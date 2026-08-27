@@ -1,49 +1,48 @@
-from app.models.user import User, FarmerProfile, OTPRecord, UserRole
+"""Centralized Model Registry."""
+
+from app.models.user import User, FarmerProfile, GeoRegionLanguageMap
 from app.models.farm import AgriculturalPlot, LivestockUnit, PoultryUnit, AquacultureUnit
-from app.models.activity import (
-    CropRecord,
-    LivestockRecord,
-    PoultryRecord,
-    AquacultureRecord,
-    VerificationTier,
-)
+from app.models.climate import HistoricalClimateData, MonthlyClimateBaseline
 from app.models.economics import (
     FertilizerPriceIndex,
     FuelPriceIndex,
     FeedPriceIndex,
+    LabourRateIndex,
+    ElectricityTariffIndex,
+    TransportCostIndex,
     MarketPriceTrend,
 )
+from app.models.soil import DistrictSoilSurvey, FarmerSoilHealthCard
 from app.models.blockchain import (
     OfficialFertilizerMRP,
     VerifiedProduceStock,
-    BlockchainLedgerBlock,
+    SynergyAdvisoryAudit,
 )
-from app.models.climate import HistoricalClimateData, SuggestionAuditLog
-from app.models.service import VeterinaryService, GeoRegionLanguageMap
+from app.models.activity import FarmerActivityLog
+from app.models.service import VeterinaryService
 
 __all__ = [
     "User",
     "FarmerProfile",
-    "OTPRecord",
-    "UserRole",
+    "GeoRegionLanguageMap",
     "AgriculturalPlot",
     "LivestockUnit",
     "PoultryUnit",
     "AquacultureUnit",
-    "CropRecord",
-    "LivestockRecord",
-    "PoultryRecord",
-    "AquacultureRecord",
-    "VerificationTier",
+    "HistoricalClimateData",
+    "MonthlyClimateBaseline",
     "FertilizerPriceIndex",
     "FuelPriceIndex",
     "FeedPriceIndex",
+    "LabourRateIndex",
+    "ElectricityTariffIndex",
+    "TransportCostIndex",
     "MarketPriceTrend",
+    "DistrictSoilSurvey",
+    "FarmerSoilHealthCard",
     "OfficialFertilizerMRP",
     "VerifiedProduceStock",
-    "BlockchainLedgerBlock",
-    "HistoricalClimateData",
-    "SuggestionAuditLog",
+    "SynergyAdvisoryAudit",
+    "FarmerActivityLog",
     "VeterinaryService",
-    "GeoRegionLanguageMap",
 ]

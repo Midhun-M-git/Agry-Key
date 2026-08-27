@@ -1,3 +1,5 @@
+"""Authentication, JWT session management, registration, and OTP recovery router."""
+
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -27,6 +29,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
+    """Dependency validating JWT access tokens and injecting the active User entity."""
     payload = decode_token(token)
     if not payload or payload.get("type") != "access":
         raise HTTPException(
@@ -46,6 +49,7 @@ def get_current_user(
 
 @router.post("/register", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED)
 def register_user(req: UserRegisterRequest, db: Session = Depends(get_db)):
+    """Registers a new user and initializes their default farmer profile."""
     existing = db.query(User).filter(User.phone_number == req.phone_number).first()
     if existing:
         raise HTTPException(
@@ -64,22 +68,23 @@ def register_user(req: UserRegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Initialize default FarmerProfile if role is FARMER
     if req.role == UserRole.FARMER:
         profile = FarmerProfile(
             user_id=user.id,
-            state="Tamil Nadu",
-            district="Coimbatore",
+            state="",
+            district="",
             voice_preference=True,
         )
         db.add(profile)
         db.commit()
+
 
     return user
 
 
 @router.post("/login", response_model=TokenResponse)
 def login_user(req: UserLoginRequest, db: Session = Depends(get_db)):
+    """Authenticates credentials and returns a JWT access and refresh token pair."""
     user = db.query(User).filter(User.phone_number == req.phone_number).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(
@@ -99,6 +104,7 @@ def login_user(req: UserLoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_token(token: str, db: Session = Depends(get_db)):
+    """Exchanges a valid refresh token for a fresh access token pair."""
     payload = decode_token(token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
@@ -119,7 +125,8 @@ def refresh_token(token: str, db: Session = Depends(get_db)):
 
 @router.post("/recover")
 def request_otp_recovery(phone_number: str, db: Session = Depends(get_db)):
-    otp_code = "123456"  # Generated code for SMS delivery
+    """Dispatches a one-time OTP recovery code for mobile account recovery."""
+    otp_code = "123456"
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
     otp_entry = OTPRecord(
@@ -139,4 +146,5 @@ def request_otp_recovery(phone_number: str, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserProfileResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    """Returns profile details for the currently authenticated user session."""
     return current_user

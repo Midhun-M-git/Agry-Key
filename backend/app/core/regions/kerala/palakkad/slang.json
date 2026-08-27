@@ -1,0 +1,16 @@
+{
+  "state": "Kerala",
+  "district": "Palakkad",
+  "language_code": "ml",
+  "dialect_pack_id": "palakkad_malayalam",
+  "slang_mapping": {
+    "net_profit": "ലാഭം",
+    "market_price": "അങ്ങാടി വില",
+    "fertilizer": "വളം",
+    "water_source": "നന",
+    "cows": "പശുക്കൾ",
+    "hens": "കോഴികൾ",
+    "fish_pond": "മീൻ കുളം",
+    "paddy": "நெல்லு / നെല്ല്"
+  }
+}

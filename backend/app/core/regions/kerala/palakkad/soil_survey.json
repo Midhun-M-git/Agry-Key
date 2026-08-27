@@ -1,0 +1,18 @@
+{
+  "state": "Kerala",
+  "district": "Palakkad",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "",
+      "village_panchayath": "",
+      "predominant_soil_type": "",
+      "ph_level": null,
+      "organic_carbon_percent": null,
+      "nitrogen_kg_ha": null,
+      "phosphorus_kg_ha": null,
+      "potassium_kg_ha": null,
+      "water_table_depth_m": null,
+      "suitable_crops": []
+    }
+  ]
+}

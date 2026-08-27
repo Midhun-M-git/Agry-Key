@@ -1,0 +1,15 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Coimbatore",
+  "language_code": "ta",
+  "dialect_pack_id": "kongu_tamil",
+  "slang_mapping": {
+    "net_profit": "நிகர லாபம்",
+    "market_price": "கட்டண விலை",
+    "fertilizer": "உரம்",
+    "water_source": "தண்ணீர் வசதி",
+    "cows": "மாடு",
+    "hens": "கோழி",
+    "fish_pond": "குளம்"
+  }
+}

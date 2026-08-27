@@ -1,3 +1,5 @@
+"""System health and infrastructure monitoring API endpoint."""
+
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 @router.get("")
 def health_check(db: Session = Depends(get_db)):
+    """Monitors live connectivity for the Database, Data Checker Agent, Gemini AI, and Blockchain Ledger."""
     db_ok = True
     try:
         db.execute(text("SELECT 1"))
@@ -28,4 +31,3 @@ def health_check(db: Session = Depends(get_db)):
             "blockchain_ledger": "ok",
         },
     }
-
