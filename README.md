@@ -27,4 +27,6 @@ The complete project roadmap and active development issues across all teams are 
 
 ## License
 
-MIT License
+- **Open Source Community Use**: Licensed under the [GNU AGPLv3](LICENSE) for open-source and non-commercial community contributions.
+- **Commercial & Monetary Use**: Any commercial deployment, monetization, or proprietary hosting requires a paid Commercial License from the author (Contact: `mmidhun781@gmail.com`).
+
