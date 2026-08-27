@@ -1,53 +1,30 @@
-# Agry-Key
+# Agry-Key 🌾
 
-Net profit optimization platform for India's food producers — covers agriculture, livestock, poultry, dairy, and aquaculture under one roof.
+Unified Food Economy Intelligence Platform.
 
-## The problem
+## The Problem
 
-A farmer with 3 acres of land, 50 cows, and a fish pond has no single tool that tells them their combined net profit, which crop to switch to, or whether the fertilizer dealer is overcharging them. Government data exists but is scattered across a dozen portals, none of which speak Tamil or Marathi.
+Farmers and consumers lack real-time market knowledge — what to grow, when to grow it, and what it is actually worth right now on their land. While raw data exists across government portals, it remains inaccessible because it is complex, text-heavy, and difficult to navigate. Most agri-tech applications are equally hard to use, requiring complex forms and technical literacy that working farmers do not have time for.
 
-## What this does
+## What Agry-Key Does
 
-Pulls verified data from official sources (Agmarknet, IMD, NDDB, NFDB, PPAC, mFMS), runs it through a triple-agent AI pipeline (data checker → advisory → verifier), and delivers spoken financial advice in the farmer's own regional dialect. No typing, no menus, no internet literacy required.
+Agry-Key bridges this gap with a voice-first platform that speaks directly to producers in their regional language and local dialect — removing complex forms and technical barriers.
 
-Key capabilities:
-- Per-sector and combined portfolio net profit calculation
-- Cross-sector cost savings (cow dung → fertilizer, hen droppings → fish feed)
-- Alternative crop/activity ranking by projected net return
-- Blockchain-verified fertilizer MRP and produce stock (anti-fraud)
-- Voice-first interface with regional language auto-detection via GPS
+- **Market Intelligence**: Clear guidance on what crops, fish, dairy, or livestock activities yield the highest net profit on a farmer's specific land.
+- **Unified Food Portfolio**: Combines agriculture, livestock, poultry, dairy, and aquaculture under a single profile with cross-sector synergy calculations.
+- **Zero-Touch Voice Experience**: Automatically detects location and speaks in the native language — zero typing or menu navigation required.
+- **Verified Data & Anti-Fraud**: Direct integration with official primary sources and cryptographic verification for fertilizer prices and produce authenticity.
 
-## Tech
+## Project Structure
 
-| | |
-|---|---|
-| Backend | FastAPI, SQLAlchemy, Alembic |
-| Auth | JWT + bcrypt |
-| AI | Gemini Free API, AI4Bharat voice models |
-| Forecasting | Prophet / LightGBM |
-| Integrity | SHA-256 Merkle-hash chain |
-| DB | SQLite (dev), PostgreSQL (prod) |
-| Mobile | Flutter (planned) |
+- `backend/` — Backend API server, AI agents, and core intelligence services.
+- `frontend/` — Cross-platform mobile application.
+- `database/` — Database schema definitions and migrations.
 
-## Setup
+## Project Roadmap
 
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload
-```
-
-Docs at `http://127.0.0.1:8000/docs`
-
-## Where things stand
-
-Phase 1 shipped — server foundation, CORS, rate limiting, auth utilities, health endpoint.
-
-Full roadmap lives in [Issues](https://github.com/Midhun-M-git/Agry-Key/issues).
+The complete project roadmap and active development issues across all teams are tracked on [GitHub Issues](https://github.com/Midhun-M-git/Agry-Key/issues).
 
 ## License
 
-MIT
+MIT License
