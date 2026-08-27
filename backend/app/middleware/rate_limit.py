@@ -1,3 +1,5 @@
+"""In-memory rate limiting middleware per client IP address."""
+
 import time
 from collections import defaultdict
 from fastapi import HTTPException, Request, status
@@ -5,6 +7,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Restricts API request bursts per client IP within a rolling time window."""
+
     def __init__(self, app, max_requests: int = 120, window_seconds: int = 60):
         super().__init__(app)
         self.max_requests = max_requests
@@ -15,6 +19,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host if request.client else "127.0.0.1"
         now = time.time()
 
+        # Evict timestamps outside the active rolling window
         self.requests[client_ip] = [
             t for t in self.requests[client_ip] if now - t < self.window_seconds
         ]
@@ -27,4 +32,3 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         self.requests[client_ip].append(now)
         return await call_next(request)
-

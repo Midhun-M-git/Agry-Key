@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+"""AI Voice Interview farm portfolio onboarding router."""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -16,6 +18,7 @@ def setup_farm_portfolio(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Processes parsed AI Voice Interview responses to configure a multi-sector farm portfolio."""
     profile = db.query(FarmerProfile).filter(FarmerProfile.user_id == current_user.id).first()
     if not profile:
         profile = FarmerProfile(
@@ -39,7 +42,7 @@ def setup_farm_portfolio(
 
     configured = []
 
-    # Configure Agricultural Plots
+    # 1. Configure Agricultural Plots
     for p in req.plots:
         plot = AgriculturalPlot(
             farmer_profile_id=profile.id,
@@ -53,7 +56,7 @@ def setup_farm_portfolio(
         db.add(plot)
         configured.append(f"Crop Plot: {p.acreage} acres ({p.soil_type} soil)")
 
-    # Configure Livestock Units
+    # 2. Configure Livestock Units
     for l in req.livestock:
         livestock = LivestockUnit(
             farmer_profile_id=profile.id,
@@ -65,7 +68,7 @@ def setup_farm_portfolio(
         db.add(livestock)
         configured.append(f"Livestock: {l.head_count} {l.animal_type}s")
 
-    # Configure Poultry Units
+    # 3. Configure Poultry Units
     for p_unit in req.poultry:
         poultry = PoultryUnit(
             farmer_profile_id=profile.id,
@@ -76,7 +79,7 @@ def setup_farm_portfolio(
         db.add(poultry)
         configured.append(f"Poultry: {p_unit.bird_count} {p_unit.bird_type}s")
 
-    # Configure Aquaculture Units
+    # 4. Configure Aquaculture Units
     for a in req.aquaculture:
         aqua = AquacultureUnit(
             farmer_profile_id=profile.id,

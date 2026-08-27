@@ -6,24 +6,26 @@ client = TestClient(app)
 
 
 def setup_module(module):
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 
-def test_zero_touch_geo_language_detection():
-    response = client.post("/api/v1/geo/detect-language", json={"latitude": 11.0168, "longitude": 76.9558})
+def test_zero_touch_geo_language_detection_palakkad():
+    response = client.post("/api/v1/geo/detect-language", json={"latitude": 10.7867, "longitude": 76.6547})
     assert response.status_code == 200
     data = response.json()
-    assert data["regional_language_code"] == "ta"
-    assert data["district"] == "Coimbatore"
+    assert data["regional_language_code"] == "ml"
+    assert data["district"] == "Palakkad"
+    assert data["dialect_pack_id"] == "palakkad_malayalam"
     assert "audio_greeting_url" in data
     assert "ui_translations" in data
 
 
 def test_i18n_translations():
-    response = client.get("/api/v1/i18n/translations?lang=ta")
+    response = client.get("/api/v1/i18n/translations?lang=ml")
     assert response.status_code == 200
     data = response.json()
-    assert data["language_code"] == "ta"
+    assert data["language_code"] == "ml"
     assert "welcome" in data["translations"]
 
 
@@ -32,9 +34,9 @@ def test_user_registration_and_login_flow():
     reg_payload = {
         "phone_number": "+919876543210",
         "password": "SecretPassword123",
-        "full_name": "Rajan Farmer",
+        "full_name": "Sreekumar Farmer",
         "role": "FARMER",
-        "preferred_language": "ta"
+        "preferred_language": "ml"
     }
     response = client.post("/api/v1/auth/register", json=reg_payload)
     assert response.status_code == 201
@@ -60,34 +62,34 @@ def test_user_registration_and_login_flow():
     assert me_resp.status_code == 200
     assert me_resp.json()["phone_number"] == "+919876543210"
 
-    # 4. Onboard Multi-Sector Farm Portfolio
+    # 4. Onboard Multi-Sector Farm Portfolio (Palakkad Region)
     onboard_payload = {
-        "state": "Tamil Nadu",
-        "district": "Coimbatore",
-        "latitude": 11.0168,
-        "longitude": 76.9558,
+        "state": "Kerala",
+        "district": "Palakkad",
+        "latitude": 10.7867,
+        "longitude": 76.6547,
         "plots": [
             {
-                "plot_name": "Main Field",
+                "plot_name": "Paddy Field Palakkad",
                 "acreage": 3.0,
-                "soil_type": "Red",
-                "water_source": "Borewell",
+                "soil_type": "Alluvial",
+                "water_source": "River",
                 "crops_currently_grown": ["Paddy"]
             }
         ],
         "livestock": [
             {
                 "animal_type": "Cow",
-                "breed": "Holstein",
+                "breed": "Veechur",
                 "head_count": 50,
                 "purpose": "DAIRY"
             }
         ],
         "aquaculture": [
             {
-                "pond_name": "Main Pond",
+                "pond_name": "Main Fish Pond",
                 "pond_size_acres": 0.5,
-                "fish_species": "Catfish"
+                "fish_species": "Karimeen"
             }
         ]
     }

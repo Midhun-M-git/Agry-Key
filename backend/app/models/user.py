@@ -1,3 +1,5 @@
+"""User accounts, farmer profiles, and mobile OTP authentication models."""
+
 from datetime import datetime, timezone
 import enum
 from typing import Optional
@@ -8,12 +10,14 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
+    """Supported platform user roles."""
     FARMER = "FARMER"
     BUYER = "BUYER"
     ADMIN = "ADMIN"
 
 
 class User(Base):
+    """Core user authentication and account model."""
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -31,6 +35,7 @@ class User(Base):
 
 
 class FarmerProfile(Base):
+    """Top-level farmer profile linking geographic location and voice preferences."""
     __tablename__ = "farmer_profiles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -47,6 +52,7 @@ class FarmerProfile(Base):
 
 
 class OTPRecord(Base):
+    """One-time password dispatch and verification log."""
     __tablename__ = "otp_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

@@ -1,3 +1,5 @@
+"""Production harvest and sale records across crops, dairy, poultry, and fish."""
+
 from datetime import datetime, timezone
 import enum
 from typing import Optional
@@ -8,17 +10,19 @@ from app.core.database import Base
 
 
 class VerificationTier(str, enum.Enum):
+    """Two-tier data verification classification."""
     PLATFORM_VERIFIED = "PLATFORM_VERIFIED"
     SELF_REPORTED = "SELF_REPORTED"
 
 
 class CropRecord(Base):
+    """Harvest and sale record for agricultural crop plots."""
     __tablename__ = "crop_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     plot_id: Mapped[int] = mapped_column(ForeignKey("agricultural_plots.id"), nullable=False)
     crop_name: Mapped[str] = mapped_column(String(50), nullable=False)
-    season: Mapped[str] = mapped_column(String(20), nullable=False)  # Kharif, Rabi, Zaid
+    season: Mapped[str] = mapped_column(String(20), nullable=False)
     quantity_produced: Mapped[float] = mapped_column(Float, nullable=False)
     quantity_unit: Mapped[str] = mapped_column(String(20), default="quintal")
     sale_price_per_unit: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -32,11 +36,12 @@ class CropRecord(Base):
 
 
 class LivestockRecord(Base):
+    """Yield and feed record for livestock production units."""
     __tablename__ = "livestock_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     unit_id: Mapped[int] = mapped_column(ForeignKey("livestock_units.id"), nullable=False)
-    product_name: Mapped[str] = mapped_column(String(50), default="Milk")  # Milk, Meat, Live Animal
+    product_name: Mapped[str] = mapped_column(String(50), default="Milk")
     daily_yield_liters: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     sale_price_per_liter: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     feed_cost_monthly: Mapped[float] = mapped_column(Float, default=0.0)
@@ -49,6 +54,7 @@ class LivestockRecord(Base):
 
 
 class PoultryRecord(Base):
+    """Egg yield and feed record for poultry units."""
     __tablename__ = "poultry_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -65,6 +71,7 @@ class PoultryRecord(Base):
 
 
 class AquacultureRecord(Base):
+    """Fish harvest and feed record for aquaculture units."""
     __tablename__ = "aquaculture_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

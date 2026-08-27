@@ -1,3 +1,5 @@
+"""i18n Localization translation bundles and voice mode preference settings."""
+
 from typing import Dict
 from fastapi import APIRouter, Query
 
@@ -33,6 +35,7 @@ TRANSLATION_STORE: Dict[str, Dict[str, str]] = {
 
 @router.post("/preferences")
 def update_voice_preference(voice_enabled: bool):
+    """Updates user session preference for voice-guided interaction mode (ON/OFF)."""
     return {
         "status": "success",
         "voice_guidance_enabled": voice_enabled,
@@ -42,6 +45,7 @@ def update_voice_preference(voice_enabled: bool):
 
 @router.get("/translations")
 def get_translations(lang: str = Query(default="ta", description="Language code e.g. ta, hi, ml")):
+    """Returns localizable UI translation string key-value bundle for the specified regional language."""
     bundle = TRANSLATION_STORE.get(lang.lower(), TRANSLATION_STORE["ta"])
     return {
         "language_code": lang,
