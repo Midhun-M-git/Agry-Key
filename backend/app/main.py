@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.middleware.rate_limit import RateLimitMiddleware
-from app.routers import health
+from app.routers import auth, geo, health, i18n, onboarding
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,7 +29,12 @@ app.add_middleware(
 )
 app.add_middleware(RateLimitMiddleware, max_requests=120, window_seconds=60)
 
+# Include Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(geo.router, prefix=settings.API_V1_STR)
+app.include_router(i18n.router, prefix=settings.API_V1_STR)
+app.include_router(onboarding.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
@@ -47,4 +52,5 @@ async def unhandled_exception_handler(request, exc):
         status_code=500,
         content={"detail": "Internal server error"},
     )
+
 
