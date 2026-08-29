@@ -1,8 +1,8 @@
 """Centralized Model Registry."""
 
-from app.models.user import User, FarmerProfile, GeoRegionLanguageMap
+from app.models.user import User, FarmerProfile
 from app.models.farm import AgriculturalPlot, LivestockUnit, PoultryUnit, AquacultureUnit
-from app.models.climate import HistoricalClimateData, MonthlyClimateBaseline
+from app.models.climate import HistoricalClimateData, SuggestionAuditLog
 from app.models.economics import (
     FertilizerPriceIndex,
     FuelPriceIndex,
@@ -16,21 +16,25 @@ from app.models.soil import DistrictSoilSurvey, FarmerSoilHealthCard
 from app.models.blockchain import (
     OfficialFertilizerMRP,
     VerifiedProduceStock,
-    SynergyAdvisoryAudit,
+    BlockchainLedgerBlock,
 )
-from app.models.activity import FarmerActivityLog
+from app.models.activity import (
+    CropRecord,
+    LivestockRecord,
+    PoultryRecord,
+    AquacultureRecord,
+)
 from app.models.service import VeterinaryService
 
 __all__ = [
     "User",
     "FarmerProfile",
-    "GeoRegionLanguageMap",
     "AgriculturalPlot",
     "LivestockUnit",
     "PoultryUnit",
     "AquacultureUnit",
     "HistoricalClimateData",
-    "MonthlyClimateBaseline",
+    "SuggestionAuditLog",
     "FertilizerPriceIndex",
     "FuelPriceIndex",
     "FeedPriceIndex",
@@ -42,7 +46,10 @@ __all__ = [
     "FarmerSoilHealthCard",
     "OfficialFertilizerMRP",
     "VerifiedProduceStock",
-    "SynergyAdvisoryAudit",
-    "FarmerActivityLog",
+    "BlockchainLedgerBlock",
+    "CropRecord",
+    "LivestockRecord",
+    "PoultryRecord",
+    "AquacultureRecord",
     "VeterinaryService",
 ]
