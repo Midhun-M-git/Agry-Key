@@ -26,3 +26,7 @@ htmlcov/
 .idea/
 *.swp
 *.swo
+
+test_report/
+
+backend/.cache.sqlite

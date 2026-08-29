@@ -19,6 +19,11 @@ class Settings(BaseSettings):
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")
+    
+    # Hugging Face API keys and Microservice URLs
+    HUGGINGFACE_API_KEY: str = Field(default="sample_hf_key")
+    DL_FORECAST_SERVICE_URL: str = Field(default="https://agry-key-dl-space.hf.space/api/predict")
+    DL_FORECAST_SERVICE_TOKEN: str = Field(default="secret-service-token-123")
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
