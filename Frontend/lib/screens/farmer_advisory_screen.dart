@@ -138,17 +138,17 @@ class _FarmerAdvisoryScreenState
               children: [
 
                 quickChip(
-                  "🌧 Weather",
+                  "Weather",
                   "Will it rain tomorrow?",
                 ),
 
                 quickChip(
-                  "🌾 Fertilizer",
+                  "Fertilizer",
                   "Best fertilizer for rice",
                 ),
 
                 quickChip(
-                  "🐛 Pest",
+                  "Pest Control",
                   "How to control pests?",
                 ),
 

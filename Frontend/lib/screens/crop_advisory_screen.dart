@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 class CropAdvisoryScreen extends StatelessWidget {
   const CropAdvisoryScreen({super.key});
@@ -25,6 +26,8 @@ class CropAdvisoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const VoiceAssistantFab(),
+      backgroundColor: const Color(0xFFF5FAF5),
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/app_state.dart';
+import '../widgets/voice_assistant_fab.dart';
 import '../widgets/voice_text_field.dart';
 
 class DiseaseDetectionScreen extends StatefulWidget {
@@ -136,7 +137,7 @@ class _DiseaseDetectionScreenState
   Widget build(BuildContext context) {
 
     return Scaffold(
-
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor:
           const Color(0xFFF5FAF5),
 

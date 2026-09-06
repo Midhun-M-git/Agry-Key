@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -44,6 +45,7 @@ class _MarketScreenState
   Widget build(BuildContext context) {
 
     return Scaffold(
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(

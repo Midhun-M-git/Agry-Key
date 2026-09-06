@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 import 'browse_products_screen.dart';
 import 'find_farmers_screen.dart';
@@ -123,6 +124,7 @@ class _BuyerDashboardScreenState
             : AppState.userName;
 
     return Scaffold(
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(

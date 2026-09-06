@@ -19,7 +19,7 @@ class _AIAssistantScreenState
 bool isListening = false;
 
   String aiResponse =
-      "🌾 Welcome to AGRI KEY AI Assistant.\n\nAsk anything about farming, weather, crops, diseases, market prices, or government schemes.";
+      "Welcome to AGRI KEY Assistant.\n\nAsk anything about farming, weather, crops, diseases, market prices, or government schemes.";
 @override
 void initState() {
   super.initState();
@@ -77,7 +77,7 @@ Future<void> stopListening() async {
 
     setState(() {
       aiResponse =
-          "👨‍🌾 ${questionController.text}\n\n🤖 AI Response:\n\nThis response will be generated dynamically after AI backend integration.";
+          "${questionController.text}\n\nResponse:\n\nThis response will be generated dynamically after AI backend integration.";
     });
 
     questionController.clear();

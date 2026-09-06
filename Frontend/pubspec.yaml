@@ -7,7 +7,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.7
+  sdk: ^3.10.4
 
 dependencies:
   flutter:
@@ -21,6 +21,7 @@ dependencies:
 
   # Voice Assistant
   speech_to_text: ^7.0.0
+  audioplayers: ^5.2.1
 
   # Camera & Gallery
   image_picker: ^1.1.2

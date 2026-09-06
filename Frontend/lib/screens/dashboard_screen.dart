@@ -15,6 +15,7 @@ import 'settings_screen.dart';
 import 'alerts_screen.dart';
 import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 
 class DashboardScreen extends StatelessWidget {
@@ -40,6 +41,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(

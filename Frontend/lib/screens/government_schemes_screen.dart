@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
+import '../widgets/voice_assistant_fab.dart';
 import '../widgets/voice_text_field.dart';
 
 class GovernmentSchemesScreen extends StatefulWidget {
@@ -158,7 +159,7 @@ class _GovernmentSchemesScreenState
   Widget build(BuildContext context) {
 
     return Scaffold(
-
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor:
           const Color(0xFFF5FAF5),
 

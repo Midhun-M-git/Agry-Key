@@ -1,7 +1,7 @@
 class AppState {
 
   // Language Selection
-  static String selectedLanguage = "English";
+  static String selectedLanguage = "";
 
   // User Role
   static String selectedRole = "";

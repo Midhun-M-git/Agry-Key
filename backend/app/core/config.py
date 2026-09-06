@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200
 
-    DATABASE_URL: str = "sqlite:///./agry_key.db"
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/agry_key"
     CORS_ORIGINS: Union[str, List[str]] = "*"
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")

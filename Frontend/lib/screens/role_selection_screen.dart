@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
+import '../widgets/voice_assistant_fab.dart';
 import 'login_screen.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
@@ -60,6 +61,7 @@ class _RoleSelectionScreenState
         title: const Text("AgriKey"),
         centerTitle: true,
       ),
+      floatingActionButton: const VoiceAssistantFab(),
 
       body: Padding(
         padding: const EdgeInsets.all(20),

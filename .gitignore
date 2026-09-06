@@ -30,3 +30,5 @@ htmlcov/
 test_report/
 
 backend/.cache.sqlite
+.cache.sqlite
+*.sqlite

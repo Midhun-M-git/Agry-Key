@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 import '../services/weather_service.dart';
 import '../widgets/voice_text_field.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -83,9 +84,8 @@ class _WeatherScreenState
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
+      floatingActionButton: const VoiceAssistantFab(),
       backgroundColor:
           const Color(0xFFF5FAF5),
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
+import '../widgets/voice_assistant_fab.dart';
 
 class SoilHealthScreen extends StatelessWidget {
   const SoilHealthScreen({super.key});
@@ -25,6 +26,7 @@ class SoilHealthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const VoiceAssistantFab(),
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(

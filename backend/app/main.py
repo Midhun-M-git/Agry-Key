@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.middleware.rate_limit import RateLimitMiddleware
-from app.routers import auth, geo, health, i18n, onboarding, advisory
+from app.routers import auth, geo, health, i18n, onboarding, advisory, voice
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -36,6 +36,7 @@ app.include_router(geo.router, prefix=settings.API_V1_STR)
 app.include_router(i18n.router, prefix=settings.API_V1_STR)
 app.include_router(onboarding.router, prefix=settings.API_V1_STR)
 app.include_router(advisory.router, prefix=f"{settings.API_V1_STR}/advisory", tags=["advisory"])
+app.include_router(voice.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
