@@ -12,14 +12,14 @@ class Base(DeclarativeBase):
     pass
 
 
-# Enable single-thread bypass for SQLite during development
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+engine_options = {"pool_pre_ping": True}
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-)
+if is_sqlite:
+    # SQLite is the zero-setup local development database.
+    engine_options["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(settings.DATABASE_URL, **engine_options)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -31,6 +31,34 @@ Agry-Key bridges this gap with a voice-first platform that speaks directly to pr
 - `frontend/` — Cross-platform mobile/web application (Frontend Team).
 - `database/` — Database schema definitions, migrations, and live primary dataset ingestion (Database Team).
 
+## Backend Database Setup
+
+Local development uses SQLite by default, so no database server is required. The backend stores the database in `backend/agry_key.db` when `DATABASE_URL` is not set.
+
+1. Copy `backend/.env.example` to `backend/.env`.
+2. Set a local `SECRET_KEY` with at least 32 characters.
+3. Keep this value for local SQLite development:
+
+  ```env
+  DATABASE_URL="sqlite:///./agry_key.db"
+  ```
+
+For staging or production, use PostgreSQL and set `DATABASE_URL` to the deployed database connection string. Both `postgresql://` and `postgres://` forms are accepted and normalized to the `psycopg2` driver:
+
+```env
+DATABASE_URL="postgresql://postgres:password@db-host:5432/agry_key"
+```
+
+Install backend dependencies and apply migrations from the backend directory:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m alembic upgrade head
+python -m pytest -q
+```
+
+Never commit `backend/.env` or database credentials. The repository `.gitignore` excludes `.env` files and local SQLite databases.
+
 ---
 
 ## Contributing & Regional Plugins

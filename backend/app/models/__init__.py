@@ -1,6 +1,6 @@
 """Centralized Model Registry."""
 
-from app.models.user import User, FarmerProfile
+from app.models.user import User, FarmerProfile, OTPRecord
 from app.models.farm import AgriculturalPlot, LivestockUnit, PoultryUnit, AquacultureUnit
 from app.models.climate import HistoricalClimateData, SuggestionAuditLog
 from app.models.economics import (
@@ -24,11 +24,12 @@ from app.models.activity import (
     PoultryRecord,
     AquacultureRecord,
 )
-from app.models.service import VeterinaryService
+from app.models.service import VeterinaryService, GeoRegionLanguageMap
 
 __all__ = [
     "User",
     "FarmerProfile",
+    "OTPRecord",
     "AgriculturalPlot",
     "LivestockUnit",
     "PoultryUnit",
@@ -52,4 +53,5 @@ __all__ = [
     "PoultryRecord",
     "AquacultureRecord",
     "VeterinaryService",
+    "GeoRegionLanguageMap",
 ]
