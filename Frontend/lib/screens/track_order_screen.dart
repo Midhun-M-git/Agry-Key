@@ -1,37 +1,21 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'chat_farmer_screen.dart';
 
-class TrackOrderScreen extends StatelessWidget {
+class TrackOrderScreen extends ConsumerWidget {
   const TrackOrderScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Track Order",
             "ഓർഡർ ട്രാക്ക് ചെയ്യുക",
             "ऑर्डर ट्रैक करें",
@@ -68,7 +52,7 @@ class TrackOrderScreen extends StatelessWidget {
                 leading: const Icon(Icons.person),
                 title: const Text("Ravi Kumar"),
                 subtitle: Text(
-                  getText(
+                  L10n.get(
                     "Farmer",
                     "കർഷകൻ",
                     "किसान",
@@ -86,7 +70,7 @@ class TrackOrderScreen extends StatelessWidget {
                   Icons.calendar_month,
                 ),
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Estimated Delivery",
                     "പ്രതീക്ഷിക്കുന്ന ഡെലിവറി",
                     "अनुमानित डिलीवरी",
@@ -102,7 +86,7 @@ class TrackOrderScreen extends StatelessWidget {
             const SizedBox(height: 25),
 
             orderStep(
-              getText(
+              L10n.get(
                 "Order Placed",
                 "ഓർഡർ നൽകി",
                 "ऑर्डर दिया गया",
@@ -112,7 +96,7 @@ class TrackOrderScreen extends StatelessWidget {
             ),
 
             orderStep(
-              getText(
+              L10n.get(
                 "Farmer Accepted",
                 "കർഷകൻ അംഗീകരിച്ചു",
                 "किसान ने स्वीकार किया",
@@ -122,7 +106,7 @@ class TrackOrderScreen extends StatelessWidget {
             ),
 
             orderStep(
-              getText(
+              L10n.get(
                 "Packed",
                 "പാക്ക് ചെയ്തു",
                 "पैक किया गया",
@@ -132,7 +116,7 @@ class TrackOrderScreen extends StatelessWidget {
             ),
 
             orderStep(
-              getText(
+              L10n.get(
                 "Shipped",
                 "അയച്ചു",
                 "भेज दिया गया",
@@ -142,7 +126,7 @@ class TrackOrderScreen extends StatelessWidget {
             ),
 
             orderStep(
-              getText(
+              L10n.get(
                 "Delivered",
                 "ഡെലിവർ ചെയ്തു",
                 "डिलीवर किया गया",
@@ -170,7 +154,7 @@ class TrackOrderScreen extends StatelessWidget {
                     },
                     icon: const Icon(Icons.call),
                     label: Text(
-                      getText(
+                      L10n.get(
                         "Call",
                         "വിളിക്കുക",
                         "कॉल",
@@ -199,7 +183,7 @@ class TrackOrderScreen extends StatelessWidget {
                     },
                     icon: const Icon(Icons.chat),
                     label: Text(
-                      getText(
+                      L10n.get(
                         "Chat",
                         "ചാറ്റ്",
                         "चैट",

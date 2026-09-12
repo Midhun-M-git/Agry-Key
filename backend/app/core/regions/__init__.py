@@ -17,6 +17,7 @@ added by regional developers — no code changes required!
 
 import json
 import importlib.util
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -86,8 +87,25 @@ class DistrictRegionRegistry:
         except Exception:
             pass
 
-    def get_provider(self, district: str) -> Optional[BaseDistrictProvider]:
-        return self._providers.get(district.lower())
+    @staticmethod
+    def _normalize_location_name(value: str) -> str:
+        normalized = re.sub(r"\bdistrict\b", "", value, flags=re.IGNORECASE)
+        return " ".join(normalized.lower().split())
+
+    def get_provider(
+        self, district: str, state: Optional[str] = None
+    ) -> Optional[BaseDistrictProvider]:
+        provider = self._providers.get(self._normalize_location_name(district))
+        if provider and state:
+            if self._normalize_location_name(provider.state_name) != self._normalize_location_name(state):
+                return None
+        return provider
+
+    def get_provider_for_location(
+        self, state: str, district: str
+    ) -> Optional[BaseDistrictProvider]:
+        """Return the district plugin matching both reverse-geocoded names."""
+        return self.get_provider(district, state)
 
     def get_slang_pack(self, district: str) -> Optional[dict]:
         return self._slang_packs.get(district.lower())

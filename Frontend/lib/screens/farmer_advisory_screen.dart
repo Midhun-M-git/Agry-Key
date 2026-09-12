@@ -1,43 +1,26 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
-class FarmerAdvisoryScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class FarmerAdvisoryScreen extends ConsumerStatefulWidget {
   const FarmerAdvisoryScreen({super.key});
 
   @override
-  State<FarmerAdvisoryScreen> createState() =>
+  _FarmerAdvisoryScreenState createState() =>
       _FarmerAdvisoryScreenState();
 }
 
 class _FarmerAdvisoryScreenState
-    extends State<FarmerAdvisoryScreen> {
+  extends ConsumerState<FarmerAdvisoryScreen> {
 
   final TextEditingController questionController =
       TextEditingController();
 
   String advisoryResult =
       "🌱 Ask any farming question and get guidance.";
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  void getAdvice() {
+void getAdvice() {
     if (questionController.text.trim().isEmpty) {
       return;
     }
@@ -66,6 +49,7 @@ class _FarmerAdvisoryScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -75,7 +59,7 @@ class _FarmerAdvisoryScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Farmer Advisory",
             "കർഷക ഉപദേശം",
             "किसान सलाह",
@@ -113,7 +97,7 @@ class _FarmerAdvisoryScreenState
                   const SizedBox(height: 10),
 
                   Text(
-                    getText(
+                    L10n.get(
                       "Smart Farming Guidance",
                       "സ്മാർട്ട് കാർഷിക മാർഗ്ഗനിർദ്ദേശം",
                       "स्मार्ट कृषि मार्गदर्शन",
@@ -168,7 +152,7 @@ class _FarmerAdvisoryScreenState
 
             VoiceTextField(
               controller: questionController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Ask your farming question...",
                 "നിങ്ങളുടെ കാർഷിക ചോദ്യം ചോദിക്കൂ...",
                 "अपना कृषि प्रश्न पूछें...",
@@ -190,7 +174,7 @@ class _FarmerAdvisoryScreenState
                 ),
 
                 label: Text(
-                  getText(
+                  L10n.get(
                     "Get Advisory",
                     "ഉപദേശം നേടുക",
                     "सलाह प्राप्त करें",

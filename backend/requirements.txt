@@ -4,6 +4,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.1.0
 sqlalchemy>=2.0.25
 alembic>=1.13.1
+# PostgreSQL driver for staging/production; SQLite is included with Python.
 psycopg2-binary>=2.9.9
 pyjwt[crypto]>=2.8.0
 passlib[bcrypt]>=1.7.4
@@ -11,4 +12,8 @@ python-multipart>=0.0.9
 geopy>=2.4.1
 numpy>=1.26.0
 httpx>=0.26.0
+openmeteo-requests==1.7.4
+requests-cache==1.2.1
+retry-requests==2.0.0
+google-generativeai==0.8.5
 pytest>=8.0.0

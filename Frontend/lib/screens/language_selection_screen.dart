@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'role_selection_screen.dart';
 import '../services/location_service.dart';
 
-class LanguageSelectionScreen extends StatefulWidget {
+class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
 
   @override
-  State<LanguageSelectionScreen> createState() =>
+  _LanguageSelectionScreenState createState() =>
       _LanguageSelectionScreenState();
 }
 
 class _LanguageSelectionScreenState
-    extends State<LanguageSelectionScreen> {
+  extends ConsumerState<LanguageSelectionScreen> {
 
   String? selectedLanguage;
 
@@ -21,7 +22,15 @@ class _LanguageSelectionScreenState
 void initState() {
   super.initState();
 
-  LocationService.getCurrentLocation();
+  LocationService.getCurrentLocation().then((position) {
+    if (!mounted || position == null) {
+      return;
+    }
+    ref.read(locationProvider.notifier).update(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+  });
 
   if (AppState.selectedLanguage.isNotEmpty) {
     selectedLanguage =
@@ -45,9 +54,8 @@ void initState() {
         onPressed: () {
           setState(() {
             selectedLanguage = language;
-            AppState.selectedLanguage =
-                language;
           });
+          ref.read(languageProvider.notifier).setLanguage(language);
         },
 
         style: ElevatedButton.styleFrom(
@@ -105,6 +113,7 @@ void initState() {
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor:
           const Color(0xFFF8FBF5),

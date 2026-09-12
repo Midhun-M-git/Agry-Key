@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class ThemeSelectionScreen extends StatefulWidget {
+class ThemeSelectionScreen extends ConsumerStatefulWidget {
   const ThemeSelectionScreen({super.key});
 
   @override
-  State<ThemeSelectionScreen> createState() =>
+  _ThemeSelectionScreenState createState() =>
       _ThemeSelectionScreenState();
 }
 
 class _ThemeSelectionScreenState
-    extends State<ThemeSelectionScreen> {
+  extends ConsumerState<ThemeSelectionScreen> {
 
   String selectedTheme = AppState.selectedTheme;
 
@@ -85,6 +86,7 @@ class _ThemeSelectionScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: const Text("Choose Theme"),
@@ -160,8 +162,9 @@ class _ThemeSelectionScreenState
               child: ElevatedButton(
                 onPressed: () {
 
-                  AppState.selectedTheme =
-                      selectedTheme;
+                  ref.read(userProvider.notifier).update(
+                    selectedTheme: selectedTheme,
+                  );
 
                   ScaffoldMessenger.of(context)
                       .showSnackBar(

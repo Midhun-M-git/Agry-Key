@@ -1,38 +1,22 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'edit_profile_screen.dart';
 import 'my_orders_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Profile",
             "പ്രൊഫൈൽ",
             "प्रोफ़ाइल",
@@ -61,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
 
             Text(
               AppState.userName.isEmpty
-                  ? getText(
+                  ? L10n.get(
                       "User",
                       "ഉപയോക്താവ്",
                       "उपयोगकर्ता",
@@ -87,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Text(
                 AppState.selectedRole.isEmpty
-                    ? getText(
+                    ? L10n.get(
                         "Role Not Selected",
                         "പങ്ക് തിരഞ്ഞെടുത്തിട്ടില്ല",
                         "भूमिका चयनित नहीं",
@@ -109,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.work),
                 title: Text(
                   AppState.userOccupation.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Occupation Not Set",
                           "തൊഴിൽ നൽകിയിട്ടില്ല",
                           "पेशा सेट नहीं है",
@@ -125,7 +109,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.location_on),
                 title: Text(
                   AppState.userLocation.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Location Not Set",
                           "സ്ഥലം നൽകിയിട്ടില്ല",
                           "स्थान सेट नहीं है",
@@ -141,7 +125,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.agriculture),
                 title: Text(
                   AppState.farmName.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Farm Name Not Set",
                           "ഫാം നാമം നൽകിയിട്ടില്ല",
                           "फार्म नाम सेट नहीं है",
@@ -157,7 +141,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.grass),
                 title: Text(
                   AppState.userCrop.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Crop Not Set",
                           "വിള നൽകിയിട്ടില്ല",
                           "फसल सेट नहीं है",
@@ -173,7 +157,7 @@ class ProfileScreen extends StatelessWidget {
                 leading: const Icon(Icons.language),
                 title: Text(
                   AppState.selectedLanguage.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Language Not Selected",
                           "ഭാഷ തിരഞ്ഞെടുത്തിട്ടില്ല",
                           "भाषा चयनित नहीं",
@@ -200,7 +184,7 @@ class ProfileScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.local_shipping),
                 label: Text(
-                  getText(
+                  L10n.get(
                     "My Orders",
                     "എന്റെ ഓർഡറുകൾ",
                     "मेरे ऑर्डर",
@@ -230,7 +214,7 @@ class ProfileScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.edit),
                 label: Text(
-                  getText(
+                  L10n.get(
                     "Edit Profile",
                     "പ്രൊഫൈൽ തിരുത്തുക",
                     "प्रोफ़ाइल संपादित करें",

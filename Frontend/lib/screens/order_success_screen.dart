@@ -1,30 +1,14 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'my_orders_screen.dart';
 
-class OrderSuccessScreen extends StatelessWidget {
+class OrderSuccessScreen extends ConsumerWidget {
   const OrderSuccessScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -45,7 +29,7 @@ class OrderSuccessScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               Text(
-                getText(
+                L10n.get(
                   "Order Placed Successfully",
                   "ഓർഡർ വിജയകരമായി നൽകി",
                   "ऑर्डर सफलतापूर्वक किया गया",
@@ -61,7 +45,7 @@ class OrderSuccessScreen extends StatelessWidget {
               const SizedBox(height: 15),
 
               Text(
-                getText(
+                L10n.get(
                   "Your order has been sent to the farmer. You can track the order status from My Orders.",
                   "നിങ്ങളുടെ ഓർഡർ കർഷകനിലേക്ക് അയച്ചിട്ടുണ്ട്. My Orders വഴി നില പരിശോധിക്കാം.",
                   "आपका ऑर्डर किसान को भेज दिया गया है। आप My Orders में इसकी स्थिति देख सकते हैं।",
@@ -95,7 +79,7 @@ class OrderSuccessScreen extends StatelessWidget {
                   ),
 
                   label: Text(
-                    getText(
+                    L10n.get(
                       "View My Orders",
                       "എന്റെ ഓർഡറുകൾ കാണുക",
                       "मेरे ऑर्डर देखें",

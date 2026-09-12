@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
-class BuyerAIAssistantScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class BuyerAIAssistantScreen extends ConsumerStatefulWidget {
   const BuyerAIAssistantScreen({super.key});
 
   @override
-  State<BuyerAIAssistantScreen> createState() =>
+  _BuyerAIAssistantScreenState createState() =>
       _BuyerAIAssistantScreenState();
 }
 
 class _BuyerAIAssistantScreenState
-    extends State<BuyerAIAssistantScreen> {
+  extends ConsumerState<BuyerAIAssistantScreen> {
 
   final TextEditingController messageController =
       TextEditingController();
@@ -23,26 +25,7 @@ class _BuyerAIAssistantScreenState
           "Hello! I am your AGRI KEY Buyer Assistant. Ask me about crops, prices, farmers or agriculture."
     }
   ];
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  void sendMessage() {
+void sendMessage() {
 
     if (messageController.text.trim().isEmpty) {
       return;
@@ -115,6 +98,7 @@ class _BuyerAIAssistantScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -125,7 +109,7 @@ class _BuyerAIAssistantScreenState
         backgroundColor: Colors.green,
 
         title: Text(
-          getText(
+          L10n.get(
             "AI Assistant",
             "AI സഹായി",
             "AI सहायक",
@@ -144,7 +128,7 @@ class _BuyerAIAssistantScreenState
             color: Colors.green.shade50,
 
             child: Text(
-              getText(
+              L10n.get(
                 "Ask questions using text or voice.",
                 "ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം ഉപയോഗിച്ച് ചോദിക്കാം.",
                 "टेक्स्ट या आवाज़ से प्रश्न पूछें।",
@@ -194,7 +178,7 @@ class _BuyerAIAssistantScreenState
                     controller:
                         messageController,
 
-                    hintText: getText(
+                    hintText: L10n.get(
                       "Ask something...",
                       "ചോദിക്കൂ...",
                       "कुछ पूछें...",

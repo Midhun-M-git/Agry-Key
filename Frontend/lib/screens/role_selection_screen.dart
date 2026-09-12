@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'login_screen.dart';
 
-class RoleSelectionScreen extends StatefulWidget {
+class RoleSelectionScreen extends ConsumerStatefulWidget {
   const RoleSelectionScreen({super.key});
 
   @override
-  State<RoleSelectionScreen> createState() =>
+  _RoleSelectionScreenState createState() =>
       _RoleSelectionScreenState();
 }
 
 class _RoleSelectionScreenState
-    extends State<RoleSelectionScreen> {
+  extends ConsumerState<RoleSelectionScreen> {
 
   String? selectedRole;
 
@@ -23,38 +25,20 @@ class _RoleSelectionScreenState
       selectedRole = AppState.selectedRole;
     }
   }
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  void selectRole(String role) {
+void selectRole(String role) {
     setState(() {
       selectedRole = role;
-      AppState.selectedRole = role;
     });
+    ref.read(authProvider.notifier).setRole(role);
 
     debugPrint(
-      "Selected Role Saved: ${AppState.selectedRole}",
+      "Selected Role Saved: ${ref.read(authProvider).selectedRole}",
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: const Text("AgriKey"),
@@ -70,7 +54,7 @@ class _RoleSelectionScreenState
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Who Are You?",
                 "നിങ്ങൾ ആരാണ്?",
                 "आप कौन हैं?",
@@ -97,7 +81,7 @@ class _RoleSelectionScreenState
                 ),
 
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Farmer / Producer",
                     "കർഷകൻ / ഉത്പാദകൻ",
                     "किसान / उत्पादक",
@@ -106,7 +90,7 @@ class _RoleSelectionScreenState
                 ),
 
                 subtitle: Text(
-                  getText(
+                  L10n.get(
                     "Manage crops, weather, diseases and sell products.",
                     "വിളകൾ, കാലാവസ്ഥ, രോഗങ്ങൾ എന്നിവ നിയന്ത്രിക്കുകയും ഉൽപ്പന്നങ്ങൾ വിൽക്കുകയും ചെയ്യുക.",
                     "फसल, मौसम, रोग प्रबंधन और उत्पाद बिक्री करें।",
@@ -133,7 +117,7 @@ class _RoleSelectionScreenState
                 ),
 
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Buyer / Consumer",
                     "വാങ്ങുന്നയാൾ / ഉപഭോക്താവ്",
                     "खरीदार / उपभोक्ता",
@@ -142,7 +126,7 @@ class _RoleSelectionScreenState
                 ),
 
                 subtitle: Text(
-                  getText(
+                  L10n.get(
                     "Browse products and buy directly from farmers.",
                     "കർഷകരിൽ നിന്ന് നേരിട്ട് ഉൽപ്പന്നങ്ങൾ വാങ്ങുക.",
                     "किसानों से सीधे उत्पाद खरीदें।",
@@ -164,8 +148,7 @@ class _RoleSelectionScreenState
                     ? null
                     : () {
 
-                        AppState.selectedRole =
-                            selectedRole!;
+                        ref.read(authProvider.notifier).setRole(selectedRole!);
 
                         Navigator.push(
                           context,
@@ -177,7 +160,7 @@ class _RoleSelectionScreenState
                       },
 
                 child: Text(
-                  getText(
+                  L10n.get(
                     "Continue",
                     "തുടരുക",
                     "जारी रखें",

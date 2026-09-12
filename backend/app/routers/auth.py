@@ -1,10 +1,15 @@
 """Authentication, JWT session management, registration, and OTP recovery router."""
 
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict, deque
+import secrets
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import (
     create_access_token,
@@ -24,6 +29,64 @@ from app.schemas.user import (
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Accounts"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+_OTP_EXPIRY_MINUTES = 10
+_OTP_REQUEST_WINDOW_SECONDS = 10 * 60
+_OTP_REQUEST_COOLDOWN_SECONDS = 60
+_OTP_REQUEST_LIMIT = 3
+_otp_requests: dict[str, deque[datetime]] = defaultdict(deque)
+
+
+def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
+    requests = _otp_requests[phone_number]
+    cutoff = now - timedelta(seconds=_OTP_REQUEST_WINDOW_SECONDS)
+    while requests and requests[0] < cutoff:
+        requests.popleft()
+
+    if requests and (now - requests[-1]).total_seconds() < _OTP_REQUEST_COOLDOWN_SECONDS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Please wait before requesting another OTP",
+        )
+    if len(requests) >= _OTP_REQUEST_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many OTP requests. Try again later",
+        )
+    requests.append(now)
+
+
+def _send_otp_sms(phone_number: str, otp_code: str) -> None:
+    if not settings.SMS_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="SMS delivery is not configured",
+        )
+
+    payload = {
+        "mobile": phone_number,
+        "otp": otp_code,
+        "otp_expiry": str(_OTP_EXPIRY_MINUTES),
+    }
+    if settings.SMS_OTP_TEMPLATE_ID:
+        payload["template_id"] = settings.SMS_OTP_TEMPLATE_ID
+
+    try:
+        response = httpx.post(
+            "https://control.msg91.com/api/v5/otp",
+            headers={
+                "authkey": settings.SMS_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=10,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to deliver OTP",
+        ) from exc
 
 
 def get_current_user(
@@ -126,8 +189,12 @@ def refresh_token(token: str, db: Session = Depends(get_db)):
 @router.post("/recover")
 def request_otp_recovery(phone_number: str, db: Session = Depends(get_db)):
     """Dispatches a one-time OTP recovery code for mobile account recovery."""
-    otp_code = "123456"
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    now = datetime.now(timezone.utc)
+    _enforce_otp_rate_limit(phone_number, now)
+    otp_code = f"{secrets.randbelow(1_000_000):06d}"
+    expires_at = now + timedelta(minutes=_OTP_EXPIRY_MINUTES)
+
+    _send_otp_sms(phone_number, otp_code)
 
     otp_entry = OTPRecord(
         phone_number=phone_number,
@@ -139,9 +206,42 @@ def request_otp_recovery(phone_number: str, db: Session = Depends(get_db)):
 
     return {
         "status": "success",
-        "message": f"OTP code dispatched to {phone_number}",
-        "expires_in_seconds": 600,
+        "message": "OTP code dispatched",
+        "expires_in_seconds": _OTP_EXPIRY_MINUTES * 60,
     }
+
+
+@router.post("/verify-otp")
+def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
+    """Verifies the newest unused recovery OTP before it expires."""
+    otp_entry = (
+        db.query(OTPRecord)
+        .filter(
+            OTPRecord.phone_number == req.phone_number,
+            OTPRecord.is_verified.is_(False),
+        )
+        .order_by(OTPRecord.created_at.desc())
+        .first()
+    )
+    if not otp_entry:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP",
+        )
+
+    now = datetime.now(timezone.utc)
+    expires_at = otp_entry.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= now or not secrets.compare_digest(otp_entry.otp_code, req.otp_code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP",
+        )
+
+    otp_entry.is_verified = True
+    db.commit()
+    return {"status": "success", "message": "OTP verified"}
 
 
 @router.get("/me", response_model=UserProfileResponse)

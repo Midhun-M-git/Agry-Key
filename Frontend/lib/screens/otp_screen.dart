@@ -1,34 +1,18 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'profile_setup_screen.dart';
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends ConsumerWidget {
   const OtpScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          getText(
+          L10n.get(
             "OTP Verification",
             "OTP സ്ഥിരീകരണം",
             "OTP सत्यापन",
@@ -55,7 +39,7 @@ class OtpScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Enter OTP",
                 "OTP നൽകുക",
                 "OTP दर्ज करें",
@@ -70,7 +54,7 @@ class OtpScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             Text(
-              getText(
+              L10n.get(
                 "We have sent a verification code to your mobile number",
                 "നിങ്ങളുടെ മൊബൈൽ നമ്പറിലേക്ക് പരിശോധന കോഡ് അയച്ചിട്ടുണ്ട്",
                 "आपके मोबाइल नंबर पर सत्यापन कोड भेजा गया है",
@@ -90,7 +74,7 @@ class OtpScreen extends StatelessWidget {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.lock),
 
-                labelText: getText(
+                labelText: L10n.get(
                   "OTP",
                   "OTP",
                   "OTP",
@@ -130,7 +114,7 @@ class OtpScreen extends StatelessWidget {
                     const SizedBox(width: 8),
 
                     Text(
-                      getText(
+                      L10n.get(
                         "Verify OTP",
                         "OTP സ്ഥിരീകരിക്കുക",
                         "OTP सत्यापित करें",
@@ -148,7 +132,7 @@ class OtpScreen extends StatelessWidget {
               onPressed: () {},
 
               child: Text(
-                getText(
+                L10n.get(
                   "Resend OTP",
                   "OTP വീണ്ടും അയയ്ക്കുക",
                   "OTP पुनः भेजें",

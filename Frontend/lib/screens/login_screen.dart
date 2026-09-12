@@ -1,47 +1,31 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'otp_screen.dart';
 import '../core/app_state.dart';
+import '../services/token_service.dart';
 import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() =>
+  _LoginScreenState createState() =>
       _LoginScreenState();
 }
 
 class _LoginScreenState
-    extends State<LoginScreen> {
+  extends ConsumerState<LoginScreen> {
 
   final TextEditingController phoneController =
       TextEditingController();
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
+@override
   void dispose() {
     phoneController.dispose();
     super.dispose();
   }
 
-  void sendOtp() {
+  Future<void> sendOtp() async {
     if (phoneController.text.trim().length !=
         10) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,8 +38,14 @@ class _LoginScreenState
       return;
     }
 
-    AppState.phoneNumber =
-        "+91${phoneController.text.trim()}";
+    ref.read(authProvider.notifier).setPhoneNumber(
+      "+91${phoneController.text.trim()}",
+    );
+    await TokenService.saveLanguage(ref.read(languageProvider));
+    await TokenService.saveRole(ref.read(authProvider).selectedRole);
+    await TokenService.saveUserDetails(
+      phoneNumber: ref.read(authProvider).phoneNumber,
+    );
 
     Navigator.push(
       context,
@@ -68,6 +58,7 @@ class _LoginScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
@@ -75,7 +66,7 @@ class _LoginScreenState
         backgroundColor: Colors.green,
         centerTitle: true,
         title: Text(
-          getText(
+          L10n.get(
             "Login",
             "ലോഗിൻ",
             "लॉगिन",
@@ -105,7 +96,7 @@ class _LoginScreenState
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Welcome to AGRI KEY",
                 "AGRI KEY ലേക്ക് സ്വാഗതം",
                 "AGRI KEY में आपका स्वागत है",
@@ -121,7 +112,7 @@ class _LoginScreenState
             const SizedBox(height: 10),
 
             Text(
-              getText(
+              L10n.get(
                 "Login using your mobile number",
                 "മൊബൈൽ നമ്പർ ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക",
                 "मोबाइल नंबर का उपयोग करके लॉगिन करें",
@@ -152,7 +143,7 @@ class _LoginScreenState
                   color: Colors.black,
                 ),
 
-                labelText: getText(
+                labelText: L10n.get(
                   "Mobile Number",
                   "മൊബൈൽ നമ്പർ",
                   "मोबाइल नंबर",
@@ -207,7 +198,7 @@ class _LoginScreenState
                     const SizedBox(width: 8),
 
                     Text(
-                      getText(
+                      L10n.get(
                         "Send OTP",
                         "OTP അയയ്ക്കുക",
                         "OTP भेजें",
@@ -237,7 +228,7 @@ class _LoginScreenState
                 );
               },
               child: Text(
-                getText(
+                L10n.get(
                   "New User? Register",
                   "പുതിയ ഉപയോക്താവാണോ? രജിസ്റ്റർ ചെയ്യുക",
                   "नए उपयोगकर्ता? पंजीकरण करें",

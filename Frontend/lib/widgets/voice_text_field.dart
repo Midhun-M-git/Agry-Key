@@ -4,11 +4,13 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 class VoiceTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
+  final ValueChanged<String>? onSubmitted;
 
   const VoiceTextField({
     super.key,
     required this.controller,
     required this.hintText,
+    this.onSubmitted,
   });
 
   @override
@@ -60,6 +62,7 @@ class _VoiceTextFieldState
   Widget build(BuildContext context) {
     return TextField(
       controller: widget.controller,
+      onSubmitted: widget.onSubmitted,
 
       decoration: InputDecoration(
         hintText: widget.hintText,

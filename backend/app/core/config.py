@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     PROJECT_NAME: str = "Agry-Key Backend"
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = "agry-key-super-secret-key-change-in-production-2026"
+    SECRET_KEY: str = Field(..., min_length=32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200
 
@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")
+    SMS_API_KEY: str = Field(default="")
+    SMS_OTP_TEMPLATE_ID: str = Field(default="")
     
     # Hugging Face API keys and Microservice URLs
     HUGGINGFACE_API_KEY: str = Field(default="sample_hf_key")
@@ -33,6 +35,16 @@ class Settings(BaseSettings):
             if v == "*":
                 return ["*"]
             return [i.strip() for i in v.split(",")]
+        return v
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Accept common PostgreSQL URLs while keeping SQLite as the dev default."""
+        if v.startswith("postgres://"):
+            return "postgresql+psycopg2://" + v[len("postgres://"):]
+        if v.startswith("postgresql://"):
+            return "postgresql+psycopg2://" + v[len("postgresql://"):]
         return v
 
     model_config = SettingsConfigDict(

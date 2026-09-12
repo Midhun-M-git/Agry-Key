@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 import 'location_setup_screen.dart';
 
-class ProfileSetupScreen extends StatefulWidget {
+class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  State<ProfileSetupScreen> createState() =>
+  _ProfileSetupScreenState createState() =>
       _ProfileSetupScreenState();
 }
 
 class _ProfileSetupScreenState
-    extends State<ProfileSetupScreen> {
+  extends ConsumerState<ProfileSetupScreen> {
 
   final TextEditingController nameController =
       TextEditingController();
@@ -24,26 +26,7 @@ class _ProfileSetupScreenState
       TextEditingController();
 
   String? selectedOccupation;
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
+@override
   void dispose() {
     nameController.dispose();
     farmController.dispose();
@@ -53,6 +36,7 @@ class _ProfileSetupScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
@@ -60,7 +44,7 @@ class _ProfileSetupScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Profile Setup",
             "പ്രൊഫൈൽ സജ്ജീകരണം",
             "प्रोफ़ाइल सेटअप",
@@ -92,7 +76,7 @@ class _ProfileSetupScreenState
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Complete Your Profile",
                 "നിങ്ങളുടെ പ്രൊഫൈൽ പൂർത്തിയാക്കുക",
                 "अपनी प्रोफ़ाइल पूरी करें",
@@ -109,7 +93,7 @@ class _ProfileSetupScreenState
             const SizedBox(height: 10),
 
             Text(
-              getText(
+              L10n.get(
                 "Use voice or text to complete your profile.",
                 "ശബ്ദമോ ടെക്സ്റ്റോ ഉപയോഗിച്ച് പ്രൊഫൈൽ പൂർത്തിയാക്കുക.",
                 "आवाज़ या टेक्स्ट का उपयोग करके प्रोफ़ाइल पूरी करें।",
@@ -125,7 +109,7 @@ class _ProfileSetupScreenState
 
             VoiceTextField(
               controller: nameController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Full Name",
                 "പൂർണ്ണ പേര്",
                 "पूरा नाम",
@@ -137,7 +121,7 @@ class _ProfileSetupScreenState
 
             VoiceTextField(
               controller: farmController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Farm Name (Optional)",
                 "ഫാമിന്റെ പേര് (നിർബന്ധം ഇല്ല)",
                 "खेत का नाम (वैकल्पिक)",
@@ -149,7 +133,7 @@ class _ProfileSetupScreenState
 
             VoiceTextField(
               controller: cropController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Main Crop (Optional)",
                 "പ്രധാന വിള (നിർബന്ധം ഇല്ല)",
                 "मुख्य फसल (वैकल्पिक)",
@@ -166,7 +150,7 @@ class _ProfileSetupScreenState
                 prefixIcon:
                     const Icon(Icons.work),
 
-                labelText: getText(
+                labelText: L10n.get(
                   "Occupation",
                   "തൊഴിൽ",
                   "व्यवसाय",
@@ -184,7 +168,7 @@ class _ProfileSetupScreenState
                 DropdownMenuItem(
                   value: "Farmer",
                   child: Text(
-                    getText(
+                    L10n.get(
                       "Farmer",
                       "കർഷകൻ",
                       "किसान",
@@ -196,7 +180,7 @@ class _ProfileSetupScreenState
                 DropdownMenuItem(
                   value: "Buyer",
                   child: Text(
-                    getText(
+                    L10n.get(
                       "Buyer",
                       "വാങ്ങുന്നയാൾ",
                       "खरीदार",
@@ -208,7 +192,7 @@ class _ProfileSetupScreenState
                 DropdownMenuItem(
                   value: "Agriculture Expert",
                   child: Text(
-                    getText(
+                    L10n.get(
                       "Agriculture Expert",
                       "കാർഷിക വിദഗ്ധൻ",
                       "कृषि विशेषज्ञ",
@@ -220,7 +204,7 @@ class _ProfileSetupScreenState
                 DropdownMenuItem(
                   value: "Student",
                   child: Text(
-                    getText(
+                    L10n.get(
                       "Student",
                       "വിദ്യാർത്ഥി",
                       "छात्र",
@@ -235,8 +219,9 @@ class _ProfileSetupScreenState
                   selectedOccupation = value;
                 });
 
-                AppState.userOccupation =
-                    value ?? "";
+                ref.read(userProvider.notifier).update(
+                  userOccupation: value ?? "",
+                );
               },
             ),
 
@@ -249,8 +234,9 @@ class _ProfileSetupScreenState
               child: ElevatedButton(
                 onPressed: () {
 
-                  AppState.userName =
-                      nameController.text;
+                  ref.read(userProvider.notifier).update(
+                    userName: nameController.text,
+                  );
 
                   Navigator.push(
                     context,
@@ -269,7 +255,7 @@ class _ProfileSetupScreenState
                 ),
 
                 child: Text(
-                  getText(
+                  L10n.get(
                     "Continue",
                     "തുടരുക",
                     "जारी रखें",

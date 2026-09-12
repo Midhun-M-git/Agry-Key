@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/app_theme.dart';
-import 'screens/language_selection_screen.dart';
+import 'core/app_router.dart';
 
 void main() {
-  runApp(const AgriKeyApp());
+  runApp(const ProviderScope(child: AgriKeyApp()));
 }
 
 class AgriKeyApp extends StatelessWidget {
@@ -11,10 +12,10 @@ class AgriKeyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LanguageSelectionScreen(),
+      routerConfig: AppRouter.create(),
     );
   }
 }

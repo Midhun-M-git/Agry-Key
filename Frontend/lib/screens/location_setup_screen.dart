@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -7,41 +9,22 @@ import '../widgets/voice_text_field.dart';
 import 'dashboard_screen.dart';
 import 'buyer_dashboard_screen.dart';
 
-class LocationSetupScreen extends StatefulWidget {
+class LocationSetupScreen extends ConsumerStatefulWidget {
   const LocationSetupScreen({super.key});
 
   @override
-  State<LocationSetupScreen> createState() =>
+  _LocationSetupScreenState createState() =>
       _LocationSetupScreenState();
 }
 
 class _LocationSetupScreenState
-    extends State<LocationSetupScreen> {
+  extends ConsumerState<LocationSetupScreen> {
 
   final TextEditingController locationController =
       TextEditingController();
 
   bool isLoading = false;
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Future<void> getCurrentLocation() async {
+Future<void> getCurrentLocation() async {
 
     setState(() {
       isLoading = true;
@@ -102,8 +85,9 @@ class _LocationSetupScreenState
             detectedLocation;
       });
 
-      AppState.userLocation =
-          detectedLocation;
+      ref.read(locationProvider.notifier).update(
+        userLocation: detectedLocation,
+      );
 
     } catch (e) {
 
@@ -130,6 +114,7 @@ class _LocationSetupScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -176,7 +161,7 @@ class _LocationSetupScreenState
               const SizedBox(height: 20),
 
               Text(
-                getText(
+                L10n.get(
                   "Choose Your Location",
                   "നിങ്ങളുടെ സ്ഥലം തിരഞ്ഞെടുക്കുക",
                   "अपना स्थान चुनें",
@@ -196,7 +181,7 @@ class _LocationSetupScreenState
               const SizedBox(height: 10),
 
               Text(
-                getText(
+                L10n.get(
                   "Weather, market prices and AI recommendations need your location.",
                   "കാലാവസ്ഥ, മാർക്കറ്റ് വില, AI ശുപാർശകൾക്കായി നിങ്ങളുടെ സ്ഥലം ആവശ്യമാണ്.",
                   "मौसम, बाजार मूल्य और AI सिफारिशों के लिए आपका स्थान आवश्यक है।",
@@ -256,7 +241,7 @@ class _LocationSetupScreenState
                           label: Text(
                             isLoading
                                 ? "Loading..."
-                                : getText(
+                                : L10n.get(
                                     "Use GPS Location",
                                     "GPS സ്ഥലം ഉപയോഗിക്കുക",
                                     "GPS स्थान उपयोग करें",
@@ -274,7 +259,7 @@ class _LocationSetupScreenState
                         controller:
                             locationController,
 
-                        hintText: getText(
+                        hintText: L10n.get(
                           "Enter Location",
                           "സ്ഥലം നൽകുക",
                           "स्थान दर्ज करें",
@@ -311,7 +296,7 @@ class _LocationSetupScreenState
 
                               Expanded(
                                 child: Text(
-                                  getText(
+                                  L10n.get(
                                     "Your location helps AGRI KEY provide accurate weather, market and crop recommendations.",
                                     "നിങ്ങളുടെ സ്ഥലം AGRI KEYയ്ക്ക് കൃത്യമായ കാലാവസ്ഥയും മാർക്കറ്റ് വിവരങ്ങളും നൽകാൻ സഹായിക്കുന്നു.",
                                     "आपका स्थान AGRI KEY को सटीक मौसम और बाजार जानकारी देने में मदद करता है।",
@@ -343,7 +328,7 @@ class _LocationSetupScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          getText(
+          L10n.get(
             "Please enter location",
             "ദയവായി സ്ഥലം നൽകുക",
             "कृपया स्थान दर्ज करें",
@@ -356,10 +341,11 @@ class _LocationSetupScreenState
     return;
   }
 
-  AppState.userLocation =
-      locationController.text.trim();
+  ref.read(locationProvider.notifier).update(
+    userLocation: locationController.text.trim(),
+  );
 
-  if (AppState.userOccupation == "Buyer") {
+  if (ref.read(userProvider).userOccupation == "Buyer") {
 
     Navigator.pushReplacement(
       context,
@@ -387,7 +373,7 @@ class _LocationSetupScreenState
                           ),
 
                           label: Text(
-                            getText(
+                            L10n.get(
                               "Finish Setup",
                               "സജ്ജീകരണം പൂർത്തിയാക്കുക",
                               "सेटअप पूरा करें",

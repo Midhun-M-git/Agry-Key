@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import 'all_services_screen.dart';
 import 'market_screen.dart';
@@ -17,28 +19,11 @@ import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
 
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
-  String getText(
-  String english,
-  String malayalam,
-  String hindi,
-  String tamil,
-) {
-  switch (AppState.selectedLanguage) {
-    case "Malayalam":
-      return malayalam;
-    case "Hindi":
-      return hindi;
-    case "Tamil":
-      return tamil;
-    default:
-      return english;
-  }
-}
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
@@ -94,13 +79,13 @@ actions: [
             /// Greeting
             Text(
              AppState.userName.isEmpty
-    ? getText(
+    ? L10n.get(
         "Good Morning 🌱",
         "സുപ്രഭാതം 🌱",
         "सुप्रभात 🌱",
         "காலை வணக்கம் 🌱",
       )
-    : "${getText(
+    : "${L10n.get(
         "Good Morning",
         "സുപ്രഭാതം",
         "सुप्रभात",
@@ -127,7 +112,7 @@ actions: [
 
                 Text(
                   AppState.userLocation.isEmpty
-                      ? getText(
+                      ? L10n.get(
     "Location Not Set",
     "സ്ഥലം നൽകിയിട്ടില്ല",
     "स्थान सेट नहीं है",
@@ -154,7 +139,7 @@ Row(
 
     Text(
       AppState.userOccupation.isEmpty
-          ? getText(
+          ? L10n.get(
     "Occupation Not Set",
     "തൊഴിൽ നൽകിയിട്ടില്ല",
     "पेशा सेट नहीं है",
@@ -188,7 +173,7 @@ Row(
                           CrossAxisAlignment.start,
                       children: [
                         Text(
-  getText(
+  L10n.get(
     "Today's Weather",
     "ഇന്നത്തെ കാലാവസ്ഥ",
     "आज का मौसम",
@@ -213,7 +198,7 @@ Row(
                         ),
 
                         Text(
-  getText(
+  L10n.get(
     "Humidity 72%",
     "ആർദ്രത 72%",
     "आर्द्रता 72%",
@@ -241,7 +226,7 @@ Row(
       color: Colors.green,
     ),
     title: Text(
-  getText(
+  L10n.get(
     "Farmer Alerts",
     "കർഷക അറിയിപ്പുകൾ",
     "किसान अलर्ट",
@@ -250,7 +235,7 @@ Row(
 ),
 
 subtitle: Text(
-  getText(
+  L10n.get(
     "Weather, Schemes & Disease Updates",
     "കാലാവസ്ഥ, പദ്ധതികൾ, രോഗ മുന്നറിയിപ്പുകൾ",
     "मौसम, योजनाएँ और रोग अपडेट",
@@ -298,7 +283,7 @@ subtitle: Text(
                   const SizedBox(height: 10),
 
                   Text(
-  getText(
+  L10n.get(
     "Ask AGRI KEY",
     "AGRI KEYനോട് ചോദിക്കൂ",
     "AGRI KEY से पूछें",
@@ -315,7 +300,7 @@ subtitle: Text(
                   const SizedBox(height: 8),
 
                   Text(
-  getText(
+  L10n.get(
     "Weather • Market • Crops • AI Advice",
     "കാലാവസ്ഥ • മാർക്കറ്റ് • വിളകൾ • AI ഉപദേശം",
     "मौसम • बाजार • फसल • AI सलाह",
@@ -340,7 +325,7 @@ subtitle: Text(
   },
   icon: const Icon(Icons.mic),
   label: Text(
-    getText(
+    L10n.get(
       "Start Speaking",
       "സംസാരം ആരംഭിക്കുക",
       "बोलना शुरू करें",
@@ -355,7 +340,7 @@ subtitle: Text(
             const SizedBox(height: 25),
 
             Text(
-  getText(
+  L10n.get(
     "Quick Actions",
     "ദ്രുത സേവനങ്ങൾ",
     "त्वरित सेवाएँ",
@@ -391,7 +376,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.inventory_2,
-      getText(
+      L10n.get(
         "Products",
         "ഉൽപ്പന്നങ്ങൾ",
         "उत्पाद",
@@ -411,7 +396,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.cloud,
-      getText(
+      L10n.get(
         "Weather",
         "കാലാവസ്ഥ",
         "मौसम",
@@ -431,7 +416,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.trending_up,
-      getText(
+      L10n.get(
         "Market",
         "മാർക്കറ്റ്",
         "बाज़ार",
@@ -451,7 +436,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.water_drop,
-      getText(
+      L10n.get(
         "Soil",
         "മണ്ണ്",
         "मिट्टी",
@@ -471,7 +456,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.grass,
-      getText(
+      L10n.get(
         "Crop",
         "വിള",
         "फसल",
@@ -491,7 +476,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.bug_report,
-      getText(
+      L10n.get(
         "Disease",
         "രോഗം",
         "रोग",
@@ -511,7 +496,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.account_balance,
-      getText(
+      L10n.get(
         "Schemes",
         "പദ്ധതികൾ",
         "योजनाएँ",
@@ -531,7 +516,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.people,
-      getText(
+      L10n.get(
         "Community",
         "സമൂഹം",
         "समुदाय",
@@ -552,7 +537,7 @@ subtitle: Text(
 
   child: actionCard(
     Icons.shopping_bag,
-    getText(
+    L10n.get(
       "Orders",
       "ഓർഡറുകൾ",
       "ऑर्डर",
@@ -572,7 +557,7 @@ subtitle: Text(
     },
     child: actionCard(
       Icons.smart_toy,
-      getText(
+      L10n.get(
         "AI Assistant",
         "AI സഹായി",
         "AI सहायक",
@@ -599,7 +584,7 @@ SizedBox(
 },
     icon: const Icon(Icons.grid_view),
    label: Text(
-  getText(
+  L10n.get(
     "View All Services",
     "എല്ലാ സേവനങ്ങളും കാണുക",
     "सभी सेवाएँ देखें",
@@ -611,7 +596,7 @@ SizedBox(
              const SizedBox(height: 25),
 
             Text(
-  getText(
+  L10n.get(
     "AI Recommendation",
     "AI ശുപാർശ",
     "AI सिफारिश",
@@ -630,7 +615,7 @@ SizedBox(
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  getText(
+                  L10n.get(
   "Based on today's weather forecast, irrigation can be postponed until evening.",
   "ഇന്നത്തെ കാലാവസ്ഥ പ്രവചനപ്രകാരം ജലസേചനം വൈകുന്നേരത്തേക്ക് മാറ്റാം.",
   "आज के मौसम पूर्वानुमान के अनुसार सिंचाई शाम तक टाली जा सकती है।",
@@ -694,7 +679,7 @@ SizedBox(
   items: [
   BottomNavigationBarItem(
     icon: const Icon(Icons.home),
-    label: getText(
+    label: L10n.get(
       "Home",
       "ഹോം",
       "होम",
@@ -704,7 +689,7 @@ SizedBox(
 
   BottomNavigationBarItem(
     icon: const Icon(Icons.store),
-    label: getText(
+    label: L10n.get(
       "Market",
       "മാർക്കറ്റ്",
       "बाज़ार",
@@ -714,7 +699,7 @@ SizedBox(
 
   BottomNavigationBarItem(
   icon: const Icon(Icons.account_balance),
-  label: getText(
+  label: L10n.get(
     "Schemes",
     "പദ്ധതികൾ",
     "योजनाएँ",
@@ -724,7 +709,7 @@ SizedBox(
 
   BottomNavigationBarItem(
     icon: const Icon(Icons.people),
-    label: getText(
+    label: L10n.get(
       "Community",
       "സമൂഹം",
       "समुदाय",
@@ -734,7 +719,7 @@ SizedBox(
 
   BottomNavigationBarItem(
     icon: const Icon(Icons.person),
-    label: getText(
+    label: L10n.get(
       "Profile",
       "പ്രൊഫൈൽ",
       "प्रोफ़ाइल",
