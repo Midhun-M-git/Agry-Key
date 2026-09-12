@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class BuyerProfileScreen extends StatelessWidget {
+class BuyerProfileScreen extends ConsumerWidget {
   const BuyerProfileScreen({super.key});
 
   Widget infoCard(
@@ -57,7 +58,8 @@ class BuyerProfileScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
 
     String userName =
         AppState.userName.isEmpty

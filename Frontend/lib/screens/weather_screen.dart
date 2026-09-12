@@ -1,42 +1,25 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import '../services/weather_service.dart';
 import '../widgets/voice_text_field.dart';
 
-class WeatherScreen extends StatefulWidget {
+class WeatherScreen extends ConsumerStatefulWidget {
   const WeatherScreen({super.key});
 
   @override
-  State<WeatherScreen> createState() =>
+  _WeatherScreenState createState() =>
       _WeatherScreenState();
 }
 
 class _WeatherScreenState
-    extends State<WeatherScreen> {
+  extends ConsumerState<WeatherScreen> {
 
   final TextEditingController
       locationSearchController =
           TextEditingController();
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget weatherCard(
+Widget weatherCard(
     IconData icon,
     String title,
     String value,
@@ -83,6 +66,7 @@ class _WeatherScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -92,7 +76,7 @@ class _WeatherScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Weather",
             "കാലാവസ്ഥ",
             "मौसम",
@@ -120,7 +104,7 @@ class _WeatherScreenState
                 title: Text(
                   AppState.userLocation
                           .isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "Location Not Set",
                           "സ്ഥലം സജ്ജമാക്കിയിട്ടില്ല",
                           "स्थान सेट नहीं है",
@@ -137,7 +121,7 @@ class _WeatherScreenState
             VoiceTextField(
               controller:
                   locationSearchController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Search Location",
                 "സ്ഥലം തിരയുക",
                 "स्थान खोजें",
@@ -184,7 +168,7 @@ class _WeatherScreenState
                   ),
 
                   Text(
-                    getText(
+                    L10n.get(
                       "Sunny",
                       "വെയിൽ",
                       "धूप",
@@ -204,7 +188,7 @@ class _WeatherScreenState
 
             weatherCard(
               Icons.thermostat,
-              getText(
+              L10n.get(
                 "Temperature",
                 "താപനില",
                 "तापमान",
@@ -215,7 +199,7 @@ class _WeatherScreenState
 
             weatherCard(
               Icons.water_drop,
-              getText(
+              L10n.get(
                 "Humidity",
                 "ഈർപ്പം",
                 "नमी",
@@ -226,7 +210,7 @@ class _WeatherScreenState
 
             weatherCard(
               Icons.air,
-              getText(
+              L10n.get(
                 "Wind Speed",
                 "കാറ്റിന്റെ വേഗത",
                 "हवा की गति",
@@ -237,7 +221,7 @@ class _WeatherScreenState
 
             weatherCard(
               Icons.cloud,
-              getText(
+              L10n.get(
                 "Rain Chance",
                 "മഴ സാധ്യത",
                 "बारिश की संभावना",
@@ -256,7 +240,7 @@ class _WeatherScreenState
                   color: Colors.orange,
                 ),
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Farming Advisory",
                     "കാർഷിക നിർദ്ദേശം",
                     "कृषि सलाह",
@@ -264,7 +248,7 @@ class _WeatherScreenState
                   ),
                 ),
                 subtitle: Text(
-                  getText(
+                  L10n.get(
                     "Good weather for irrigation and crop monitoring.",
                     "ജലസേചനത്തിനും വിള നിരീക്ഷണത്തിനും അനുയോജ്യമായ കാലാവസ്ഥ.",
                     "सिंचाई और फसल निगरानी के लिए अच्छा मौसम।",
@@ -284,7 +268,7 @@ class _WeatherScreenState
                   color: Colors.red,
                 ),
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Weather Alert",
                     "കാലാവസ്ഥ മുന്നറിയിപ്പ്",
                     "मौसम चेतावनी",
@@ -292,7 +276,7 @@ class _WeatherScreenState
                   ),
                 ),
                 subtitle: Text(
-                  getText(
+                  L10n.get(
                     "No severe alerts currently.",
                     "ഇപ്പോൾ ഗുരുതര മുന്നറിയിപ്പുകളില്ല.",
                     "फिलहाल कोई गंभीर चेतावनी नहीं।",
@@ -305,7 +289,7 @@ class _WeatherScreenState
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "5-Day Forecast",
                 "5 ദിവസത്തെ പ്രവചനം",
                 "5 दिन का पूर्वानुमान",
@@ -321,7 +305,7 @@ class _WeatherScreenState
             const SizedBox(height: 10),
 
             forecastCard(
-              getText(
+              L10n.get(
                 "Tomorrow",
                 "നാളെ",
                 "कल",
@@ -332,7 +316,7 @@ class _WeatherScreenState
             ),
 
             forecastCard(
-              getText(
+              L10n.get(
                 "Day 2",
                 "ദിവസം 2",
                 "दिन 2",
@@ -343,7 +327,7 @@ class _WeatherScreenState
             ),
 
             forecastCard(
-              getText(
+              L10n.get(
                 "Day 3",
                 "ദിവസം 3",
                 "दिन 3",
@@ -354,7 +338,7 @@ class _WeatherScreenState
             ),
 
             forecastCard(
-              getText(
+              L10n.get(
                 "Day 4",
                 "ദിവസം 4",
                 "दिन 4",
@@ -365,7 +349,7 @@ class _WeatherScreenState
             ),
 
             forecastCard(
-              getText(
+              L10n.get(
                 "Day 5",
                 "ദിവസം 5",
                 "दिन 5",

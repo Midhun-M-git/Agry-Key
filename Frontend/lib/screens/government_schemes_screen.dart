@@ -1,40 +1,23 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
-class GovernmentSchemesScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class GovernmentSchemesScreen extends ConsumerStatefulWidget {
   const GovernmentSchemesScreen({super.key});
 
   @override
-  State<GovernmentSchemesScreen> createState() =>
+  _GovernmentSchemesScreenState createState() =>
       _GovernmentSchemesScreenState();
 }
 
 class _GovernmentSchemesScreenState
-    extends State<GovernmentSchemesScreen> {
+  extends ConsumerState<GovernmentSchemesScreen> {
 
   final TextEditingController searchController =
       TextEditingController();
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget schemeCard(
+Widget schemeCard(
     String title,
     String description,
     String eligibility,
@@ -133,7 +116,7 @@ class _GovernmentSchemesScreenState
                 ),
 
                 label: Text(
-                  getText(
+                  L10n.get(
                     "View Details",
                     "കൂടുതൽ വിവരങ്ങൾ",
                     "विवरण देखें",
@@ -156,6 +139,7 @@ class _GovernmentSchemesScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -166,7 +150,7 @@ class _GovernmentSchemesScreenState
         backgroundColor: Colors.green,
 
         title: Text(
-          getText(
+          L10n.get(
             "Government Schemes",
             "സർക്കാർ പദ്ധതികൾ",
             "सरकारी योजनाएँ",
@@ -209,7 +193,7 @@ class _GovernmentSchemesScreenState
                   const SizedBox(height: 10),
 
                   Text(
-                    getText(
+                    L10n.get(
                       "Farmer Welfare Schemes",
                       "കർഷക ക്ഷേമ പദ്ധതികൾ",
                       "किसान कल्याण योजनाएँ",
@@ -232,7 +216,7 @@ class _GovernmentSchemesScreenState
             VoiceTextField(
               controller:
                   searchController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Search schemes...",
                 "പദ്ധതികൾ തിരയുക...",
                 "योजनाएँ खोजें...",
@@ -244,13 +228,13 @@ class _GovernmentSchemesScreenState
 
             schemeCard(
               "PM-KISAN",
-              getText(
+              L10n.get(
                 "Income support provided directly to eligible farmers.",
                 "അർഹരായ കർഷകർക്ക് നേരിട്ടുള്ള സാമ്പത്തിക സഹായം.",
                 "योग्य किसानों को प्रत्यक्ष आय सहायता।",
                 "தகுதியான விவசாயிகளுக்கு நேரடி வருமான உதவி.",
               ),
-              getText(
+              L10n.get(
                 "Small and marginal farmers",
                 "ചെറിയ കർഷകർ",
                 "छोटे किसान",
@@ -260,13 +244,13 @@ class _GovernmentSchemesScreenState
 
             schemeCard(
               "PM Fasal Bima Yojana",
-              getText(
+              L10n.get(
                 "Crop insurance scheme protecting farmers from losses.",
                 "വിളനാശത്തിൽ നിന്ന് സംരക്ഷിക്കുന്ന ഇൻഷുറൻസ് പദ്ധതി.",
                 "फसल हानि से सुरक्षा देने वाली योजना।",
                 "பயிர் இழப்பிலிருந்து பாதுகாக்கும் திட்டம்.",
               ),
-              getText(
+              L10n.get(
                 "All registered farmers",
                 "രജിസ്റ്റർ ചെയ്ത കർഷകർ",
                 "पंजीकृत किसान",
@@ -276,13 +260,13 @@ class _GovernmentSchemesScreenState
 
             schemeCard(
               "Kisan Credit Card",
-              getText(
+              L10n.get(
                 "Provides easy access to agricultural loans.",
                 "കാർഷിക വായ്പകൾ എളുപ്പത്തിൽ ലഭ്യമാക്കുന്നു.",
                 "कृषि ऋण आसानी से उपलब्ध कराता है।",
                 "விவசாய கடன் எளிதில் பெற உதவுகிறது.",
               ),
-              getText(
+              L10n.get(
                 "Farmers with cultivable land",
                 "കൃഷിയോഗ്യ ഭൂമിയുള്ളവർ",
                 "खेती योग्य भूमि वाले किसान",
@@ -292,13 +276,13 @@ class _GovernmentSchemesScreenState
 
             schemeCard(
               "State Agriculture Subsidy",
-              getText(
+              L10n.get(
                 "Support for seeds, fertilizers and equipment.",
                 "വിത്തുകൾ, വളങ്ങൾ, ഉപകരണങ്ങൾ എന്നിവയ്ക്കുള്ള സഹായം.",
                 "बीज, उर्वरक और उपकरण सहायता.",
                 "விதைகள், உரங்கள் மற்றும் உபகரண உதவி.",
               ),
-              getText(
+              L10n.get(
                 "Depends on state guidelines",
                 "സംസ്ഥാന മാനദണ്ഡങ്ങൾ അനുസരിച്ച്",
                 "राज्य दिशा-निर्देशों के अनुसार",

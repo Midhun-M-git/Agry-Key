@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class EquipmentScreen extends StatelessWidget {
+class EquipmentScreen extends ConsumerWidget {
   const EquipmentScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget equipmentCard(
+Widget equipmentCard(
     String name,
     String owner,
     String location,
@@ -45,14 +28,15 @@ class EquipmentScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Equipment Rental",
             "കാർഷിക ഉപകരണങ്ങൾ",
             "कृषि उपकरण",
@@ -70,7 +54,7 @@ class EquipmentScreen extends StatelessWidget {
           children: [
 
             Text(
-              getText(
+              L10n.get(
                 "Available Equipment",
                 "ലഭ്യമായ ഉപകരണങ്ങൾ",
                 "उपलब्ध उपकरण",

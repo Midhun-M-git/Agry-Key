@@ -1,40 +1,23 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
-class FindFarmersScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class FindFarmersScreen extends ConsumerStatefulWidget {
   const FindFarmersScreen({super.key});
 
   @override
-  State<FindFarmersScreen> createState() =>
+  _FindFarmersScreenState createState() =>
       _FindFarmersScreenState();
 }
 
 class _FindFarmersScreenState
-    extends State<FindFarmersScreen> {
+  extends ConsumerState<FindFarmersScreen> {
 
   final TextEditingController searchController =
       TextEditingController();
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget farmerCard({
+Widget farmerCard({
     required String farmerName,
     required String crop,
     required String location,
@@ -121,7 +104,7 @@ class _FindFarmersScreenState
                     ),
 
                     label: Text(
-                      getText(
+                      L10n.get(
                         "Call",
                         "വിളിക്കുക",
                         "कॉल करें",
@@ -142,7 +125,7 @@ class _FindFarmersScreenState
                     ),
 
                     label: Text(
-                      getText(
+                      L10n.get(
                         "Message",
                         "സന്ദേശം",
                         "संदेश",
@@ -161,6 +144,7 @@ class _FindFarmersScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -171,7 +155,7 @@ class _FindFarmersScreenState
         backgroundColor: Colors.green,
 
         title: Text(
-          getText(
+          L10n.get(
             "Find Farmers",
             "കർഷകരെ കണ്ടെത്തുക",
             "किसानों को खोजें",
@@ -189,7 +173,7 @@ class _FindFarmersScreenState
             VoiceTextField(
               controller: searchController,
 
-              hintText: getText(
+              hintText: L10n.get(
                 "Search farmer, crop or location...",
                 "കർഷകൻ, വിള അല്ലെങ്കിൽ സ്ഥലം തിരയുക...",
                 "किसान, फसल या स्थान खोजें...",

@@ -25,6 +25,11 @@ from app.models.activity import (
     AquacultureRecord,
 )
 from app.models.service import VeterinaryService, GeoRegionLanguageMap
+from app.models.marketplace import Product
+from app.models.order import Order, OrderStatus
+from app.models.scheme import Scheme
+from app.models.notification import AlertType, Notification, NotificationSubscription
+from app.models.community import Comment, Post, PostLike
 
 __all__ = [
     "User",
@@ -54,4 +59,14 @@ __all__ = [
     "AquacultureRecord",
     "VeterinaryService",
     "GeoRegionLanguageMap",
+    "Product",
+    "Order",
+    "OrderStatus",
+    "Scheme",
+    "AlertType",
+    "Notification",
+    "NotificationSubscription",
+    "Post",
+    "Comment",
+    "PostLike",
 ]

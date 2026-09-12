@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 
-class EditProfileScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   late TextEditingController nameController;
   late TextEditingController locationController;
@@ -38,6 +39,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+      AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: const Text("Edit Profile"),
@@ -88,20 +90,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ElevatedButton(
               onPressed: () {
 
-                AppState.userName =
-                    nameController.text;
-
-                AppState.userLocation =
-                    locationController.text;
-
-                AppState.userOccupation =
-                    occupationController.text;
-
-                AppState.farmName =
-                    farmController.text;
-
-                AppState.userCrop =
-                    cropController.text;
+                ref.read(userProvider.notifier).update(
+                  userName: nameController.text,
+                  userOccupation: occupationController.text,
+                  farmName: farmController.text,
+                  userCrop: cropController.text,
+                );
+                ref.read(locationProvider.notifier).update(
+                  userLocation: locationController.text,
+                );
 
                 Navigator.pop(context);
               },

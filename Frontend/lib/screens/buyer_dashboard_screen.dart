@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
@@ -9,16 +10,17 @@ import 'buyer_orders_screen.dart';
 import 'buyer_ai_assistant_screen.dart';
 import 'buyer_profile_screen.dart';
 
-class BuyerDashboardScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class BuyerDashboardScreen extends ConsumerStatefulWidget {
   const BuyerDashboardScreen({super.key});
 
   @override
-  State<BuyerDashboardScreen> createState() =>
+  _BuyerDashboardScreenState createState() =>
       _BuyerDashboardScreenState();
 }
 
 class _BuyerDashboardScreenState
-    extends State<BuyerDashboardScreen> {
+  extends ConsumerState<BuyerDashboardScreen> {
 
   final TextEditingController searchController =
       TextEditingController();
@@ -28,26 +30,7 @@ class _BuyerDashboardScreenState
     searchController.dispose();
     super.dispose();
   }
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget statCard(
+Widget statCard(
     String value,
     String title,
     IconData icon,
@@ -116,6 +99,7 @@ class _BuyerDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     String userName =
         AppState.userName.isEmpty
@@ -128,7 +112,7 @@ class _BuyerDashboardScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Buyer Dashboard",
             "വാങ്ങുന്നയാളുടെ ഡാഷ്ബോർഡ്",
             "खरीदार डैशबोर्ड",
@@ -165,7 +149,7 @@ class _BuyerDashboardScreenState
                   const SizedBox(height: 10),
 
                   Text(
-                    "${getText(
+                    "${L10n.get(
                       "Welcome",
                       "സ്വാഗതം",
                       "स्वागत है",
@@ -219,7 +203,7 @@ class _BuyerDashboardScreenState
 
             VoiceTextField(
               controller: searchController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Search crops using voice...",
                 "വോയ്സ് ഉപയോഗിച്ച് വിളകൾ തിരയുക...",
                 "आवाज़ से फसल खोजें...",
@@ -232,13 +216,13 @@ class _BuyerDashboardScreenState
             dashboardCard(
               context,
               Icons.search,
-              getText(
+              L10n.get(
                 "Find Farmers",
                 "കർഷകരെ കണ്ടെത്തുക",
                 "किसानों को खोजें",
                 "விவசாயிகளை கண்டறியுங்கள்",
               ),
-              getText(
+              L10n.get(
                 "Search nearby farmers",
                 "സമീപത്തെ കർഷകരെ കണ്ടെത്തുക",
                 "नजदीकी किसानों को खोजें",
@@ -258,13 +242,13 @@ class _BuyerDashboardScreenState
             dashboardCard(
               context,
               Icons.store,
-              getText(
+              L10n.get(
                 "Browse Products",
                 "ഉൽപ്പന്നങ്ങൾ കാണുക",
                 "उत्पाद देखें",
                 "பொருட்களை பார்வையிடுங்கள்",
               ),
-              getText(
+              L10n.get(
                 "View available crops",
                 "ലഭ്യമായ വിളകൾ കാണുക",
                 "उपलब्ध फसलें देखें",
@@ -284,13 +268,13 @@ class _BuyerDashboardScreenState
             dashboardCard(
               context,
               Icons.shopping_bag,
-              getText(
+              L10n.get(
                 "My Orders",
                 "എന്റെ ഓർഡറുകൾ",
                 "मेरे ऑर्डर",
                 "என் ஆர்டர்கள்",
               ),
-              getText(
+              L10n.get(
                 "Track purchases",
                 "വാങ്ങലുകൾ നിരീക്ഷിക്കുക",
                 "खरीदारी ट्रैक करें",
@@ -310,13 +294,13 @@ class _BuyerDashboardScreenState
             dashboardCard(
               context,
               Icons.smart_toy,
-              getText(
+              L10n.get(
                 "AI Assistant",
                 "AI സഹായി",
                 "AI सहायक",
                 "AI உதவியாளர்",
               ),
-              getText(
+              L10n.get(
                 "Ask agriculture questions",
                 "കൃഷി ചോദ്യങ്ങൾ ചോദിക്കുക",
                 "कृषि प्रश्न पूछें",
@@ -336,13 +320,13 @@ class _BuyerDashboardScreenState
             dashboardCard(
               context,
               Icons.person,
-              getText(
+              L10n.get(
                 "My Profile",
                 "എന്റെ പ്രൊഫൈൽ",
                 "मेरी प्रोफ़ाइल",
                 "என் சுயவிவரம்",
               ),
-              getText(
+              L10n.get(
                 "View profile details",
                 "പ്രൊഫൈൽ വിവരങ്ങൾ കാണുക",
                 "प्रोफ़ाइल देखें",

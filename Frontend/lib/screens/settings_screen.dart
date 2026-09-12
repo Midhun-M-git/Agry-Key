@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  _SettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: const Text("Settings"),
@@ -52,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               onChanged: (value) {
                 setState(() {
-                  AppState.selectedLanguage = value!;
+                  ref.read(languageProvider.notifier).setLanguage(value!);
                 });
               },
             ),

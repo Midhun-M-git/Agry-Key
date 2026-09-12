@@ -1,36 +1,20 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Notifications",
             "അറിയിപ്പുകൾ",
             "सूचनाएँ",
@@ -51,7 +35,7 @@ class NotificationScreen extends StatelessWidget {
                 color: Colors.blue,
               ),
               title: Text(
-                getText(
+                L10n.get(
                   "Weather Alert",
                   "കാലാവസ്ഥ മുന്നറിയിപ്പ്",
                   "मौसम अलर्ट",
@@ -59,7 +43,7 @@ class NotificationScreen extends StatelessWidget {
                 ),
               ),
               subtitle: Text(
-                getText(
+                L10n.get(
                   "Rain expected tomorrow.",
                   "നാളെ മഴ പ്രതീക്ഷിക്കുന്നു.",
                   "कल वर्षा होने की संभावना है।",
@@ -76,7 +60,7 @@ class NotificationScreen extends StatelessWidget {
                 color: Colors.green,
               ),
               title: Text(
-                getText(
+                L10n.get(
                   "Market Update",
                   "മാർക്കറ്റ് അപ്ഡേറ്റ്",
                   "बाज़ार अपडेट",
@@ -84,7 +68,7 @@ class NotificationScreen extends StatelessWidget {
                 ),
               ),
               subtitle: Text(
-                getText(
+                L10n.get(
                   "Rice price increased by 2.5%",
                   "അരിയുടെ വില 2.5% വർധിച്ചു",
                   "चावल की कीमत 2.5% बढ़ी",
@@ -101,7 +85,7 @@ class NotificationScreen extends StatelessWidget {
                 color: Colors.orange,
               ),
               title: Text(
-                getText(
+                L10n.get(
                   "Order Update",
                   "ഓർഡർ അപ്ഡേറ്റ്",
                   "ऑर्डर अपडेट",
@@ -109,7 +93,7 @@ class NotificationScreen extends StatelessWidget {
                 ),
               ),
               subtitle: Text(
-                getText(
+                L10n.get(
                   "Your order has been accepted.",
                   "നിങ്ങളുടെ ഓർഡർ അംഗീകരിച്ചു.",
                   "आपका ऑर्डर स्वीकार कर लिया गया है।",
@@ -126,7 +110,7 @@ class NotificationScreen extends StatelessWidget {
                 color: Colors.purple,
               ),
               title: Text(
-                getText(
+                L10n.get(
                   "AI Recommendation",
                   "AI ശുപാർശ",
                   "AI सिफारिश",
@@ -134,7 +118,7 @@ class NotificationScreen extends StatelessWidget {
                 ),
               ),
               subtitle: Text(
-                getText(
+                L10n.get(
                   "Irrigation can be postponed until evening.",
                   "ജലസേചനം വൈകുന്നേരത്തേക്ക് മാറ്റാം.",
                   "सिंचाई शाम तक टाली जा सकती है।",

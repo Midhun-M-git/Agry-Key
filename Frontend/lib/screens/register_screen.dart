@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
+import '../services/token_service.dart';
 import 'farmer_onboarding_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() =>
+  _RegisterScreenState createState() =>
       _RegisterScreenState();
 }
 
 class _RegisterScreenState
-    extends State<RegisterScreen> {
+  extends ConsumerState<RegisterScreen> {
 
   final TextEditingController nameController =
       TextEditingController();
@@ -21,36 +24,17 @@ class _RegisterScreenState
 
   final TextEditingController confirmPasswordController =
       TextEditingController();
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  void showMessage(String message) {
+void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  void registerUser() {
+  Future<void> registerUser() async {
 
     if (nameController.text.trim().isEmpty) {
       showMessage(
-        getText(
+        L10n.get(
           "Please enter your name",
           "ദയവായി പേര് നൽകുക",
           "कृपया अपना नाम दर्ज करें",
@@ -62,7 +46,7 @@ class _RegisterScreenState
 
     if (passwordController.text.length < 6) {
       showMessage(
-        getText(
+        L10n.get(
           "Password must be at least 6 characters",
           "പാസ്‌വേഡ് കുറഞ്ഞത് 6 അക്ഷരങ്ങൾ വേണം",
           "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
@@ -75,7 +59,7 @@ class _RegisterScreenState
     if (passwordController.text !=
         confirmPasswordController.text) {
       showMessage(
-        getText(
+        L10n.get(
           "Passwords do not match",
           "പാസ്‌വേഡുകൾ പൊരുത്തപ്പെടുന്നില്ല",
           "पासवर्ड मेल नहीं खाते",
@@ -85,13 +69,20 @@ class _RegisterScreenState
       return;
     }
 
-    AppState.userName =
-        nameController.text.trim();
+    ref.read(userProvider.notifier).update(
+      userName: nameController.text.trim(),
+    );
+    await TokenService.saveLanguage(ref.read(languageProvider));
+    await TokenService.saveRole(ref.read(authProvider).selectedRole);
+    await TokenService.saveUserDetails(
+      userName: nameController.text.trim(),
+      phoneNumber: ref.read(authProvider).phoneNumber,
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          getText(
+          L10n.get(
             "Registration Successful",
             "രജിസ്ട്രേഷൻ വിജയകരം",
             "पंजीकरण सफल",
@@ -120,6 +111,7 @@ class _RegisterScreenState
 
   @override
   Widget build(BuildContext context) {
+    AppState.watchAll(ref);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
@@ -127,7 +119,7 @@ class _RegisterScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Register",
             "രജിസ്റ്റർ",
             "पंजीकरण",
@@ -158,7 +150,7 @@ class _RegisterScreenState
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: getText(
+                labelText: L10n.get(
                   "Full Name",
                   "പൂർണ്ണ നാമം",
                   "पूरा नाम",
@@ -176,7 +168,7 @@ class _RegisterScreenState
             TextField(
               enabled: false,
               decoration: InputDecoration(
-                labelText: getText(
+                labelText: L10n.get(
                   "Mobile Number",
                   "മൊബൈൽ നമ്പർ",
                   "मोबाइल नंबर",
@@ -197,7 +189,7 @@ class _RegisterScreenState
               controller: passwordController,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: getText(
+                labelText: L10n.get(
                   "Password",
                   "പാസ്‌വേഡ്",
                   "पासवर्ड",
@@ -217,7 +209,7 @@ class _RegisterScreenState
                   confirmPasswordController,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: getText(
+                labelText: L10n.get(
                   "Confirm Password",
                   "പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക",
                   "पासवर्ड पुष्टि करें",
@@ -237,7 +229,7 @@ class _RegisterScreenState
                 leading:
                     const Icon(Icons.language),
                 title: Text(
-                  "${getText("Language", "ഭാഷ", "भाषा", "மொழி")} : ${AppState.selectedLanguage}",
+                  "${L10n.get("Language", "ഭാഷ", "भाषा", "மொழி")} : ${AppState.selectedLanguage}",
                 ),
               ),
             ),
@@ -249,7 +241,7 @@ class _RegisterScreenState
                 leading:
                     const Icon(Icons.work),
                 title: Text(
-                  "${getText("Role", "പങ്ക്", "भूमिका", "பங்கு")} : ${AppState.selectedRole}",
+                  "${L10n.get("Role", "പങ്ക്", "भूमिका", "பங்கு")} : ${AppState.selectedRole}",
                 ),
               ),
             ),
@@ -269,7 +261,7 @@ class _RegisterScreenState
                       Colors.white,
                 ),
                 child: Text(
-                  getText(
+                  L10n.get(
                     "Register",
                     "രജിസ്റ്റർ ചെയ്യുക",
                     "पंजीकरण करें",

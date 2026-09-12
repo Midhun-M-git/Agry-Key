@@ -1,20 +1,22 @@
 import 'dart:io';
+import '../utils/localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
-class DiseaseDetectionScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class DiseaseDetectionScreen extends ConsumerStatefulWidget {
   const DiseaseDetectionScreen({super.key});
 
   @override
-  State<DiseaseDetectionScreen> createState() =>
+  _DiseaseDetectionScreenState createState() =>
       _DiseaseDetectionScreenState();
 }
 
 class _DiseaseDetectionScreenState
-    extends State<DiseaseDetectionScreen> {
+  extends ConsumerState<DiseaseDetectionScreen> {
 
   final TextEditingController symptomController =
       TextEditingController();
@@ -30,26 +32,7 @@ class _DiseaseDetectionScreenState
 
   String recommendation =
       "Upload image or describe symptoms for analysis.";
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Future<void> pickFromCamera() async {
+Future<void> pickFromCamera() async {
 
     final XFile? image =
         await picker.pickImage(
@@ -101,7 +84,7 @@ class _DiseaseDetectionScreenState
           .showSnackBar(
         SnackBar(
           content: Text(
-            getText(
+            L10n.get(
               "Please describe crop symptoms.",
               "വിളയുടെ ലക്ഷണങ്ങൾ വിവരിക്കുക.",
               "कृपया फसल के लक्षण बताएं।",
@@ -134,6 +117,7 @@ class _DiseaseDetectionScreenState
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
 
@@ -143,7 +127,7 @@ class _DiseaseDetectionScreenState
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Disease Detection",
             "രോഗ നിർണയം",
             "रोग पहचान",
@@ -196,7 +180,7 @@ class _DiseaseDetectionScreenState
               onPressed: pickFromCamera,
               icon: const Icon(Icons.camera_alt),
               label: Text(
-                getText(
+                L10n.get(
                   "Take Photo",
                   "ഫോട്ടോ എടുക്കുക",
                   "फोटो लें",
@@ -211,7 +195,7 @@ class _DiseaseDetectionScreenState
               onPressed: pickFromGallery,
               icon: const Icon(Icons.upload),
               label: Text(
-                getText(
+                L10n.get(
                   "Upload Image",
                   "ചിത്രം അപ്‌ലോഡ് ചെയ്യുക",
                   "छवि अपलोड करें",
@@ -223,7 +207,7 @@ class _DiseaseDetectionScreenState
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Describe Symptoms",
                 "ലക്ഷണങ്ങൾ വിവരിക്കുക",
                 "लक्षण बताएं",
@@ -241,7 +225,7 @@ class _DiseaseDetectionScreenState
             VoiceTextField(
               controller:
                   symptomController,
-              hintText: getText(
+              hintText: L10n.get(
                 "Describe crop symptoms...",
                 "വിളയുടെ ലക്ഷണങ്ങൾ വിവരിക്കുക...",
                 "फसल के लक्षण बताएं...",
@@ -262,7 +246,7 @@ class _DiseaseDetectionScreenState
                 ),
 
                 label: Text(
-                  getText(
+                  L10n.get(
                     "Analyze Symptoms",
                     "ലക്ഷണങ്ങൾ പരിശോധിക്കുക",
                     "लक्षणों का विश्लेषण करें",
@@ -295,7 +279,7 @@ class _DiseaseDetectionScreenState
                   children: [
 
                     Text(
-                      getText(
+                      L10n.get(
                         "Detected Disease",
                         "കണ്ടെത്തിയ രോഗം",
                         "पहचानी गई बीमारी",
@@ -322,7 +306,7 @@ class _DiseaseDetectionScreenState
                     const SizedBox(height: 10),
 
                     Text(
-                      "${getText(
+                      "${L10n.get(
                         "Confidence",
                         "കൃത്യത",
                         "विश्वास स्तर",

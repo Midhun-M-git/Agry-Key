@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import '../core/app_state.dart';
 
-class FarmerOnboardingScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class FarmerOnboardingScreen extends ConsumerStatefulWidget {
   const FarmerOnboardingScreen({super.key});
 
   @override
-  State<FarmerOnboardingScreen> createState() =>
+  _FarmerOnboardingScreenState createState() =>
       _FarmerOnboardingScreenState();
 }
 
 class _FarmerOnboardingScreenState
-    extends State<FarmerOnboardingScreen> {
+  extends ConsumerState<FarmerOnboardingScreen> {
 
   final stateController =
       TextEditingController();
@@ -81,19 +82,13 @@ fishSpeciesController.dispose();
       return;
     }
 
-    AppState.farmName =
-        farmNameController.text;
-
-    AppState.userCrop =
-        cropController.text;
-
-    AppState.userLocation =
-        "${districtController.text}, ${stateController.text}";
-        AppState.farmPayload = {
+    final location =
+      "${districtController.text}, ${stateController.text}";
+    final payload = {
   "state": stateController.text.trim(),
   "district": districtController.text.trim(),
-  "latitude": AppState.latitude,
-  "longitude": AppState.longitude,
+  "latitude": ref.read(locationProvider).latitude,
+  "longitude": ref.read(locationProvider).longitude,
 
   "plots": [
     {
@@ -173,6 +168,12 @@ fishSpeciesController.dispose();
           }
         ],
 };
+    ref.read(userProvider.notifier).update(
+      farmName: farmNameController.text,
+      userCrop: cropController.text,
+      farmPayload: payload,
+    );
+    ref.read(locationProvider.notifier).update(userLocation: location);
 
     ScaffoldMessenger.of(context)
         .showSnackBar(
@@ -188,6 +189,7 @@ fishSpeciesController.dispose();
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
       appBar: AppBar(

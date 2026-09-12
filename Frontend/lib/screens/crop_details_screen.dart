@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import '../utils/language_helper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/app_state.dart';
+import '../utils/localization.dart';
 
-class CropDetailsScreen extends StatelessWidget {
+class CropDetailsScreen extends ConsumerWidget {
   const CropDetailsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          LanguageHelper.getText(
+          L10n.get(
             "Crop Details",
             "വിള വിവരങ്ങൾ",
             "फसल विवरण",
@@ -69,7 +72,7 @@ class CropDetailsScreen extends StatelessWidget {
                       color: Colors.green,
                     ),
                     title: Text(
-                      LanguageHelper.getText(
+                      L10n.get(
                         "Available Quantity",
                         "ലഭ്യമായ അളവ്",
                         "उपलब्ध मात्रा",
@@ -86,7 +89,7 @@ class CropDetailsScreen extends StatelessWidget {
                       color: Colors.green,
                     ),
                     title: Text(
-                      LanguageHelper.getText(
+                      L10n.get(
                         "Farmer",
                         "കർഷകൻ",
                         "किसान",
@@ -103,7 +106,7 @@ class CropDetailsScreen extends StatelessWidget {
                       color: Colors.red,
                     ),
                     title: Text(
-                      LanguageHelper.getText(
+                      L10n.get(
                         "Location",
                         "സ്ഥലം",
                         "स्थान",
@@ -120,7 +123,7 @@ class CropDetailsScreen extends StatelessWidget {
                       color: Colors.orange,
                     ),
                     title: Text(
-                      LanguageHelper.getText(
+                      L10n.get(
                         "Rating",
                         "റേറ്റിംഗ്",
                         "रेटिंग",
@@ -134,7 +137,7 @@ class CropDetailsScreen extends StatelessWidget {
                   const Divider(),
 
                   Text(
-                    LanguageHelper.getText(
+                    L10n.get(
                       "Quality Information",
                       "ഗുണനിലവാര വിവരം",
                       "गुणवत्ता जानकारी",
@@ -190,7 +193,7 @@ class CropDetailsScreen extends StatelessWidget {
                       icon:
                           const Icon(Icons.shopping_cart),
                       label: Text(
-                        LanguageHelper.getText(
+                        L10n.get(
                           "Add To Cart",
                           "കാർട്ടിൽ ചേർക്കുക",
                           "कार्ट में जोड़ें",
@@ -217,7 +220,7 @@ class CropDetailsScreen extends StatelessWidget {
                       icon:
                           const Icon(Icons.call),
                       label: Text(
-                        LanguageHelper.getText(
+                        L10n.get(
                           "Contact Farmer",
                           "കർഷകനെ ബന്ധപ്പെടുക",
                           "किसान से संपर्क करें",
@@ -237,7 +240,7 @@ class CropDetailsScreen extends StatelessWidget {
                       icon:
                           const Icon(Icons.flash_on),
                       label: Text(
-                        LanguageHelper.getText(
+                        L10n.get(
                           "Buy Now",
                           "ഇപ്പോൾ വാങ്ങുക",
                           "अभी खरीदें",

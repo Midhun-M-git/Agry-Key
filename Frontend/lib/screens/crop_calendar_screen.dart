@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class CropCalendarScreen extends StatelessWidget {
+class CropCalendarScreen extends ConsumerWidget {
   const CropCalendarScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget taskCard(
+Widget taskCard(
     IconData icon,
     String task,
     String date,
@@ -41,14 +24,15 @@ class CropCalendarScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Crop Calendar",
             "വിള കലണ്ടർ",
             "फसल कैलेंडर",
@@ -74,7 +58,7 @@ class CropCalendarScreen extends StatelessWidget {
                 ),
                 title: Text(
                   AppState.userCrop.isEmpty
-                      ? getText(
+                      ? L10n.get(
                           "No Crop Selected",
                           "വിള തിരഞ്ഞെടുക്കപ്പെട്ടിട്ടില്ല",
                           "कोई फसल चयनित नहीं",
@@ -88,7 +72,7 @@ class CropCalendarScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Upcoming Activities",
                 "വരാനിരിക്കുന്ന പ്രവർത്തനങ്ങൾ",
                 "आगामी गतिविधियाँ",
@@ -104,7 +88,7 @@ class CropCalendarScreen extends StatelessWidget {
 
             taskCard(
               Icons.eco,
-              getText(
+              L10n.get(
                 "Sowing",
                 "വിത്തിടൽ",
                 "बुवाई",
@@ -115,7 +99,7 @@ class CropCalendarScreen extends StatelessWidget {
 
             taskCard(
               Icons.water_drop,
-              getText(
+              L10n.get(
                 "Irrigation",
                 "ജലസേചനം",
                 "सिंचाई",
@@ -126,7 +110,7 @@ class CropCalendarScreen extends StatelessWidget {
 
             taskCard(
               Icons.science,
-              getText(
+              L10n.get(
                 "Fertilizer Application",
                 "വളപ്രയോഗം",
                 "उर्वरक उपयोग",
@@ -137,7 +121,7 @@ class CropCalendarScreen extends StatelessWidget {
 
             taskCard(
               Icons.bug_report,
-              getText(
+              L10n.get(
                 "Pest Inspection",
                 "കീട പരിശോധന",
                 "कीट निरीक्षण",
@@ -148,7 +132,7 @@ class CropCalendarScreen extends StatelessWidget {
 
             taskCard(
               Icons.agriculture,
-              getText(
+              L10n.get(
                 "Harvest",
                 "വിളവെടുപ്പ്",
                 "कटाई",

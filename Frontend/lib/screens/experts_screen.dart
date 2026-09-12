@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class ExpertsScreen extends StatelessWidget {
+class ExpertsScreen extends ConsumerWidget {
   const ExpertsScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  Widget expertCard(
+Widget expertCard(
     IconData icon,
     String title,
     String name,
@@ -46,14 +29,15 @@ class ExpertsScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
 
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Nearby Experts",
             "സമീപ വിദഗ്ധർ",
             "नज़दीकी विशेषज्ञ",

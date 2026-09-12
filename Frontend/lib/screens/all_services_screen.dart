@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/app_state.dart';
 
@@ -16,33 +18,15 @@ import 'crop_calendar_screen.dart';
 import 'experts_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'notifications_screen.dart';
-class AllServicesScreen extends StatelessWidget {
+class AllServicesScreen extends ConsumerWidget {
   const AllServicesScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          getText(
+          L10n.get(
             "All Services",
             "എല്ലാ സേവനങ്ങളും",
             "सभी सेवाएँ",
@@ -73,7 +57,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.cloud,
-      getText("Weather","കാലാവസ്ഥ","मौसम","வானிலை"),
+      L10n.get("Weather","കാലാവസ്ഥ","मौसम","வானிலை"),
     ),
   ),
 
@@ -88,7 +72,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.trending_up,
-      getText("Market Prices","മാർക്കറ്റ് വിലകൾ","बाज़ार मूल्य","சந்தை விலைகள்"),
+      L10n.get("Market Prices","മാർക്കറ്റ് വിലകൾ","बाज़ार मूल्य","சந்தை விலைகள்"),
     ),
   ),
 
@@ -103,7 +87,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.grass,
-      getText("Crop Advisory","വിള ഉപദേശം","फसल सलाह","பயிர் ஆலோசனை"),
+      L10n.get("Crop Advisory","വിള ഉപദേശം","फसल सलाह","பயிர் ஆலோசனை"),
     ),
   ),
 
@@ -118,7 +102,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.bug_report,
-      getText("Disease","രോഗം","रोग","நோய்"),
+      L10n.get("Disease","രോഗം","रोग","நோய்"),
     ),
   ),
 
@@ -133,7 +117,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.water_drop,
-      getText("Soil","മണ്ണ്","मिट्टी","மண்"),
+      L10n.get("Soil","മണ്ണ്","मिट्टी","மண்"),
     ),
   ),
 
@@ -148,7 +132,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.account_balance,
-      getText("Schemes","പദ്ധതികൾ","योजनाएँ","திட்டங்கள்"),
+      L10n.get("Schemes","പദ്ധതികൾ","योजनाएँ","திட்டங்கள்"),
     ),
   ),
 
@@ -163,7 +147,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.agriculture,
-      getText("Equipment","ഉപകരണങ്ങൾ","उपकरण","உபகரணங்கள்"),
+      L10n.get("Equipment","ഉപകരണങ്ങൾ","उपकरण","உபகரணங்கள்"),
     ),
   ),
 
@@ -178,7 +162,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.storefront,
-      getText("Marketplace","മാർക്കറ്റ് പ്ലേസ്","मार्केटप्लेस","சந்தை"),
+      L10n.get("Marketplace","മാർക്കറ്റ് പ്ലേസ്","मार्केटप्लेस","சந்தை"),
     ),
   ),
 
@@ -193,7 +177,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.shopping_cart,
-      getText("Buyer","വാങ്ങുന്നവർ","खरीदार","வாங்குபவர்"),
+      L10n.get("Buyer","വാങ്ങുന്നവർ","खरीदार","வாங்குபவர்"),
     ),
   ),
 
@@ -208,7 +192,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.groups,
-      getText("Community","സമൂഹം","समुदाय","சமூகம்"),
+      L10n.get("Community","സമൂഹം","समुदाय","சமூகம்"),
     ),
   ),
 
@@ -223,7 +207,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.calendar_month,
-      getText("Calendar","കലണ്ടർ","कैलेंडर","நாட்காட்டி"),
+      L10n.get("Calendar","കലണ്ടർ","कैलेंडर","நாட்காட்டி"),
     ),
   ),
 
@@ -238,7 +222,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.support_agent,
-      getText("Experts","വിദഗ്ധർ","विशेषज्ञ","நிபுணர்கள்"),
+      L10n.get("Experts","വിദഗ്ധർ","विशेषज्ञ","நிபுணர்கள்"),
     ),
   ),
 
@@ -253,7 +237,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.smart_toy,
-      getText("AI Expert","AI വിദഗ്ധൻ","AI विशेषज्ञ","AI நிபுணர்"),
+      L10n.get("AI Expert","AI വിദഗ്ധൻ","AI विशेषज्ञ","AI நிபுணர்"),
     ),
   ),
 
@@ -268,7 +252,7 @@ class AllServicesScreen extends StatelessWidget {
     },
     child: ServiceCard(
       Icons.campaign,
-      getText("Updates","അപ്ഡേറ്റുകൾ","अपडेट्स","புதுப்பிப்புகள்"),
+      L10n.get("Updates","അപ്ഡേറ്റുകൾ","अपडेट्स","புதுப்பிப்புகள்"),
     ),
   ),
 ],

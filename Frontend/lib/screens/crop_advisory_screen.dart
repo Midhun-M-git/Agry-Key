@@ -1,34 +1,18 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class CropAdvisoryScreen extends StatelessWidget {
+class CropAdvisoryScreen extends ConsumerWidget {
   const CropAdvisoryScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Crop Advisory",
             "വിള ഉപദേശം",
             "फसल सलाह",
@@ -48,7 +32,7 @@ class CropAdvisoryScreen extends StatelessWidget {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: const Icon(Icons.mic),
-                labelText: getText(
+                labelText: L10n.get(
                   "Search Crop",
                   "വിള തിരയുക",
                   "फसल खोजें",
@@ -63,7 +47,7 @@ class CropAdvisoryScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "AI Recommendations",
                 "AI ശുപാർശകൾ",
                 "AI सिफारिशें",
@@ -95,7 +79,7 @@ class CropAdvisoryScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             Text(
-              getText(
+              L10n.get(
                 "Seasonal Crops",
                 "കാലാവസ്ഥാ വിളകൾ",
                 "मौसमी फसलें",

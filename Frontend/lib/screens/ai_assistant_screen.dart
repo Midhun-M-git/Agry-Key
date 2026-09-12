@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
 import '../core/app_state.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-class AIAssistantScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+class AIAssistantScreen extends ConsumerStatefulWidget {
   const AIAssistantScreen({super.key});
 
   @override
-  State<AIAssistantScreen> createState() =>
+  _AIAssistantScreenState createState() =>
       _AIAssistantScreenState();
 }
 
 class _AIAssistantScreenState
-    extends State<AIAssistantScreen> {
+  extends ConsumerState<AIAssistantScreen> {
 
   final TextEditingController questionController =
       TextEditingController();
@@ -52,25 +54,7 @@ Future<void> stopListening() async {
     isListening = false;
   });
 }
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  void askAI() {
+void askAI() {
     if (questionController.text.trim().isEmpty) {
       return;
     }
@@ -109,6 +93,7 @@ Future<void> stopListening() async {
 
   @override
   Widget build(BuildContext context) {
+  AppState.watchAll(ref);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
@@ -116,7 +101,7 @@ Future<void> stopListening() async {
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "AI Assistant",
             "AI സഹായി",
             "AI सहायक",
@@ -178,7 +163,7 @@ Future<void> stopListening() async {
                   SizedBox(height: 10),
 
                   Text(
-                    getText(
+                    L10n.get(
                       "Ask anything about farming in your language.",
                       "നിങ്ങളുടെ ഭാഷയിൽ കൃഷിയെക്കുറിച്ച് എന്തും ചോദിക്കൂ.",
                       "अपनी भाषा में खेती के बारे में कुछ भी पूछें।",
@@ -203,7 +188,7 @@ Future<void> stopListening() async {
                 children: [
 
                   quickChip(
-                    getText(
+                    L10n.get(
                       "Weather",
                       "കാലാവസ്ഥ",
                       "मौसम",
@@ -213,7 +198,7 @@ Future<void> stopListening() async {
                   ),
 
                   quickChip(
-                    getText(
+                    L10n.get(
                       "Market",
                       "വിപണി",
                       "बाज़ार",
@@ -223,7 +208,7 @@ Future<void> stopListening() async {
                   ),
 
                   quickChip(
-                    getText(
+                    L10n.get(
                       "Crop",
                       "വിള",
                       "फसल",
@@ -233,7 +218,7 @@ Future<void> stopListening() async {
                   ),
 
                   quickChip(
-                    getText(
+                    L10n.get(
                       "Disease",
                       "രോഗം",
                       "रोग",
@@ -243,7 +228,7 @@ Future<void> stopListening() async {
                   ),
 
                   quickChip(
-                    getText(
+                    L10n.get(
                       "Schemes",
                       "പദ്ധതികൾ",
                       "योजनाएँ",
@@ -297,7 +282,7 @@ Future<void> stopListening() async {
 
               decoration:
                   InputDecoration(
-                hintText: getText(
+                hintText: L10n.get(
                   "Ask your question...",
                   "ചോദ്യം ചോദിക്കൂ...",
                   "अपना प्रश्न पूछें...",
@@ -332,7 +317,7 @@ Future<void> stopListening() async {
                     ),
 
                     label: Text(
-                      getText(
+                      L10n.get(
                         "Ask AI",
                         "AIയോട് ചോദിക്കൂ",
                         "AI से पूछें",

@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")
+    SMS_API_KEY: str = Field(default="")
+    SMS_OTP_TEMPLATE_ID: str = Field(default="")
     
     # Hugging Face API keys and Microservice URLs
     HUGGINGFACE_API_KEY: str = Field(default="sample_hf_key")

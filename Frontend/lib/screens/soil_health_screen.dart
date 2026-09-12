@@ -1,34 +1,18 @@
 import 'package:flutter/material.dart';
+import '../utils/localization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 
-class SoilHealthScreen extends StatelessWidget {
+class SoilHealthScreen extends ConsumerWidget {
   const SoilHealthScreen({super.key});
-
-  String getText(
-    String english,
-    String malayalam,
-    String hindi,
-    String tamil,
-  ) {
-    switch (AppState.selectedLanguage) {
-      case "Malayalam":
-        return malayalam;
-      case "Hindi":
-        return hindi;
-      case "Tamil":
-        return tamil;
-      default:
-        return english;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+@override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppState.watchAll(ref);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          getText(
+          L10n.get(
             "Soil Health",
             "മണ്ണിന്റെ ആരോഗ്യം",
             "मिट्टी का स्वास्थ्य",
@@ -50,7 +34,7 @@ class SoilHealthScreen extends StatelessWidget {
                   color: Colors.brown,
                 ),
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Soil Type",
                     "മണ്ണിന്റെ തരം",
                     "मिट्टी का प्रकार",
@@ -68,7 +52,7 @@ class SoilHealthScreen extends StatelessWidget {
                   color: Colors.blue,
                 ),
                 title: Text(
-                  getText(
+                  L10n.get(
                     "Moisture",
                     "ഈർപ്പം",
                     "नमी",
