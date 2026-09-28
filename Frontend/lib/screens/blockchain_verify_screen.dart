@@ -141,7 +141,7 @@ class _BlockchainVerifyScreenState extends State<BlockchainVerifyScreen>
         produceBatchId: batchId,
         quantitySold: qty,
         salePriceTotal: price,
-        verification_tier: _selectedTier,
+        verificationTier: _selectedTier,
         buyerDetails: _buyerDetailsController.text.trim().isNotEmpty
             ? _buyerDetailsController.text.trim()
             : null,

@@ -68,7 +68,7 @@ jobs:
           BACKEND_URL: ${{ inputs.backend_url || vars.BACKEND_URL || 'https://agry-key.onrender.com' }}
         run: |
           echo "Building APK pointing to backend: $BACKEND_URL"
-          flutter build apk --release --dart-define=BACKEND_URL="$BACKEND_URL"
+          flutter build apk --release --android-skip-build-dependency-validation --dart-define=BACKEND_URL="$BACKEND_URL"
 
       - name: Verify APK Generated
         run: |

@@ -43,7 +43,7 @@ class CropAdvisoryCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: alternative.rank == 1 ? Colors.black80 : Colors.green.shade900,
+                            color: alternative.rank == 1 ? Colors.black87 : Colors.green.shade900,
                           ),
                         ),
                       ),
@@ -119,7 +119,7 @@ class CropAdvisoryCard extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isHighlight ? Colors.green.shade800 : Colors.black80,
+            color: isHighlight ? Colors.green.shade800 : Colors.black87,
           ),
         ),
       ],
