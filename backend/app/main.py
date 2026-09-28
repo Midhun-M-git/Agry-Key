@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.core.database import SessionLocal
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import (
     admin,
@@ -27,17 +26,20 @@ from app.routers import (
     weather,
 )
 
+from app.core.database import Base, engine, SessionLocal
 from app.routers.schemes import seed_schemes
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         seed_schemes(db)
         yield
     finally:
         db.close()
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

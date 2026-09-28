@@ -62,6 +62,40 @@ Never commit `backend/.env` or database credentials. The repository `.gitignore`
 
 ---
 
+## Cloud Deployment (Backend Hosting)
+
+### 1-Click Deployment on Render
+The repository includes a ready-to-use [`render.yaml`](file:///Users/midhun/Documents/Agry-Key/render.yaml) blueprint:
+1. Sign up / Log in to [Render](https://render.com).
+2. Click **New +** > **Blueprint**.
+3. Connect your GitHub repository (`Midhun-M-git/Agry-Key`).
+4. Render automatically configures the FastAPI web service, installs dependencies, and deploys your backend with a free HTTPS URL (e.g. `https://agry-key-api.onrender.com`).
+
+### Docker & Docker Compose
+You can also run or deploy the full stack (FastAPI Backend + DL Microservice) via Docker:
+```bash
+docker compose up -d --build
+```
+The backend will be available at `http://localhost:8000` (API docs at `/docs`) and the DL microservice at `http://localhost:7860`.
+
+---
+
+## Automated Mobile App Compilation (GitHub Actions)
+
+A GitHub Actions workflow is configured in [`.github/workflows/build-mobile-app.yml`](file:///Users/midhun/Documents/Agry-Key/.github/workflows/build-mobile-app.yml) to automatically compile the Flutter Android APK:
+
+1. **Automatic Build**: Whenever code is pushed to `Frontend/**` on the `main` branch or a tag (`v*`) is pushed, GitHub Actions compiles the Android release APK.
+2. **Manual Build with Custom Backend URL**:
+   - Go to the **Actions** tab in your GitHub repository.
+   - Select **Build & Release Mobile App (Android APK)**.
+   - Click **Run workflow**.
+   - (Optional) Provide your hosted `backend_url` (e.g. `https://agry-key-api.onrender.com`) and choose whether to publish a GitHub Release.
+3. **Download the APK**:
+   - Once the workflow completes, open the workflow run.
+   - Download the **`AgriKey-Android-Release-APK`** artifact zip containing `app-release.apk`.
+   - Install the APK directly on any Android smartphone!
+
+
 ## Contributing & Regional Plugins
 
 Agry-Key uses a **zero-code-change plugin system** for region-specific datasets:
