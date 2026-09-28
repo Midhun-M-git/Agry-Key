@@ -1,6 +1,7 @@
 import 'dart:convert';
-
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/api_config.dart';
 
 class StoredSession {
   final String? accessToken;
@@ -180,6 +181,38 @@ class TokenService {
     } catch (_) {
       return false;
     }
+  }
+
+  static Future<String?> refreshTokens() async {
+    final refreshToken = await getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      await logout();
+      return null;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/refresh?token=$refreshToken'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final newAccessToken = data['access_token'] as String?;
+        final newRefreshToken = data['refresh_token'] as String?;
+
+        if (newAccessToken != null && newRefreshToken != null) {
+          await saveTokens(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+          );
+          return newAccessToken;
+        }
+      }
+    } catch (_) {}
+
+    await logout();
+    return null;
   }
 
   static Future<void> logout() async {

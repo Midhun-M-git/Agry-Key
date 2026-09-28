@@ -1,0 +1,10 @@
+{
+  "state": "Kerala",
+  "district": "Kannur",
+  "dialect_pack_id": "kannur_ml",
+  "slang_mapping": {
+    "market_price": "കച്ചവട വില (Kachavada Vila)",
+    "net_profit": "ലാഭം (Laabham)",
+    "fertilizer": "വളം (Valam)"
+  }
+}

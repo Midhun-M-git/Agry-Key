@@ -1,0 +1,26 @@
+{
+  "state": "Kerala",
+  "district": "Ernakulam",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Aluva",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "RIVERINE_ALLUVIAL",
+      "ph_range": {
+        "min": 5.5,
+        "max": 6.5,
+        "avg": 6.0
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Pineapple",
+        "Rubber",
+        "Shrimp",
+        "Paddy"
+      ]
+    }
+  ]
+}

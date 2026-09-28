@@ -33,7 +33,7 @@ def _to_response(notification: Notification) -> NotificationResponse:
 @router.get("", response_model=list[NotificationResponse])
 def list_notifications(
     unread_only: bool = Query(default=False),
-    alert_type: Optional[AlertType] = Query(default=None),
+    alert_type: Optional[str] = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -43,7 +43,17 @@ def list_notifications(
     if unread_only:
         query = query.filter(Notification.is_read.is_(False))
     if alert_type:
-        query = query.filter(Notification.alert_type == alert_type)
+        norm = alert_type.strip().lower()
+        if "weather" in norm:
+            query = query.filter(Notification.alert_type.in_([AlertType.WEATHER, AlertType.WEATHER_WARNING]))
+        elif "market" in norm or "price" in norm:
+            query = query.filter(Notification.alert_type.in_([AlertType.MARKET, AlertType.PRICE_ALERT]))
+        elif "scheme" in norm:
+            query = query.filter(Notification.alert_type.in_([AlertType.SCHEME, AlertType.SCHEME_DEADLINE]))
+        elif "disease" in norm or "pest" in norm:
+            query = query.filter(Notification.alert_type.in_([AlertType.DISEASE, AlertType.DISEASE_OUTBREAK]))
+        else:
+            query = query.filter(Notification.alert_type == alert_type)
     notifications = query.order_by(Notification.created_at.desc()).limit(limit).all()
     return [_to_response(notification) for notification in notifications]
 

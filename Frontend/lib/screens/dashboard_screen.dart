@@ -5,7 +5,7 @@ import '../core/app_state.dart';
 import 'all_services_screen.dart';
 import 'market_screen.dart';
 import 'crop_advisory_screen.dart';
-import 'disease_detection_screen.dart';
+import 'blockchain_verify_screen.dart';
 import 'soil_health_screen.dart';
 import 'schemes_screen.dart';
 import 'community_screen.dart';
@@ -80,17 +80,17 @@ actions: [
             Text(
              AppState.userName.isEmpty
     ? L10n.get(
-        "Good Morning 🌱",
-        "സുപ്രഭാതം 🌱",
-        "सुप्रभात 🌱",
-        "காலை வணக்கம் 🌱",
+        "Good Morning",
+        "സുപ്രഭാതം",
+        "सुप्रभात",
+        "காலை வணக்கம்",
       )
     : "${L10n.get(
         "Good Morning",
         "സുപ്രഭാതം",
         "सुप्रभात",
         "காலை வணக்கம்",
-      )}, ${AppState.userName} 🌱",
+      )}, ${AppState.userName}",
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -236,10 +236,10 @@ Row(
 
 subtitle: Text(
   L10n.get(
-    "Weather, Schemes & Disease Updates",
-    "കാലാവസ്ഥ, പദ്ധതികൾ, രോഗ മുന്നറിയിപ്പുകൾ",
-    "मौसम, योजनाएँ और रोग अपडेट",
-    "வானிலை, திட்டங்கள் மற்றும் நோய் புதுப்பிப்புகள்",
+    "Weather, Schemes & Farm Updates",
+    "കാലാവസ്ഥ, പദ്ധതികൾ, കൃഷി വിവരങ്ങൾ",
+    "मौसम, योजनाएँ और कृषि अपडेट",
+    "வானிலை, திட்டங்கள் மற்றும் பண்ணை தகவல்கள்",
   ),
 ),
     trailing: const Icon(
@@ -470,17 +470,17 @@ subtitle: Text(
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const DiseaseDetectionScreen(),
+          builder: (_) => const BlockchainVerifyScreen(),
         ),
       );
     },
     child: actionCard(
-      Icons.bug_report,
+      Icons.verified_user,
       L10n.get(
-        "Disease",
-        "രോഗം",
-        "रोग",
-        "நோய்",
+        "Anti-Fraud",
+        "വ്യാജവിരുദ്ധം",
+        "धोखाधड़ी रोधी",
+        "மோசடி தடுப்பு",
       ),
     ),
   ),
@@ -624,6 +624,85 @@ SizedBox(
                   style: TextStyle(
                     fontSize: 16,
                   ),
+                ),
+              ),
+            const SizedBox(height: 20),
+
+            Text(
+              L10n.get(
+                "Nearby Veterinary Services",
+                "അടുത്തുള്ള മൃഗാശുപത്രികൾ",
+                "निकटतम पशु चिकित्सा सेवाएं",
+                "அருகிலுள்ள கால்நடை சேவைகள்",
+              ),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.medical_services, color: Colors.green.shade800),
+                        const SizedBox(width: 8),
+                        Text(
+                          L10n.get(
+                            "Emergency Veterinary Support",
+                            "അടിയന്തിര വെറ്ററിനറി സഹായം",
+                            "आपातकालीन पशु चिकित्सा सहायता",
+                            "அவசர கால்நடை உதவி",
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green.shade100,
+                        child: Icon(Icons.local_hospital, color: Colors.green.shade800),
+                      ),
+                      title: const Text(
+                        "District Veterinary Polyclinic",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: const Text(
+                        "Government Hospital, Emergency & Mobile Ambulance Unit",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      trailing: ElevatedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Calling Veterinary Helpline: +91 9447012345 / 1962"),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.call, size: 16),
+                        label: const Text("Call 1962"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

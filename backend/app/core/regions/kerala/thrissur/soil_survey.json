@@ -1,0 +1,26 @@
+{
+  "state": "Kerala",
+  "district": "Thrissur",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Chalakudy",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "LATERITE",
+      "ph_range": {
+        "min": 5.2,
+        "max": 6.2,
+        "avg": 5.7
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Paddy",
+        "Nutmeg",
+        "Coconut",
+        "Banana"
+      ]
+    }
+  ]
+}

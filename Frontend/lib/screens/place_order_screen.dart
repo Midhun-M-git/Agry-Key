@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/voice_text_field.dart';
 import 'order_success_screen.dart';
+import 'payment_screen.dart';
 
 class PlaceOrderScreen extends StatefulWidget {
   const PlaceOrderScreen({super.key});
@@ -285,12 +286,20 @@ class _PlaceOrderScreenState
                   }
 
                  
+                  final qty = double.tryParse(quantityController.text) ?? 10.0;
+                  final total = totalAmount > 0 ? totalAmount : (qty * pricePerKg);
                   Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const OrderSuccessScreen(),
-  ),
-);
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PaymentScreen(
+                        totalAmount: total,
+                        productName: "Agricultural Produce Order",
+                        quantity: qty,
+                        unit: "kg",
+                        deliveryAddress: addressController.text.trim(),
+                      ),
+                    ),
+                  );
                 },
 
                 icon: const Icon(

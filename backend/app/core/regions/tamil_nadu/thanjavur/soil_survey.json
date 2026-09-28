@@ -1,0 +1,26 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Thanjavur",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Kumbakonam",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "CAUVERY_DELTA_ALLUVIAL",
+      "ph_range": {
+        "min": 6.8,
+        "max": 7.8,
+        "avg": 7.3
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Paddy (Kuruvai/Samba)",
+        "Blackgram",
+        "Sugarcane",
+        "Groundnut"
+      ]
+    }
+  ]
+}

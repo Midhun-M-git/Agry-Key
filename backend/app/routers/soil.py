@@ -1,5 +1,5 @@
-"""Soil health reports and regional fertilizer recommendations."""
-
+import json
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.regions import district_registry
 from app.models.farm import AgriculturalPlot
 from app.models.soil import FarmerSoilHealthCard
-from app.models.user import FarmerProfile, User
+from app.models.user import FarmerProfile, User, UserRole
 from app.routers.auth import get_current_user
 from app.schemas.soil import (
     SoilRecommendation,
@@ -17,9 +17,20 @@ from app.schemas.soil import (
     SoilReportCreate,
     SoilReportListResponse,
     SoilReportResponse,
+    SoilSurveyUploadRequest,
 )
 
 router = APIRouter(prefix="/soil", tags=["Soil Health"])
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required to update soil survey registries",
+        )
+    return current_user
+
 
 
 def _get_owned_profile(profile_id: int, current_user: User, db: Session) -> FarmerProfile:
@@ -166,3 +177,45 @@ def get_soil_recommendations(
         regional_survey=regional_survey,
         recommendations=recommendations,
     )
+
+
+@router.get("/survey/{district}")
+def get_district_soil_survey(district: str):
+    """Retrieve ground-truth soil survey data for a specific district."""
+    survey = district_registry.get_soil_survey(district.strip())
+    if not survey:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No soil survey data found for district '{district}'",
+        )
+    return survey
+
+
+@router.post("/survey-upload", status_code=status.HTTP_200_OK)
+def upload_soil_survey(
+    req: SoilSurveyUploadRequest,
+    admin_user: User = Depends(get_current_admin_user),
+):
+    """Admin endpoint to upload or update ground-truth soil survey data."""
+    state_slug = req.state.strip().lower().replace(" ", "_")
+    district_slug = req.district.strip().lower().replace(" ", "_")
+
+    regions_base = Path(__file__).resolve().parent.parent / "core" / "regions"
+    district_dir = regions_base / state_slug / district_slug
+    if not district_dir.exists():
+        district_dir.mkdir(parents=True, exist_ok=True)
+
+    survey_path = district_dir / "soil_survey.json"
+    survey_data = req.model_dump()
+    with open(survey_path, "w", encoding="utf-8") as f:
+        json.dump(survey_data, f, ensure_ascii=False, indent=2)
+
+    # Update in-memory registry cache
+    district_registry._soil_surveys[district_slug] = survey_data
+
+    return {
+        "status": "success",
+        "message": f"Soil survey data for {req.district}, {req.state} successfully uploaded and registered.",
+        "district": req.district,
+        "taluks_count": len(req.panchayaths_and_taluks),
+    }

@@ -21,6 +21,15 @@ def test_zero_touch_geo_language_detection_palakkad():
     assert "ui_translations" in data
 
 
+def test_zero_touch_geo_language_detection_coimbatore():
+    response = client.post("/api/v1/geo/detect-language", json={"latitude": 11.0168, "longitude": 76.9558})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["regional_language_code"] == "ta"
+    assert data["district"] == "Coimbatore"
+    assert "audio_greeting_url" in data
+
+
 def test_i18n_translations():
     response = client.get("/api/v1/i18n/translations?lang=ml")
     assert response.status_code == 200
@@ -98,3 +107,34 @@ def test_user_registration_and_login_flow():
     onboard_data = onboard_resp.json()
     assert onboard_data["status"] == "success"
     assert len(onboard_data["configured_units"]) == 3
+
+
+def test_otp_recovery_and_verification_flow(monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "SMS_API_KEY", "mock")
+
+    test_phone = "+919123456780"
+    # Request OTP with properly encoded query param
+    resp = client.post("/api/v1/auth/recover", params={"phone_number": test_phone})
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
+
+    # Query the generated OTP from DB to test verification
+    from app.core.database import SessionLocal
+    from app.models.user import OTPRecord
+    db = SessionLocal()
+    otp_record = db.query(OTPRecord).filter_by(phone_number=test_phone).order_by(OTPRecord.created_at.desc()).first()
+    assert otp_record is not None
+    assert len(otp_record.otp_code) == 6
+    code = otp_record.otp_code
+    db.close()
+
+    # Wrong OTP fails
+    bad_resp = client.post("/api/v1/auth/verify-otp", json={"phone_number": test_phone, "otp_code": "000000"})
+    assert bad_resp.status_code == 400
+
+    # Correct OTP succeeds
+    good_resp = client.post("/api/v1/auth/verify-otp", json={"phone_number": test_phone, "otp_code": code})
+    assert good_resp.status_code == 200
+    assert good_resp.json()["status"] == "success"
+

@@ -1,0 +1,10 @@
+{
+  "state": "Kerala",
+  "district": "Ernakulam",
+  "dialect_pack_id": "ernakulam_ml",
+  "slang_mapping": {
+    "market_price": "മാർക്കറ്റ് വില (Market Vila)",
+    "net_profit": "മിച്ചം (Micham)",
+    "fertilizer": "വളം (Valam)"
+  }
+}

@@ -21,7 +21,7 @@ class _AIAssistantScreenState
 bool isListening = false;
 
   String aiResponse =
-      "🌾 Welcome to AGRI KEY AI Assistant.\n\nAsk anything about farming, weather, crops, diseases, market prices, or government schemes.";
+      "Welcome to AGRI KEY AI Assistant.\n\nAsk anything about farming, weather, crops, soil health, fertilizer MRP, market prices, or government schemes.";
 @override
 void initState() {
   super.initState();
@@ -219,12 +219,12 @@ void askAI() {
 
                   quickChip(
                     L10n.get(
-                      "Disease",
-                      "രോഗം",
-                      "रोग",
-                      "நோய்",
+                      "Soil Health",
+                      "മണ്ണ് പരിശോധന",
+                      "मृदा स्वास्थ्य",
+                      "மண் வளம்",
                     ),
-                    "Identify crop disease",
+                    "Soil health and fertilizer recommendation",
                   ),
 
                   quickChip(

@@ -1,0 +1,26 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Tirunelveli",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Ambasamudram",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "RED_SANDY_LOAM",
+      "ph_range": {
+        "min": 6.2,
+        "max": 7.5,
+        "avg": 6.85
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Paddy",
+        "Banana",
+        "Pulses",
+        "Chilli"
+      ]
+    }
+  ]
+}

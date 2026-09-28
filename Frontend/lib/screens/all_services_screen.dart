@@ -7,7 +7,7 @@ import '../core/app_state.dart';
 import 'weather_screen.dart';
 import 'market_screen.dart';
 import 'crop_advisory_screen.dart';
-import 'disease_detection_screen.dart';
+import 'blockchain_verify_screen.dart';
 import 'soil_health_screen.dart';
 import 'schemes_screen.dart';
 import 'equipment_screen.dart';
@@ -96,13 +96,18 @@ class AllServicesScreen extends ConsumerWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const DiseaseDetectionScreen(),
+          builder: (_) => const BlockchainVerifyScreen(),
         ),
       );
     },
     child: ServiceCard(
-      Icons.bug_report,
-      L10n.get("Disease","രോഗം","रोग","நோய்"),
+      Icons.verified_user,
+      L10n.get(
+        "Anti-Fraud MRP",
+        "വ്യാജവിരുദ്ധ MRP",
+        "धोखाधड़ी रोधी MRP",
+        "மோசடி தடுப்பு MRP",
+      ),
     ),
   ),
 

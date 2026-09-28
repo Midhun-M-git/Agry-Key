@@ -224,6 +224,18 @@ class AppState {
   static String refreshToken = '';
   static Map<String, dynamic> farmPayload = {};
 
+  static String get userState => state;
+  static set userState(String val) => state = val;
+
+  static String get userDistrict => district;
+  static set userDistrict(String val) => district = val;
+
+  static double get userLatitude => latitude;
+  static set userLatitude(double val) => latitude = val;
+
+  static double get userLongitude => longitude;
+  static set userLongitude(double val) => longitude = val;
+
   static void watchAll(WidgetRef ref) {
     ref.watch(authProvider);
     ref.watch(userProvider);

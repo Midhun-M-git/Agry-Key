@@ -1,8 +1,117 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
+import 'token_service.dart';
 
 class ApiService {
+  /// Core HTTP client interceptor handling automated JWT token refresh on 401.
+  static Future<http.Response> requestWithAuth({
+    required String method,
+    required Uri uri,
+    Map<String, String>? headers,
+    dynamic body,
+  }) async {
+    headers ??= {};
+    headers['Content-Type'] ??= 'application/json';
+
+    String? token = await TokenService.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    http.Response response;
+    try {
+      response = await _sendRaw(method, uri, headers, body);
+    } catch (e) {
+      rethrow;
+    }
+
+    // Intercept 401 Unauthorized for token refresh
+    if (response.statusCode == 401) {
+      final newToken = await TokenService.refreshTokens();
+      if (newToken != null && newToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $newToken';
+        // Retry the original request with the fresh access token
+        response = await _sendRaw(method, uri, headers, body);
+      } else {
+        // Refresh token expired or revoked - user session terminated
+        await TokenService.logout();
+      }
+    }
+
+    return response;
+  }
+
+  static Future<http.Response> _sendRaw(
+    String method,
+    Uri uri,
+    Map<String, String> headers,
+    dynamic body,
+  ) {
+    final encodedBody = (body != null && body is! String) ? jsonEncode(body) : body as String?;
+
+    switch (method.toUpperCase()) {
+      case 'POST':
+        return http.post(uri, headers: headers, body: encodedBody);
+      case 'PUT':
+        return http.put(uri, headers: headers, body: encodedBody);
+      case 'DELETE':
+        return http.delete(uri, headers: headers, body: encodedBody);
+      case 'GET':
+      default:
+        return http.get(uri, headers: headers);
+    }
+  }
+
+  /// Convenience GET helper with auto refresh
+  static Future<Map<String, dynamic>> get(String endpoint, {bool requireAuth = true}) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+      final response = requireAuth
+          ? await requestWithAuth(method: 'GET', uri: uri)
+          : await http.get(uri);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {
+        "success": false,
+        "status_code": response.statusCode,
+        "message": response.body,
+      };
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  /// Convenience POST helper with auto refresh
+  static Future<Map<String, dynamic>> post(
+    String endpoint, {
+    dynamic body,
+    bool requireAuth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+      final response = requireAuth
+          ? await requestWithAuth(method: 'POST', uri: uri, body: body)
+          : await http.post(
+              uri,
+              headers: {'Content-Type': 'application/json'},
+              body: body != null ? jsonEncode(body) : null,
+            );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {
+        "success": false,
+        "status_code": response.statusCode,
+        "message": response.body,
+      };
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
 
   // LOGIN
   static Future<Map<String, dynamic>> login({

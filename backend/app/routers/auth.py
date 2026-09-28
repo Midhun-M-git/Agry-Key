@@ -5,8 +5,10 @@ from collections import defaultdict, deque
 import secrets
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -57,36 +59,66 @@ def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
 
 
 def _send_otp_sms(phone_number: str, otp_code: str) -> None:
-    if not settings.SMS_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="SMS delivery is not configured",
-        )
+    # Allow mock / test mode when SMS_API_KEY is 'mock' or 'test' or in test environment
+    if settings.SMS_API_KEY in ("mock", "test"):
+        return
 
-    payload = {
-        "mobile": phone_number,
-        "otp": otp_code,
-        "otp_expiry": str(_OTP_EXPIRY_MINUTES),
-    }
-    if settings.SMS_OTP_TEMPLATE_ID:
-        payload["template_id"] = settings.SMS_OTP_TEMPLATE_ID
+    provider = (settings.SMS_PROVIDER or "msg91").lower()
+    if provider == "twilio":
+        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM_NUMBER):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Twilio SMS delivery is not fully configured",
+            )
+        try:
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
+            response = httpx.post(
+                url,
+                auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN),
+                data={
+                    "From": settings.TWILIO_FROM_NUMBER,
+                    "To": phone_number,
+                    "Body": f"Your Agry-Key OTP verification code is {otp_code}. Valid for {_OTP_EXPIRY_MINUTES} minutes.",
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Unable to deliver OTP via Twilio",
+            ) from exc
+    else:
+        # Default MSG91
+        if not settings.SMS_API_KEY:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="SMS delivery is not configured",
+            )
+        payload = {
+            "mobile": phone_number,
+            "otp": otp_code,
+            "otp_expiry": str(_OTP_EXPIRY_MINUTES),
+        }
+        if settings.SMS_OTP_TEMPLATE_ID:
+            payload["template_id"] = settings.SMS_OTP_TEMPLATE_ID
 
-    try:
-        response = httpx.post(
-            "https://control.msg91.com/api/v5/otp",
-            headers={
-                "authkey": settings.SMS_API_KEY,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=10,
-        )
-        response.raise_for_status()
-    except httpx.HTTPError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Unable to deliver OTP",
-        ) from exc
+        try:
+            response = httpx.post(
+                "https://control.msg91.com/api/v5/otp",
+                headers={
+                    "authkey": settings.SMS_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=10,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Unable to deliver OTP via MSG91",
+            ) from exc
 
 
 def get_current_user(
@@ -165,10 +197,29 @@ def login_user(req: UserLoginRequest, db: Session = Depends(get_db)):
     )
 
 
+class RefreshTokenPayload(BaseModel):
+    refresh_token: Optional[str] = None
+    token: Optional[str] = None
+
+
 @router.post("/refresh", response_model=TokenResponse)
-def refresh_token(token: str, db: Session = Depends(get_db)):
+def refresh_token(
+    token: Optional[str] = Query(default=None),
+    body: Optional[RefreshTokenPayload] = None,
+    db: Session = Depends(get_db),
+):
     """Exchanges a valid refresh token for a fresh access token pair."""
-    payload = decode_token(token)
+    raw_token = token
+    if not raw_token and body:
+        raw_token = body.refresh_token or body.token
+
+    if not raw_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refresh token required in query parameter or request body",
+        )
+
+    payload = decode_token(raw_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

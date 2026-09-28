@@ -1,0 +1,26 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Madurai",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Melur",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "BLACK_COTTON_SOIL",
+      "ph_range": {
+        "min": 7.2,
+        "max": 8.4,
+        "avg": 7.8
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Paddy",
+        "Jasmine",
+        "Pulses",
+        "Millets"
+      ]
+    }
+  ]
+}

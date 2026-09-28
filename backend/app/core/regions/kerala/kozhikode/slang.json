@@ -1,0 +1,10 @@
+{
+  "state": "Kerala",
+  "district": "Kozhikode",
+  "dialect_pack_id": "kozhikode_ml",
+  "slang_mapping": {
+    "market_price": "റേറ്റ് (Rate)",
+    "net_profit": "ലാഭം (Laabham)",
+    "fertilizer": "വളം (Valam)"
+  }
+}

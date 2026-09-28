@@ -5,6 +5,7 @@ import '../screens/add_product_screen.dart';
 import '../screens/ai_assistant_screen.dart';
 import '../screens/alerts_screen.dart';
 import '../screens/all_services_screen.dart';
+import '../screens/blockchain_verify_screen.dart';
 import '../screens/browse_products_screen.dart';
 import '../screens/buyer_ai_assistant_screen.dart';
 import '../screens/buyer_dashboard_screen.dart';
@@ -21,7 +22,6 @@ import '../screens/crop_advisory_screen.dart';
 import '../screens/crop_calendar_screen.dart';
 import '../screens/crop_details_screen.dart';
 import '../screens/dashboard_screen.dart';
-import '../screens/disease_detection_screen.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/equipment_screen.dart';
 import '../screens/experts_screen.dart';
@@ -121,7 +121,8 @@ class AppRouter {
         GoRoute(path: '/crop-advisory', name: 'crop-advisory', builder: (_, __) => const CropAdvisoryScreen()),
         GoRoute(path: '/crop-calendar', name: 'crop-calendar', builder: (_, __) => const CropCalendarScreen()),
         GoRoute(path: '/crop-details', name: 'crop-details', builder: (_, __) => const CropDetailsScreen()),
-        GoRoute(path: '/disease-detection', name: 'disease-detection', builder: (_, __) => const DiseaseDetectionScreen()),
+        GoRoute(path: '/blockchain-verify', name: 'blockchain-verify', builder: (_, __) => const BlockchainVerifyScreen()),
+        GoRoute(path: '/disease-detection', name: 'disease-detection', builder: (_, __) => const BlockchainVerifyScreen()),
         GoRoute(path: '/edit-profile', name: 'edit-profile', builder: (_, __) => const EditProfileScreen()),
         GoRoute(path: '/equipment', name: 'equipment', builder: (_, __) => const EquipmentScreen()),
         GoRoute(path: '/experts', name: 'experts', builder: (_, __) => const ExpertsScreen()),
@@ -132,7 +133,13 @@ class AppRouter {
         GoRoute(path: '/farmer-upload', name: 'farmer-upload', builder: (_, __) => const FarmerUploadScreen()),
         GoRoute(path: '/find-farmers', name: 'find-farmers', builder: (_, __) => const FindFarmersScreen()),
         GoRoute(path: '/government-schemes', name: 'government-schemes', builder: (_, __) => const GovernmentSchemesScreen()),
-        GoRoute(path: '/invoice', name: 'invoice', builder: (_, __) => const InvoiceScreen()),
+        GoRoute(
+          path: '/invoice',
+          name: 'invoice',
+          builder: (_, state) => InvoiceScreen(
+            orderId: int.tryParse(state.uri.queryParameters['orderId'] ?? ''),
+          ),
+        ),
         GoRoute(path: '/market', name: 'market', builder: (_, __) => const MarketScreen()),
         GoRoute(path: '/marketplace', name: 'marketplace', builder: (_, __) => const MarketplaceScreen()),
         GoRoute(path: '/add-product', name: 'add-product', builder: (_, __) => const AddProductScreen()),
@@ -141,7 +148,18 @@ class AppRouter {
         GoRoute(path: '/order-management', name: 'order-management', builder: (_, __) => const OrderManagementScreen()),
         GoRoute(path: '/order-success', name: 'order-success', builder: (_, __) => const OrderSuccessScreen()),
         GoRoute(path: '/order-tracking', name: 'order-tracking', builder: (_, __) => const OrderTrackingScreen()),
-        GoRoute(path: '/payment', name: 'payment', builder: (_, __) => const PaymentScreen()),
+        GoRoute(
+          path: '/payment',
+          name: 'payment',
+          builder: (_, state) => PaymentScreen(
+            orderId: int.tryParse(state.uri.queryParameters['orderId'] ?? ''),
+            totalAmount: double.tryParse(state.uri.queryParameters['totalAmount'] ?? ''),
+            productName: state.uri.queryParameters['productName'],
+            quantity: double.tryParse(state.uri.queryParameters['quantity'] ?? ''),
+            unit: state.uri.queryParameters['unit'],
+            deliveryAddress: state.uri.queryParameters['deliveryAddress'],
+          ),
+        ),
         GoRoute(path: '/place-order', name: 'place-order', builder: (_, __) => const PlaceOrderScreen()),
         GoRoute(path: '/product-details', name: 'product-details', builder: (_, __) => const ProductDetailsScreen()),
         GoRoute(path: '/profile', name: 'profile', builder: (_, __) => const ProfileScreen()),

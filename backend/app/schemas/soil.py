@@ -55,3 +55,24 @@ class SoilRecommendationsResponse(BaseModel):
     soil_type: str
     regional_survey: Optional[Dict[str, Any]]
     recommendations: List[SoilRecommendation]
+
+
+class SoilSurveyTalukData(BaseModel):
+    taluk: str = Field(..., min_length=1)
+    village_panchayath: Optional[str] = None
+    predominant_soil_type: str = Field(..., min_length=1)
+    ph_level: Optional[float] = Field(None, ge=0, le=14)
+    organic_carbon_percent: Optional[float] = Field(None, ge=0)
+    nitrogen_kg_ha: Optional[float] = Field(None, ge=0)
+    phosphorus_kg_ha: Optional[float] = Field(None, ge=0)
+    potassium_kg_ha: Optional[float] = Field(None, ge=0)
+    water_table_depth_m: Optional[float] = Field(None, ge=0)
+    suitable_crops: List[str] = Field(default_factory=list)
+
+
+class SoilSurveyUploadRequest(BaseModel):
+    state: str = Field(..., min_length=1)
+    district: str = Field(..., min_length=1)
+    survey_authority: Optional[str] = None
+    last_updated: Optional[str] = None
+    panchayaths_and_taluks: List[SoilSurveyTalukData] = Field(..., min_length=1)

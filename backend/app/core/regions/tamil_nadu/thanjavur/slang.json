@@ -1,0 +1,10 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Thanjavur",
+  "dialect_pack_id": "thanjavur_ta",
+  "slang_mapping": {
+    "market_price": "மண்டி விலை (Mandi Vilai)",
+    "net_profit": "நிகர லாபம் (Nikara Laabam)",
+    "fertilizer": "உரம் (Uram)"
+  }
+}

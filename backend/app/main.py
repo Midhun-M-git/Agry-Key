@@ -8,21 +8,25 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import (
+    admin,
     advisory,
     auth,
+    blockchain,
+    community,
     geo,
     health,
     i18n,
     marketplace,
+    notifications,
     onboarding,
     orders,
-    disease,
-    community,
-    notifications,
+    payment,
     schemes,
+    services,
     soil,
     weather,
 )
+
 from app.routers.schemes import seed_schemes
 
 
@@ -69,11 +73,15 @@ app.include_router(advisory.router, prefix=f"{settings.API_V1_STR}/advisory", ta
 app.include_router(weather.router, prefix=settings.API_V1_STR)
 app.include_router(marketplace.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
+app.include_router(payment.router, prefix=settings.API_V1_STR)
+app.include_router(blockchain.router, prefix=settings.API_V1_STR)
+app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(schemes.router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
-app.include_router(disease.router, prefix=settings.API_V1_STR)
 app.include_router(community.router, prefix=settings.API_V1_STR)
 app.include_router(soil.router, prefix=settings.API_V1_STR)
+app.include_router(services.router, prefix=settings.API_V1_STR)
+
 
 
 @app.get("/")

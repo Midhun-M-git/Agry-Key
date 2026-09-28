@@ -17,3 +17,6 @@ requests-cache==1.2.1
 retry-requests==2.0.0
 google-generativeai==0.8.5
 pytest>=8.0.0
+reportlab>=4.0.0
+razorpay>=2.0.0
+

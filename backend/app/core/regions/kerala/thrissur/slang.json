@@ -1,0 +1,10 @@
+{
+  "state": "Kerala",
+  "district": "Thrissur",
+  "dialect_pack_id": "thrissur_ml",
+  "slang_mapping": {
+    "market_price": "ചന്തവില (Chantha Vila)",
+    "net_profit": "ലാഭം (Laabham)",
+    "fertilizer": "വളം (Valam)"
+  }
+}

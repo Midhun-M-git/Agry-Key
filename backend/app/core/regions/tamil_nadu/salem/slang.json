@@ -1,0 +1,10 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Salem",
+  "dialect_pack_id": "salem_ta",
+  "slang_mapping": {
+    "market_price": "சந்தை விலை (Santhai Vilai)",
+    "net_profit": "லாபம் (Laabam)",
+    "fertilizer": "உரம் (Uram)"
+  }
+}

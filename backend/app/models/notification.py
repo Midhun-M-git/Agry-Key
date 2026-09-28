@@ -15,6 +15,12 @@ class AlertType(str, Enum):
     DISEASE_OUTBREAK = "disease_outbreak"
     SCHEME_DEADLINE = "scheme_deadline"
     PRICE_ALERT = "price_alert"
+    WEATHER = "WEATHER"
+    MARKET = "MARKET"
+    SCHEME = "SCHEME"
+    DISEASE = "DISEASE"
+    ORDER = "ORDER"
+    SYSTEM = "SYSTEM"
 
 
 class Notification(Base):

@@ -49,11 +49,12 @@ For staging or production, use PostgreSQL and set `DATABASE_URL` to the deployed
 DATABASE_URL="postgresql://postgres:password@db-host:5432/agry_key"
 ```
 
-Install backend dependencies and apply migrations from the backend directory:
+Install backend dependencies, apply migrations, seed dummy data, and run tests from the backend directory:
 
-```powershell
+```bash
 python -m pip install -r requirements.txt
 python -m alembic upgrade head
+python -m scripts.seed_db
 python -m pytest -q
 ```
 

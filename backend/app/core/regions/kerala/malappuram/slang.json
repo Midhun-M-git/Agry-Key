@@ -1,0 +1,10 @@
+{
+  "state": "Kerala",
+  "district": "Malappuram",
+  "dialect_pack_id": "malappuram_ml",
+  "slang_mapping": {
+    "market_price": "മാർക്കറ്റ് വില (Market Vila)",
+    "net_profit": "ലാഭം (Laabham)",
+    "fertilizer": "വളം (Valam)"
+  }
+}

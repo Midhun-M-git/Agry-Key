@@ -1,0 +1,26 @@
+{
+  "state": "Kerala",
+  "district": "Kannur",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Taliparamba",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "LATERITIC_RED_LOAM",
+      "ph_range": {
+        "min": 5.2,
+        "max": 6.1,
+        "avg": 5.65
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Cashew",
+        "Pepper",
+        "Coconut",
+        "Paddy"
+      ]
+    }
+  ]
+}

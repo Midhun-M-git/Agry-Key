@@ -1,5 +1,4 @@
-"""Marketplace product listing API routes."""
-
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,6 +11,19 @@ from app.routers.auth import get_current_user
 from app.schemas.marketplace import ProductCreate, ProductResponse, ProductUpdate
 
 router = APIRouter(prefix="/marketplace", tags=["Marketplace"])
+
+_SECTOR_EXPIRY_DAYS = {
+    "AQUACULTURE": 2,
+    "FISH": 2,
+    "DAIRY": 2,
+    "MILK": 2,
+    "LIVESTOCK": 3,
+    "MEAT": 3,
+    "POULTRY": 7,
+    "EGGS": 7,
+    "CROPS": 30,
+}
+
 
 
 def _require_farmer(current_user: User) -> None:
@@ -50,6 +62,7 @@ def _to_response(product: Product, db: Session) -> ProductResponse:
 
 
 @router.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/listings", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(
     req: ProductCreate,
     current_user: User = Depends(get_current_user),
@@ -57,7 +70,13 @@ def create_product(
 ):
     """Create a produce listing owned by the authenticated farmer."""
     _require_farmer(current_user)
-    product = Product(farmer_id=current_user.id, **req.model_dump())
+    data = req.model_dump()
+    if not data.get("expires_at"):
+        sec = data.get("sector", "CROPS").upper()
+        days = _SECTOR_EXPIRY_DAYS.get(sec, 14)
+        data["expires_at"] = datetime.now(timezone.utc) + timedelta(days=days)
+
+    product = Product(farmer_id=current_user.id, **data)
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -65,22 +84,35 @@ def create_product(
 
 
 @router.get("/products", response_model=list[ProductResponse])
+@router.get("/listings", response_model=list[ProductResponse])
 def list_products(
     district: Optional[str] = Query(default=None),
     crop_type: Optional[str] = Query(default=None),
+    sector: Optional[str] = Query(default=None),
+    quality_grade: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """Browse active product listings, optionally filtered by district and crop type."""
-    query = db.query(Product).filter(Product.is_active.is_(True))
+    """Browse active product listings, optionally filtered by district, crop, sector, and grade."""
+    now = datetime.now(timezone.utc)
+    query = db.query(Product).filter(
+        Product.is_active.is_(True),
+        (Product.expires_at.is_(None)) | (Product.expires_at >= now),
+    )
     if district:
         query = query.filter(Product.district.ilike(district.strip()))
     if crop_type:
         query = query.filter(Product.crop_type.ilike(crop_type.strip()))
+    if sector:
+        query = query.filter(Product.sector.ilike(sector.strip()))
+    if quality_grade:
+        query = query.filter(Product.quality_grade.ilike(quality_grade.strip()))
     products = query.order_by(Product.created_at.desc()).all()
     return [_to_response(product, db) for product in products]
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
+@router.get("/listings/{product_id}", response_model=ProductResponse)
+
 def get_product(product_id: int, db: Session = Depends(get_db)):
     """Return one active product listing."""
     product = (

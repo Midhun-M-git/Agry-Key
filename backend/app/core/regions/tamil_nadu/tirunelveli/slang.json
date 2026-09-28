@@ -1,0 +1,10 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Tirunelveli",
+  "dialect_pack_id": "tirunelveli_ta",
+  "slang_mapping": {
+    "market_price": "கடை விலை (Kadai Vilai)",
+    "net_profit": "லாபம் (Laabam)",
+    "fertilizer": "உரம் (Uram)"
+  }
+}

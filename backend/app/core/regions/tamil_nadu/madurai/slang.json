@@ -1,0 +1,10 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Madurai",
+  "dialect_pack_id": "madurai_ta",
+  "slang_mapping": {
+    "market_price": "சந்தை விலை (Santhai Vilai)",
+    "net_profit": "வருமானம் (Varumaanam)",
+    "fertilizer": "உரம் (Uram)"
+  }
+}

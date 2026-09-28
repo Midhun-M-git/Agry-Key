@@ -30,8 +30,10 @@ from app.models.order import Order, OrderStatus
 from app.models.scheme import Scheme
 from app.models.notification import AlertType, Notification, NotificationSubscription
 from app.models.community import Comment, Post, PostLike
+from app.models.payment import Payment, PaymentStatus
 
 __all__ = [
+
     "User",
     "FarmerProfile",
     "OTPRecord",
@@ -69,4 +71,7 @@ __all__ = [
     "Post",
     "Comment",
     "PostLike",
+    "Payment",
+    "PaymentStatus",
 ]
+

@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -11,8 +11,10 @@ from app.models.order import Order, OrderStatus
 from app.models.user import User, UserRole
 from app.routers.auth import get_current_user
 from app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate, TrackingEvent
+from app.services.invoice_generator import InvoiceGenerator
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
+
 
 _STATUS_SEQUENCE = [
     OrderStatus.PENDING,
@@ -196,3 +198,38 @@ def cancel_order(
     db.commit()
     db.refresh(order)
     return _to_response(order, db)
+
+
+@router.get("/{order_id}/invoice")
+def get_order_invoice_pdf(
+    order_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generates and downloads the official tax invoice PDF for an order."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+
+    if current_user.role != UserRole.ADMIN and current_user.id not in (order.buyer_id, order.farmer_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view or download this invoice.",
+        )
+
+    buyer = db.query(User).filter(User.id == order.buyer_id).first()
+    farmer = db.query(User).filter(User.id == order.farmer_id).first()
+
+    pdf_bytes = InvoiceGenerator.generate_order_invoice_pdf(
+        order=order,
+        buyer=buyer,
+        farmer=farmer,
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=AgryKey_Invoice_{order.id}.pdf"
+        },
+    )

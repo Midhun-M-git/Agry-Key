@@ -1,0 +1,26 @@
+{
+  "state": "Kerala",
+  "district": "Kozhikode",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Koyilandy",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "COASTAL_ALLUVIAL",
+      "ph_range": {
+        "min": 5.4,
+        "max": 6.3,
+        "avg": 5.85
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Coconut",
+        "Pepper",
+        "Ginger",
+        "Turmeric"
+      ]
+    }
+  ]
+}

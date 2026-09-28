@@ -1,0 +1,26 @@
+{
+  "state": "Tamil Nadu",
+  "district": "Salem",
+  "panchayaths_and_taluks": [
+    {
+      "taluk": "Attur",
+      "village_panchayath": "Primary Agricultural Block",
+      "predominant_soil_type": "RED_LOAMY",
+      "ph_range": {
+        "min": 6.5,
+        "max": 7.8,
+        "avg": 7.15
+      },
+      "organic_carbon_status": "MEDIUM",
+      "nitrogen_kg_ha": 235.0,
+      "phosphorus_kg_ha": 21.0,
+      "potassium_kg_ha": 215.0,
+      "suitable_crops": [
+        "Mango",
+        "Tapioca",
+        "Sorghum",
+        "Cotton"
+      ]
+    }
+  ]
+}

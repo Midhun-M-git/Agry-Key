@@ -5,6 +5,7 @@ import 'otp_screen.dart';
 import '../core/app_state.dart';
 import '../services/token_service.dart';
 import 'register_screen.dart';
+import 'market_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -234,6 +235,43 @@ class _LoginScreenState
                   "नए उपयोगकर्ता? पंजीकरण करें",
                   "புதிய பயனரா? பதிவு செய்யவும்",
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            const Divider(),
+
+            const SizedBox(height: 10),
+
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MarketScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.explore, color: Colors.green),
+              label: Text(
+                L10n.get(
+                  "Explore Live Market Prices (Guest Mode)",
+                  "തത്സമയ മാർക്കറ്റ് വിലകൾ കാണുക (അതിഥി മോഡ്)",
+                  "लाइव बाजार भाव देखें (अतिथि मोड)",
+                  "நேரலை சந்தை விலைகளை பார்க்க (விருந்தினர்)",
+                ),
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.green, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                minimumSize: const Size(double.infinity, 50),
               ),
             ),
           ],

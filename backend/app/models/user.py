@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 import enum
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -49,6 +49,10 @@ class FarmerProfile(Base):
     voice_preference: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped["User"] = relationship("User", back_populates="profile")
+    plots: Mapped[List["AgriculturalPlot"]] = relationship("AgriculturalPlot", cascade="all, delete-orphan", lazy="select")
+    livestock: Mapped[List["LivestockUnit"]] = relationship("LivestockUnit", cascade="all, delete-orphan", lazy="select")
+    poultry: Mapped[List["PoultryUnit"]] = relationship("PoultryUnit", cascade="all, delete-orphan", lazy="select")
+    aquaculture: Mapped[List["AquacultureUnit"]] = relationship("AquacultureUnit", cascade="all, delete-orphan", lazy="select")
 
 
 class OTPRecord(Base):

@@ -49,7 +49,7 @@ class FarmerSoilHealthCard(Base):
     __tablename__ = "farmer_soil_health_cards"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), nullable=False)
+    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), index=True, nullable=False)
     plot_id: Mapped[Optional[int]] = mapped_column(ForeignKey("agricultural_plots.id"), nullable=True)
     shc_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     

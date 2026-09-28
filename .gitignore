@@ -14,12 +14,16 @@ env/
 
 # SQLite local database
 *.db
+*.sqlite
 agry_key.db
+.cache*
+backend/.cache.sqlite
 
 # Testing and coverage
 .pytest_cache/
 .coverage
 htmlcov/
+test_report/
 
 # IDE / Editor files
 .vscode/
@@ -27,6 +31,6 @@ htmlcov/
 *.swp
 *.swo
 
-test_report/
+# Scratch scripts
+track_download.py
 
-backend/.cache.sqlite

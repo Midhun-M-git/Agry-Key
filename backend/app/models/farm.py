@@ -12,7 +12,7 @@ class AgriculturalPlot(Base):
     __tablename__ = "agricultural_plots"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), nullable=False)
+    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), index=True, nullable=False)
     plot_name: Mapped[str] = mapped_column(String(50), default="Main Plot")
     acreage: Mapped[float] = mapped_column(Float, nullable=False)
     soil_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -26,7 +26,7 @@ class LivestockUnit(Base):
     __tablename__ = "livestock_units"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), nullable=False)
+    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), index=True, nullable=False)
     animal_type: Mapped[str] = mapped_column(String(50), nullable=False)
     breed: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     head_count: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -38,7 +38,7 @@ class PoultryUnit(Base):
     __tablename__ = "poultry_units"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), nullable=False)
+    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), index=True, nullable=False)
     bird_type: Mapped[str] = mapped_column(String(50), default="Hen")
     bird_count: Mapped[int] = mapped_column(Integer, nullable=False)
     purpose: Mapped[str] = mapped_column(String(20), default="EGGS")
@@ -49,7 +49,7 @@ class AquacultureUnit(Base):
     __tablename__ = "aquaculture_units"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), nullable=False)
+    farmer_profile_id: Mapped[int] = mapped_column(ForeignKey("farmer_profiles.id"), index=True, nullable=False)
     pond_name: Mapped[str] = mapped_column(String(50), default="Pond 1")
     pond_size_acres: Mapped[float] = mapped_column(Float, nullable=False)
     fish_species: Mapped[str] = mapped_column(String(100), nullable=False)

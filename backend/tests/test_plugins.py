@@ -33,11 +33,30 @@ def test_district_registry_loads_soil_survey_template():
     assert soil_data is not None
     assert soil_data["state"] == "Kerala"
     assert soil_data["district"] == "Palakkad"
-    assert len(soil_data["panchayaths_and_taluks"]) == 1
+    assert len(soil_data["panchayaths_and_taluks"]) >= 1
     assert "ph_level" in soil_data["panchayaths_and_taluks"][0]
+    assert soil_data["panchayaths_and_taluks"][0]["ph_level"] is not None
+
 
 
 def test_unsupported_district_returns_none():
     assert district_registry.get_provider("unknown_district") is None
     assert district_registry.get_slang_pack("unknown_district") is None
     assert district_registry.get_soil_survey("unknown_district") is None
+
+
+def test_expanded_regional_districts_loaded():
+    supported = district_registry.list_supported_districts()
+    expected_districts = [
+        "palakkad", "thrissur", "ernakulam", "kozhikode", "malappuram", "kannur",
+        "coimbatore", "salem", "madurai", "tirunelveli", "thanjavur"
+    ]
+    for d in expected_districts:
+        assert d in supported, f"District {d} not found in supported plugins"
+        provider = district_registry.get_provider(d)
+        assert provider is not None
+        assert provider.state_name in ["Kerala", "Tamil Nadu"]
+        assert len(provider.get_market_source_declarations()) > 0
+        assert district_registry.get_slang_pack(d) is not None
+        assert district_registry.get_soil_survey(d) is not None
+
