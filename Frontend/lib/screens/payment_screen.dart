@@ -61,7 +61,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       if (selectedPayment == "COD") {
-        // Direct cash / offline delivery confirmation
+        // Cash on Delivery — legitimate offline confirmation
         await Future.delayed(const Duration(seconds: 1));
         if (!mounted) return;
         setState(() {
@@ -75,33 +75,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
         return;
       }
 
-      // 1. Create gateway order on backend
-      Map<String, dynamic> verification;
-      try {
-        final gatewayOrder = await _paymentService.createPaymentOrder(_effectiveOrderId);
-        final razorpayOrderId = gatewayOrder["razorpay_order_id"] as String;
-        final mockPaymentId = "pay_${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}";
-        
-        // Verification with backend
-        verification = await _paymentService.verifyPayment(
-          razorpayOrderId: razorpayOrderId,
-          razorpayPaymentId: mockPaymentId,
-          razorpaySignature: "mock_sig_${DateTime.now().millisecondsSinceEpoch}",
-        );
-      } catch (err) {
-        // If order was local or gateway credentials in demo mode, confirm with simulated transaction
-        verification = {
-          "status": "SUCCESS",
-          "order_status": "CONFIRMED",
-          "payment_id": "pay_demo_${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}",
-          "order_id": _effectiveOrderId,
-        };
+      // Online payment — create real Razorpay order on backend
+      final gatewayOrder = await _paymentService.createPaymentOrder(_effectiveOrderId);
+      final razorpayOrderId = gatewayOrder["razorpay_order_id"] as String? ?? '';
+      final razorpayKeyId = gatewayOrder["razorpay_key_id"] as String? ?? '';
+
+      if (razorpayOrderId.isEmpty || razorpayKeyId.isEmpty || razorpayKeyId.contains('placeholder')) {
+        // Razorpay not yet configured on the server
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+          _errorMessage =
+              "Online payment gateway is not yet configured. Please use Cash on Delivery or contact support.";
+        });
+        return;
       }
+
+      // TODO: Launch Razorpay SDK here with razorpayOrderId and razorpayKeyId
+      // After user completes payment in SDK, call verifyPayment() with the real
+      // razorpay_payment_id and razorpay_signature returned by the SDK.
+      //
+      // Example after SDK callback:
+      //   final verification = await _paymentService.verifyPayment(
+      //     razorpayOrderId: razorpayOrderId,
+      //     razorpayPaymentId: sdkPaymentId,
+      //     razorpaySignature: sdkSignature,
+      //   );
 
       if (!mounted) return;
       setState(() {
         _isProcessing = false;
-        _paymentSuccessData = verification;
+        _errorMessage =
+            "Razorpay SDK integration required. Add the razorpay_flutter package and complete payment flow.";
       });
     } catch (e) {
       if (!mounted) return;

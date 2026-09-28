@@ -26,8 +26,8 @@ class AlertsService {
       }
     } catch (_) {}
 
-    // Fallback alerts for initial or offline state
-    return _getFallbackAlerts();
+    // Not authenticated or network unavailable — return empty list
+    return _getEmptyAlerts();
   }
 
   /// Marks a specific notification as read.
@@ -56,40 +56,7 @@ class AlertsService {
     }
   }
 
-  static List<AppNotification> _getFallbackAlerts() {
-    return [
-      AppNotification(
-        id: 101,
-        title: 'Weather Advisory: Heavy Rain Expected',
-        message: 'Monsoon showers anticipated in Palakkad over the next 48 hours. Ensure paddy field drainage channels are clear.',
-        alertType: 'WEATHER',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      AppNotification(
-        id: 102,
-        title: 'Agmarknet Price Alert: Paddy Up by 4.2%',
-        message: 'Palakkad APMC mandi price for Matta Paddy reached ₹2,820/quintal today morning.',
-        alertType: 'MARKET',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      AppNotification(
-        id: 103,
-        title: 'Government Subsidy Notice: PM-KISAN 17th Instalment',
-        message: 'Verify e-KYC and land seeding records before the seasonal deadline to receive DBT credit.',
-        alertType: 'SCHEME',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      AppNotification(
-        id: 104,
-        title: 'Pest Advisory: Stem Borer Preventive Measure',
-        message: 'KVK recommends installing light traps and monitoring lower tillers for early stem borer detection.',
-        alertType: 'DISEASE',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
-  }
+  // No fallback data — alerts must come from the real backend.
+  // Returns empty list if not authenticated or network unavailable.
+  static List<AppNotification> _getEmptyAlerts() => [];
 }

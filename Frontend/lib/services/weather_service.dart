@@ -92,23 +92,23 @@ class WeatherService {
     return _lastCachedWeather ?? _getFallbackWeather();
   }
 
-  static WeatherData _getFallbackWeather() {
+  static WeatherData _getFallbackWeather({String district = '', String state = ''}) {
+    // This data is only shown when the device is completely offline.
+    // Values are generic — not location-specific.
     return WeatherData(
-      district: 'Palakkad',
-      state: 'Kerala',
+      district: district.isNotEmpty ? district : 'Your Location',
+      state: state.isNotEmpty ? state : 'India',
       temperature: 28.5,
-      condition: 'Partly Cloudy',
-      humidity: 72,
-      windSpeedKmH: 12.0,
+      condition: 'Offline – No Live Data',
+      humidity: 70,
+      windSpeedKmH: 10.0,
       rainfallMm: 0.0,
       forecast: [
-        ForecastDay(date: 'Tomorrow', minTemp: 24.0, maxTemp: 32.0, condition: 'Sunny', rainfallProbability: 10),
-        ForecastDay(date: 'Day 2', minTemp: 23.5, maxTemp: 31.0, condition: 'Clear', rainfallProbability: 15),
-        ForecastDay(date: 'Day 3', minTemp: 24.0, maxTemp: 30.5, condition: 'Cloudy', rainfallProbability: 40),
-        ForecastDay(date: 'Day 4', minTemp: 22.0, maxTemp: 29.0, condition: 'Rain', rainfallProbability: 75),
-        ForecastDay(date: 'Day 5', minTemp: 23.0, maxTemp: 30.0, condition: 'Scattered Showers', rainfallProbability: 50),
+        ForecastDay(date: 'Tomorrow', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
+        ForecastDay(date: 'Day 2', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
+        ForecastDay(date: 'Day 3', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
       ],
-      agriculturalAdvisory: 'Favorable conditions for paddy irrigation and field monitoring.',
+      agriculturalAdvisory: 'No live weather data available. Please connect to the internet for real-time forecasts.',
       updatedAt: DateTime.now(),
     );
   }
