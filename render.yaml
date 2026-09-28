@@ -25,8 +25,10 @@ services:
       - key: CORS_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "sqlite:///./agry_key.db"
+        value: "sqlite:///./agry_key.db" # Set to PostgreSQL connection string in production (e.g. postgresql://...)
       - key: SMS_PROVIDER
+        value: "mock" # Set to "twilio" or "msg91" with SMS_API_KEY / TWILIO credentials for real SMS delivery
+      - key: SMS_API_KEY
         value: "mock"
       - key: DL_FORECAST_SERVICE_URL
         value: "https://agry-key-dl-space.hf.space/api/predict"

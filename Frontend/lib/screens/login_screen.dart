@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'otp_screen.dart';
 import '../core/app_state.dart';
 import '../services/token_service.dart';
+import '../services/api_service.dart';
 import 'register_screen.dart';
 import 'market_screen.dart';
 
@@ -20,41 +21,92 @@ class _LoginScreenState
 
   final TextEditingController phoneController =
       TextEditingController();
-@override
+  bool _isLoading = false;
+
+  @override
   void dispose() {
     phoneController.dispose();
     super.dispose();
   }
 
   Future<void> sendOtp() async {
-    if (phoneController.text.trim().length !=
-        10) {
+    final rawPhone = phoneController.text.trim();
+    if (rawPhone.length != 10 || int.tryParse(rawPhone) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            "Please enter a valid 10-digit mobile number",
+            L10n.get(
+              "Please enter a valid 10-digit mobile number",
+              "ദയവായി സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക",
+              "कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें",
+              "சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்",
+            ),
           ),
+          backgroundColor: Colors.red.shade700,
         ),
       );
       return;
     }
 
-    ref.read(authProvider.notifier).setPhoneNumber(
-      "+91${phoneController.text.trim()}",
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    final formattedPhone = "+91$rawPhone";
+    ref.read(authProvider.notifier).setPhoneNumber(formattedPhone);
     await TokenService.saveLanguage(ref.read(languageProvider));
     await TokenService.saveRole(ref.read(authProvider).selectedRole);
     await TokenService.saveUserDetails(
-      phoneNumber: ref.read(authProvider).phoneNumber,
+      phoneNumber: formattedPhone,
     );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const OtpScreen(),
-      ),
-    );
+    final result = await ApiService.sendOtp(formattedPhone);
+
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result["success"] == true) {
+      final demoOtp = result["otp"] as String?;
+      if (result["sms_delivered"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              L10n.get(
+                "OTP sent to your mobile number",
+                "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
+                "आपके मोबाइल पर OTP भेजा गया",
+                "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
+              ),
+            ),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      } else if (demoOtp != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Demo OTP: $demoOtp (Logged to server console)"),
+            backgroundColor: Colors.blueGrey.shade800,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtpScreen(demoOtp: demoOtp),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result["message"] ?? "Failed to send OTP"),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override
@@ -175,7 +227,7 @@ class _LoginScreenState
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: sendOtp,
+                onPressed: _isLoading ? null : sendOtp,
                 style:
                     ElevatedButton.styleFrom(
                   backgroundColor:
@@ -190,29 +242,36 @@ class _LoginScreenState
                     ),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.send),
-
-                    const SizedBox(width: 8),
-
-                    Text(
-                      L10n.get(
-                        "Send OTP",
-                        "OTP അയയ്ക്കുക",
-                        "OTP भेजें",
-                        "OTP அனுப்பு",
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.send),
+                          const SizedBox(width: 8),
+                          Text(
+                            L10n.get(
+                              "Send OTP",
+                              "OTP അയയ്ക്കുക",
+                              "OTP भेजें",
+                              "OTP அனுப்பு",
+                            ),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
 

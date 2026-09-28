@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
+import '../services/weather_service.dart';
 import 'all_services_screen.dart';
 import 'market_screen.dart';
 import 'crop_advisory_screen.dart';
@@ -19,10 +20,65 @@ import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
 
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
-@override
-  Widget build(BuildContext context, WidgetRef ref) {
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _temperature = WeatherService.temperature;
+  String _humidity = WeatherService.humidity;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLiveWeather();
+  }
+
+  Future<void> _fetchLiveWeather() async {
+    try {
+      final lat = AppState.latitude != 0.0 ? AppState.latitude : null;
+      final lng = AppState.longitude != 0.0 ? AppState.longitude : null;
+      final data = await WeatherService.fetchWeather(lat: lat, lng: lng);
+      if (mounted) {
+        setState(() {
+          _temperature = "${data.temperature.toStringAsFixed(1)}°C";
+          _humidity = "${data.humidity}%";
+        });
+      }
+    } catch (_) {}
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return L10n.get(
+        "Good Morning",
+        "സുപ്രഭാതം",
+        "सुप्रभात",
+        "காலை வணக்கம்",
+      );
+    } else if (hour < 17) {
+      return L10n.get(
+        "Good Afternoon",
+        "ശുഭ ഉച്ചതിരിഞ്ഞ്",
+        "शुभ दोपहर",
+        "மதிய வணக்கம்",
+      );
+    } else {
+      return L10n.get(
+        "Good Evening",
+        "ശുഭ സായാഹ്നം",
+        "शुभ संध्या",
+        "மாலை வணக்கம்",
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
@@ -37,37 +93,37 @@ class DashboardScreen extends ConsumerWidget {
             color: Colors.white,
           ),
         ),
-actions: [
-  IconButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const NotificationScreen(),
-        ),
-      );
-    },
-    icon: const Icon(
-      Icons.notifications_none,
-      color: Colors.white,
-    ),
-  ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationScreen(),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.notifications_none,
+              color: Colors.white,
+            ),
+          ),
 
-  IconButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const SettingsScreen(),
-        ),
-      );
-    },
-    icon: const Icon(
-      Icons.settings,
-      color: Colors.white,
-    ),
-  ),
-],
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.settings,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
 
       body: SingleChildScrollView(
@@ -78,19 +134,9 @@ actions: [
           children: [
             /// Greeting
             Text(
-             AppState.userName.isEmpty
-    ? L10n.get(
-        "Good Morning",
-        "സുപ്രഭാതം",
-        "सुप्रभात",
-        "காலை வணக்கம்",
-      )
-    : "${L10n.get(
-        "Good Morning",
-        "സുപ്രഭാതം",
-        "सुप्रभात",
-        "காலை வணக்கம்",
-      )}, ${AppState.userName}",
+              AppState.userName.isEmpty
+                  ? _getGreeting()
+                  : "${_getGreeting()}, ${AppState.userName}",
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -113,11 +159,11 @@ actions: [
                 Text(
                   AppState.userLocation.isEmpty
                       ? L10n.get(
-    "Location Not Set",
-    "സ്ഥലം നൽകിയിട്ടില്ല",
-    "स्थान सेट नहीं है",
-    "இருப்பிடம் அமைக்கப்படவில்லை",
-  )
+                          "Location Not Set",
+                          "സ്ഥലം നൽകിയിട്ടില്ല",
+                          "स्थान सेट नहीं है",
+                          "இருப்பிடம் அமைக்கப்படவில்லை",
+                        )
                       : AppState.userLocation,
                   style: const TextStyle(
                     color: Colors.grey,
@@ -128,92 +174,126 @@ actions: [
             ),
             const SizedBox(height: 5),
 
-Row(
-  children: [
-    const Icon(
-      Icons.work,
-      color: Colors.green,
-      size: 18,
-    ),
-    const SizedBox(width: 5),
+            Row(
+              children: [
+                const Icon(
+                  Icons.work,
+                  color: Colors.green,
+                  size: 18,
+                ),
+                const SizedBox(width: 5),
 
-    Text(
-      AppState.userOccupation.isEmpty
-          ? L10n.get(
-    "Occupation Not Set",
-    "തൊഴിൽ നൽകിയിട്ടില്ല",
-    "पेशा सेट नहीं है",
-    "தொழில் அமைக்கப்படவில்லை",
-  )
-          : AppState.userOccupation,
-      style: const TextStyle(
-        color: Colors.green,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ],
-),
+                Text(
+                  AppState.userOccupation.isEmpty
+                      ? L10n.get(
+                          "Occupation Not Set",
+                          "തൊഴിൽ നൽകിയിട്ടില്ല",
+                          "पेशा सेट नहीं है",
+                          "தொழில் அமைக்கப்படவில்லை",
+                        )
+                      : AppState.userOccupation,
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
 
             const SizedBox(height: 20),
 
             /// Weather Card
             Card(
-              elevation: 4,
+              elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child:  Padding(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-  L10n.get(
-    "Today's Weather",
-    "ഇന്നത്തെ കാലാവസ്ഥ",
-    "आज का मौसम",
-    "இன்றைய வானிலை",
-  ),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        SizedBox(height: 10),
-
-                        Text(
-                          "28°C",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        Text(
-  L10n.get(
-    "Humidity 72%",
-    "ആർദ്രത 72%",
-    "आर्द्रता 72%",
-    "ஈரப்பதம் 72%",
-  ),
-),
-                      ],
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WeatherScreen(),
                     ),
+                  ).then((_) => _fetchLiveWeather());
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                L10n.get(
+                                  "Today's Weather",
+                                  "ഇന്നത്തെ കാലാവസ്ഥ",
+                                  "आज का मौसम",
+                                  "இன்றைய வானிலை",
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.open_in_new,
+                                size: 14,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
 
-                    Icon(
-                      Icons.wb_sunny,
-                      size: 60,
-                      color: Colors.orange,
-                    ),
-                  ],
+                          const SizedBox(height: 10),
+
+                          Text(
+                            _temperature,
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+
+                          Text(
+                            "${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Column(
+                        children: [
+                          const Icon(
+                            Icons.wb_sunny,
+                            size: 56,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            L10n.get("Tap for details", "കൂടുതൽ വിവരങ്ങൾ", "विवरण देखें", "விவரங்களை பார்க்க"),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

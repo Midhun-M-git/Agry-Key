@@ -113,6 +113,74 @@ class ApiService {
     }
   }
 
+  // SEND OTP
+  static Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"phone_number": phoneNumber}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {
+          "success": true,
+          "message": data["message"] ?? "OTP sent successfully",
+          "otp": data["otp"],
+          "sms_delivered": data["sms_delivered"] ?? false,
+        };
+      }
+      return {
+        "success": false,
+        "message": data["detail"] ?? data["message"] ?? "Failed to send OTP",
+      };
+    } catch (e) {
+      return {
+        "success": false,
+        "message": e.toString(),
+      };
+    }
+  }
+
+  // VERIFY OTP
+  static Future<Map<String, dynamic>> verifyOtp({
+    required String phoneNumber,
+    required String otpCode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "phone_number": phoneNumber,
+          "otp_code": otpCode,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return {
+          "success": true,
+          "message": data["message"] ?? "OTP verified",
+          "user_exists": data["user_exists"] ?? false,
+          "access_token": data["access_token"],
+          "refresh_token": data["refresh_token"],
+          "user": data["user"],
+        };
+      }
+      return {
+        "success": false,
+        "message": data["detail"] ?? data["message"] ?? "Invalid or expired OTP",
+      };
+    } catch (e) {
+      return {
+        "success": false,
+        "message": e.toString(),
+      };
+    }
+  }
+
   // LOGIN
   static Future<Map<String, dynamic>> login({
     required String phoneNumber,

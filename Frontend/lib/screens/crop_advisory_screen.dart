@@ -34,19 +34,30 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
     });
 
     try {
+      Map<String, dynamic> portfolio = AppState.farmPayload;
+      if (portfolio.isEmpty) {
+        final crop = AppState.userCrop.isNotEmpty
+            ? AppState.userCrop
+            : (AppState.mainCrop.isNotEmpty ? AppState.mainCrop : "Paddy");
+        portfolio = {
+          "plots": [
+            {
+              "crop": crop,
+              "acreage": 1.0,
+              "soil_type": "Loamy Soil",
+              "water_source": "Canal / Borewell",
+            }
+          ]
+        };
+      }
+
       final response = await AIService.generateAdvisory(
         farmerProfileId: 1,
         state: AppState.userState.isNotEmpty ? AppState.userState : 'Kerala',
         district: AppState.userDistrict.isNotEmpty ? AppState.userDistrict : 'Palakkad',
         latitude: AppState.userLatitude != 0.0 ? AppState.userLatitude : 10.7867,
         longitude: AppState.userLongitude != 0.0 ? AppState.userLongitude : 76.6547,
-        farmPortfolio: AppState.farmPayload.isNotEmpty
-            ? AppState.farmPayload
-            : {
-                "plots": [{"acreage": 3.0, "soil_type": "Clay Loam", "water_source": "Canal"}],
-                "livestock": [{"animal_type": "Cow", "head_count": 4}],
-                "poultry": [{"bird_type": "Hen", "bird_count": 40}],
-              },
+        farmPortfolio: portfolio,
       );
 
       if (mounted) {
@@ -113,6 +124,33 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (AppState.farmPayload.isEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    L10n.get(
+                                      "Using regional estimates. Complete farm profile for customized advice.",
+                                      "മേഖലാ വിവരങ്ങൾ ഉപയോഗിക്കുന്നു. കൂടുതൽ വ്യക്തതയ്ക്ക് ഫാം വിവരങ്ങൾ നൽകുക.",
+                                      "क्षेत्रीय अनुमानों का उपयोग किया जा रहा है। सटीक सलाह हेतु फार्म पूरा करें।",
+                                      "பிராந்திய மதிப்பீடுகள் பயன்படுத்தப்படுகின்றன. பண்ணை விவரங்களை பூர்த்தி செய்க.",
+                                    ),
+                                    style: TextStyle(color: Colors.blue.shade900, fontSize: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         // Strategic Plan Card
                         Card(
                           elevation: 2,

@@ -3,7 +3,9 @@ import '../utils/localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import '../services/token_service.dart';
+import '../services/api_service.dart';
 import 'farmer_onboarding_screen.dart';
+import 'buyer_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -24,15 +26,21 @@ class _RegisterScreenState
 
   final TextEditingController confirmPasswordController =
       TextEditingController();
-void showMessage(String message) {
+
+  bool _isLoading = false;
+
+  void showMessage(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+      ),
     );
   }
 
   Future<void> registerUser() async {
-
-    if (nameController.text.trim().isEmpty) {
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
       showMessage(
         L10n.get(
           "Please enter your name",
@@ -69,36 +77,93 @@ void showMessage(String message) {
       return;
     }
 
-    ref.read(userProvider.notifier).update(
-      userName: nameController.text.trim(),
-    );
-    await TokenService.saveLanguage(ref.read(languageProvider));
-    await TokenService.saveRole(ref.read(authProvider).selectedRole);
-    await TokenService.saveUserDetails(
-      userName: nameController.text.trim(),
-      phoneNumber: ref.read(authProvider).phoneNumber,
+    final phone = ref.read(authProvider).phoneNumber.isNotEmpty
+        ? ref.read(authProvider).phoneNumber
+        : AppState.phoneNumber;
+
+    if (phone.isEmpty) {
+      showMessage("Phone number is missing. Please restart registration.");
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final role = AppState.selectedRole.isNotEmpty ? AppState.selectedRole : "FARMER";
+    String langCode = 'en';
+    switch (AppState.selectedLanguage.toLowerCase()) {
+      case 'malayalam': langCode = 'ml'; break;
+      case 'hindi': langCode = 'hi'; break;
+      case 'tamil': langCode = 'ta'; break;
+      default: langCode = 'en';
+    }
+
+    final result = await ApiService.register(
+      phoneNumber: phone,
+      password: passwordController.text,
+      fullName: name,
+      role: role,
+      preferredLanguage: langCode,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          L10n.get(
-            "Registration Successful",
-            "രജിസ്ട്രേഷൻ വിജയകരം",
-            "पंजीकरण सफल",
-            "பதிவு வெற்றிகரமாக முடிந்தது",
-          ),
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result["success"] == true) {
+      ref.read(userProvider.notifier).update(
+        userName: name,
+      );
+      await TokenService.saveLanguage(ref.read(languageProvider));
+      await TokenService.saveRole(role);
+      await TokenService.saveUserDetails(
+        userName: name,
+        phoneNumber: phone,
+      );
+
+      final accessToken = result["access_token"] as String?;
+      final refreshToken = result["refresh_token"] as String?;
+      if (accessToken != null && refreshToken != null) {
+        await TokenService.saveTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+        ref.read(authProvider.notifier).setTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+      }
+
+      showMessage(
+        L10n.get(
+          "Registration Successful",
+          "രജിസ്ട്രേഷൻ വിജയകരം",
+          "पंजीकरण सफल",
+          "பதிவு வெற்றிகரமாக முடிந்தது",
         ),
-      ),
-    );
+        isError: false,
+      );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const FarmerOnboardingScreen(),
-      ),
-    );
+      if (role == "BUYER") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const BuyerScreen(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const FarmerOnboardingScreen(),
+          ),
+        );
+      }
+    } else {
+      showMessage(result["message"] ?? "Registration failed");
+    }
   }
 
   @override
@@ -252,27 +317,39 @@ void showMessage(String message) {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: registerUser,
+                onPressed: _isLoading ? null : registerUser,
                 style:
                     ElevatedButton.styleFrom(
                   backgroundColor:
                       Colors.green,
                   foregroundColor:
                       Colors.white,
-                ),
-                child: Text(
-                  L10n.get(
-                    "Register",
-                    "രജിസ്റ്റർ ചെയ്യുക",
-                    "पंजीकरण करें",
-                    "பதிவு செய்யவும்",
-                  ),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight:
-                        FontWeight.bold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        L10n.get(
+                          "Register",
+                          "രജിസ്റ്റർ ചെയ്യുക",
+                          "पंजीकरण करें",
+                          "பதிவு செய்யவும்",
+                        ),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
 

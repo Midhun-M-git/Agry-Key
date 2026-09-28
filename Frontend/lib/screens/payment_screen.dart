@@ -40,14 +40,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
   late double _effectiveQty;
   late String _effectiveUnit;
 
+  bool get _hasExplicitOrder => widget.orderId != null || widget.totalAmount != null;
+
   @override
   void initState() {
     super.initState();
-    _effectiveOrderId = widget.orderId ?? 1;
-    _effectiveTotal = widget.totalAmount ?? 84000.0;
-    _effectiveProduct = widget.productName ?? "Paddy / Rice";
-    _effectiveQty = widget.quantity ?? 20.0;
-    _effectiveUnit = widget.unit ?? "Quintal";
+    _effectiveOrderId = widget.orderId ?? 0;
+    _effectiveTotal = widget.totalAmount ?? 0.0;
+    _effectiveProduct = widget.productName ?? "Farm Produce";
+    _effectiveQty = widget.quantity ?? 1.0;
+    _effectiveUnit = widget.unit ?? "Kg";
   }
 
   Future<void> _processPayment() async {
@@ -127,11 +129,62 @@ class _PaymentScreenState extends State<PaymentScreen> {
         backgroundColor: Colors.green.shade800,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: !_hasExplicitOrder
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.shopping_bag_outlined, size: 72, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      L10n.get(
+                        "No Active Order to Pay",
+                        "പേയ്‌മെന്റിന് ഓർഡറുകൾ ഒന്നും ഇല്ല",
+                        "भुगतान के लिए कोई सक्रिय ऑर्डर नहीं",
+                        "செலுத்த எந்த செயலில் உள்ள ஆர்டரும் இல்லை",
+                      ),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      L10n.get(
+                        "Please select a product from the marketplace and place an order first.",
+                        "മാർക്കറ്റിൽ നിന്ന് ഒരു ഉൽപ്പന്നം തിരഞ്ഞെടുത്ത് ഓർഡർ ചെയ്യുക.",
+                        "कृपया पहले बाज़ार से कोई उत्पाद चुनें और ऑर्डर दें।",
+                        "தயவுசெய்து சந்தையிலிருந்து ஒரு பொருளைத் தேர்ந்தெடுத்து முதலில் ஆர்டர் செய்யுங்கள்.",
+                      ),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                      label: Text(
+                        L10n.get(
+                          "Back to Marketplace",
+                          "മാർക്കറ്റിലേക്ക് മടങ്ങുക",
+                          "वापस बाज़ार जाएं",
+                          "மீண்டும் சந்தைக்கு செல்லவும்",
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             // Order Summary Card
             Card(
               elevation: 2,
