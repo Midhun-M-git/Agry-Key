@@ -5,23 +5,33 @@ import 'otp_screen.dart';
 import '../core/app_state.dart';
 import '../services/token_service.dart';
 import '../services/api_service.dart';
-import 'register_screen.dart';
 import 'market_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() =>
-      _LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState
-  extends ConsumerState<LoginScreen> {
-
-  final TextEditingController phoneController =
-      TextEditingController();
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final TextEditingController phoneController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-strip country code prefix if autofilled by Android
+    phoneController.addListener(() {
+      final text = phoneController.text;
+      if (text.startsWith("+91")) {
+        phoneController.text = text.substring(3).trim();
+        phoneController.selection = TextSelection.fromPosition(
+          TextPosition(offset: phoneController.text.length),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -29,9 +39,23 @@ class _LoginScreenState
     super.dispose();
   }
 
+  String? _normalizeInput(String raw) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 10 && RegExp(r'^[6-9]').hasMatch(digits)) {
+      return "+91$digits";
+    } else if (digits.length == 12 && digits.startsWith('91') && RegExp(r'^[6-9]').hasMatch(digits.substring(2))) {
+      return "+$digits";
+    } else if (digits.length == 11 && digits.startsWith('0') && RegExp(r'^[6-9]').hasMatch(digits.substring(1))) {
+      return "+91${digits.substring(1)}";
+    }
+    return null;
+  }
+
   Future<void> sendOtp() async {
     final rawPhone = phoneController.text.trim();
-    if (rawPhone.length != 10 || int.tryParse(rawPhone) == null) {
+    final normalized = _normalizeInput(rawPhone);
+
+    if (normalized == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -52,15 +76,18 @@ class _LoginScreenState
       _isLoading = true;
     });
 
-    final formattedPhone = "+91$rawPhone";
-    ref.read(authProvider.notifier).setPhoneNumber(formattedPhone);
+    ref.read(authProvider.notifier).setPhoneNumber(normalized);
     await TokenService.saveLanguage(ref.read(languageProvider));
-    await TokenService.saveRole(ref.read(authProvider).selectedRole);
+    await TokenService.saveRole(
+      ref.read(authProvider).selectedRole.isNotEmpty
+          ? ref.read(authProvider).selectedRole
+          : "FARMER",
+    );
     await TokenService.saveUserDetails(
-      phoneNumber: formattedPhone,
+      phoneNumber: normalized,
     );
 
-    final result = await ApiService.sendOtp(formattedPhone);
+    final result = await ApiService.sendOtp(normalized);
 
     if (!mounted) return;
     setState(() {
@@ -68,35 +95,24 @@ class _LoginScreenState
     });
 
     if (result["success"] == true) {
-      final demoOtp = result["otp"] as String?;
-      if (result["sms_delivered"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              L10n.get(
-                "OTP sent to your mobile number",
-                "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
-                "आपके मोबाइल पर OTP भेजा गया",
-                "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
-              ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            L10n.get(
+              "OTP sent to your mobile number",
+              "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
+              "आपके मोबाइल पर OTP भेजा गया",
+              "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
             ),
-            backgroundColor: Colors.green.shade700,
           ),
-        );
-      } else if (demoOtp != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Demo OTP: $demoOtp (Logged to server console)"),
-            backgroundColor: Colors.blueGrey.shade800,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpScreen(demoOtp: demoOtp),
+          builder: (context) => const OtpScreen(),
         ),
       );
     } else {
@@ -114,16 +130,16 @@ class _LoginScreenState
     AppState.watchAll(ref);
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
-
       appBar: AppBar(
         backgroundColor: Colors.green,
         centerTitle: true,
+        elevation: 0,
         title: Text(
           L10n.get(
-            "Login",
-            "ലോഗിൻ",
-            "लॉगिन",
-            "உள்நுழைவு",
+            "Login with Mobile",
+            "മൊബൈൽ ലോഗിൻ",
+            "मोबाइल लॉगिन",
+            "மொபைல் உள்நுழைவு",
           ),
           style: const TextStyle(
             color: Colors.white,
@@ -131,209 +147,195 @@ class _LoginScreenState
           ),
         ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: AutofillGroup(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
 
-        child: Column(
-          children: [
-
-            const SizedBox(height: 30),
-
-            const Icon(
-              Icons.phone_android,
-              size: 90,
-              color: Colors.green,
-            ),
-
-            const SizedBox(height: 20),
-
-            Text(
-              L10n.get(
-                "Welcome to AGRI KEY",
-                "AGRI KEY ലേക്ക് സ്വാഗതം",
-                "AGRI KEY में आपका स्वागत है",
-                "AGRI KEY-க்கு வரவேற்கிறோம்",
-              ),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              L10n.get(
-                "Login using your mobile number",
-                "മൊബൈൽ നമ്പർ ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക",
-                "मोबाइल नंबर का उपयोग करके लॉगिन करें",
-                "மொபைல் எண்ணைப் பயன்படுத்தி உள்நுழைக",
-              ),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 15,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              maxLength: 10,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(
-                  Icons.phone,
+              // Brand Icon
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.phone_android,
+                  size: 72,
                   color: Colors.green,
                 ),
+              ),
 
-                prefixText: "+91 ",
-                prefixStyle: const TextStyle(
+              const SizedBox(height: 20),
+
+              Text(
+                L10n.get(
+                  "Welcome to AGRI KEY",
+                  "AGRI KEY ലേക്ക് സ്വാഗതം",
+                  "AGRI KEY में आपका स्वागत है",
+                  "AGRI KEY-க்கு வரவேற்கிறோம்",
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-
-                labelText: L10n.get(
-                  "Mobile Number",
-                  "മൊബൈൽ നമ്പർ",
-                  "मोबाइल नंबर",
-                  "மொபைல் எண்",
-                ),
-
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
-                ),
-
-                focusedBorder:
-                    OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(
-                    color: Colors.green,
-                    width: 2,
-                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 25),
+              const SizedBox(height: 8),
 
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : sendOtp,
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.green,
-                  foregroundColor:
-                      Colors.white,
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      12,
+              Text(
+                L10n.get(
+                  "Use your mobile number to continue",
+                  "തുടരാൻ നിങ്ങളുടെ മൊബൈൽ നമ്പർ ഉപയോഗിക്കുക",
+                  "आगे बढ़ने के लिए अपना मोबाइल नंबर दर्ज करें",
+                  "தொடர உங்கள் மொபைல் எண்ணைப் பயன்படுத்தவும்",
+                ),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 35),
+
+              // Mobile Number Field with Android Phone Number Hint support
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                autofillHints: const [
+                  AutofillHints.telephoneNumber,
+                  AutofillHints.telephoneNumberNational,
+                ],
+                maxLength: 10,
+                decoration: InputDecoration(
+                  counterText: "",
+                  prefixIcon: const Icon(
+                    Icons.phone,
+                    color: Colors.green,
+                  ),
+                  prefixText: "+91 ",
+                  prefixStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  labelText: L10n.get(
+                    "Mobile Number",
+                    "മൊബൈൽ നമ്പർ",
+                    "मोबाइल नंबर",
+                    "மொபைல் எண்",
+                  ),
+                  hintText: "9876543210",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.green,
+                      width: 2,
                     ),
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.send),
-                          const SizedBox(width: 8),
-                          Text(
-                            L10n.get(
-                              "Send OTP",
-                              "OTP അയയ്ക്കുക",
-                              "OTP भेजें",
-                              "OTP அனுப்பு",
-                            ),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // Submit / Continue Button
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.arrow_forward),
+                            const SizedBox(width: 8),
+                            Text(
+                              L10n.get(
+                                "Continue with mobile number",
+                                "മൊബൈൽ നമ്പർ ഉപയോഗിച്ച് തുടരുക",
+                                "मोबाइल नंबर से आगे बढ़ें",
+                                "மொபைல் எண் மூலம் தொடரவும்",
+                              ),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 25),
 
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const RegisterScreen(),
+              const Divider(),
+
+              const SizedBox(height: 15),
+
+              // Guest explore live market prices
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MarketScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.explore, color: Colors.green),
+                label: Text(
+                  L10n.get(
+                    "Explore Live Market Prices (Guest Mode)",
+                    "തത്സമയ മാർക്കറ്റ് വിലകൾ കാണുക (അതിഥി മോഡ്)",
+                    "लाइव बाजार भाव देखें (अतिथि मोड)",
+                    "நேரலை சந்தை விலைகளை பார்க்க (விருந்தினர்)",
                   ),
-                );
-              },
-              child: Text(
-                L10n.get(
-                  "New User? Register",
-                  "പുതിയ ഉപയോക്താവാണോ? രജിസ്റ്റർ ചെയ്യുക",
-                  "नए उपयोगकर्ता? पंजीकरण करें",
-                  "புதிய பயனரா? பதிவு செய்யவும்",
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Divider(),
-
-            const SizedBox(height: 10),
-
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MarketScreen(),
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
-              icon: const Icon(Icons.explore, color: Colors.green),
-              label: Text(
-                L10n.get(
-                  "Explore Live Market Prices (Guest Mode)",
-                  "തത്സമയ മാർക്കറ്റ് വിലകൾ കാണുക (അതിഥി മോഡ്)",
-                  "लाइव बाजार भाव देखें (अतिथि मोड)",
-                  "நேரலை சந்தை விலைகளை பார்க்க (விருந்தினர்)",
                 ),
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.green, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
               ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.green, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                minimumSize: const Size(double.infinity, 50),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

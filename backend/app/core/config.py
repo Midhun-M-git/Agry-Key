@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")
+    OTP_PROVIDER: str = Field(default="development")
     SMS_API_KEY: str = Field(default="")
     SMS_OTP_TEMPLATE_ID: str = Field(default="")
     SMS_PROVIDER: str = Field(default="msg91")

@@ -30,6 +30,13 @@ from app.schemas.user import (
     UserProfileResponse,
     UserRegisterRequest,
 )
+from app.services.otp_provider import get_otp_provider
+from app.utils.phone import (
+    generate_otp_code,
+    hash_otp,
+    normalize_indian_phone,
+    verify_otp_hash,
+)
 
 import logging
 
@@ -38,15 +45,16 @@ logger = logging.getLogger("auth")
 router = APIRouter(prefix="/auth", tags=["Authentication & Accounts"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-_OTP_EXPIRY_MINUTES = 10
+_OTP_EXPIRY_MINUTES = 5
 _OTP_REQUEST_WINDOW_SECONDS = 10 * 60
 _OTP_REQUEST_COOLDOWN_SECONDS = 60
 _OTP_REQUEST_LIMIT = 3
+_MAX_VERIFY_ATTEMPTS = 5
 _otp_requests: dict[str, deque[datetime]] = defaultdict(deque)
 
 
 def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
-    is_mock = not settings.SMS_API_KEY or settings.SMS_API_KEY in ("mock", "test")
+    is_mock = getattr(settings, "OTP_PROVIDER", "development") == "development"
     cooldown = 5 if is_mock else _OTP_REQUEST_COOLDOWN_SECONDS
     limit = 20 if is_mock else _OTP_REQUEST_LIMIT
     requests = _otp_requests[phone_number]
@@ -57,77 +65,14 @@ def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
     if requests and (now - requests[-1]).total_seconds() < cooldown:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Please wait before requesting another OTP",
+            detail="Too many attempts. Please wait a little before requesting another OTP.",
         )
     if len(requests) >= limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many OTP requests. Try again later",
+            detail="Too many OTP requests. Please try again after 10 minutes.",
         )
     requests.append(now)
-
-
-def _send_otp_sms(phone_number: str, otp_code: str) -> bool:
-    # Always log clearly to console/stdout so Render & local logs show the OTP
-    print(f"\n=======================================================", flush=True)
-    print(f"🔑 [AGRY-KEY OTP] Mobile: {phone_number} | Code: {otp_code}", flush=True)
-    print(f"=======================================================\n", flush=True)
-    logger.info(f"🔑 [AGRY-KEY OTP] Mobile: {phone_number} | Code: {otp_code}")
-
-    # Allow mock / test mode when SMS_API_KEY is unset, 'mock' or 'test'
-    if not settings.SMS_API_KEY or settings.SMS_API_KEY in ("mock", "test"):
-        return False
-
-    provider = (settings.SMS_PROVIDER or "msg91").lower()
-    if provider == "twilio":
-        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM_NUMBER):
-            logger.warning("Twilio SMS credentials incomplete. Falling back to console OTP.")
-            return False
-        try:
-            url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
-            response = httpx.post(
-                url,
-                auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN),
-                data={
-                    "From": settings.TWILIO_FROM_NUMBER,
-                    "To": phone_number,
-                    "Body": f"Your Agry-Key OTP verification code is {otp_code}. Valid for {_OTP_EXPIRY_MINUTES} minutes.",
-                },
-                timeout=10,
-            )
-            response.raise_for_status()
-            return True
-        except Exception as exc:
-            logger.error(f"Unable to deliver OTP via Twilio: {exc}")
-            return False
-    else:
-        # Default MSG91
-        if not settings.SMS_API_KEY:
-            logger.warning("MSG91 auth key missing. Falling back to console OTP.")
-            return False
-        payload = {
-            "mobile": phone_number,
-            "otp": otp_code,
-            "otp_expiry": str(_OTP_EXPIRY_MINUTES),
-        }
-        if settings.SMS_OTP_TEMPLATE_ID:
-            payload["template_id"] = settings.SMS_OTP_TEMPLATE_ID
-
-        try:
-            response = httpx.post(
-                "https://control.msg91.com/api/v5/otp",
-                headers={
-                    "authkey": settings.SMS_API_KEY,
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-                timeout=10,
-            )
-            response.raise_for_status()
-            return True
-        except Exception as exc:
-            logger.error(f"Unable to deliver OTP via MSG91: {exc}")
-            return False
 
 
 def get_current_user(
@@ -251,66 +196,91 @@ def refresh_token(
     )
 
 
+@router.post("/request-otp", response_model=OTPResponse)
 @router.post("/send-otp", response_model=OTPResponse)
 @router.post("/recover", response_model=OTPResponse)
-def request_otp(
+async def request_otp(
     req: Optional[OTPRequest] = None,
     phone_number: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Dispatches a one-time OTP code for mobile login or account recovery."""
-    target_phone = None
+    raw_phone = None
     if req and req.phone_number:
-        target_phone = req.phone_number.strip()
+        raw_phone = req.phone_number.strip()
     elif phone_number:
-        target_phone = phone_number.strip()
+        raw_phone = phone_number.strip()
 
-    if not target_phone:
+    if not raw_phone:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Phone number is required",
+            detail="Mobile number is required.",
+        )
+
+    try:
+        normalized_phone = normalize_indian_phone(raw_phone)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
         )
 
     now = datetime.now(timezone.utc)
-    _enforce_otp_rate_limit(target_phone, now)
-    otp_code = f"{secrets.randbelow(1_000_000):06d}"
+    _enforce_otp_rate_limit(normalized_phone, now)
+
+    otp_code = generate_otp_code()
+    otp_hash_val = hash_otp(normalized_phone, otp_code, settings.SECRET_KEY)
     expires_at = now + timedelta(minutes=_OTP_EXPIRY_MINUTES)
 
-    sms_delivered = _send_otp_sms(target_phone, otp_code)
+    # Invalidate prior unverified OTP records for this phone number
+    db.query(OTPRecord).filter(
+        OTPRecord.phone_number == normalized_phone,
+        OTPRecord.is_verified.is_(False),
+    ).update({"is_verified": True})
 
     otp_entry = OTPRecord(
-        phone_number=target_phone,
-        otp_code=otp_code,
+        phone_number=normalized_phone,
+        otp_code=otp_hash_val,
         expires_at=expires_at,
+        attempts=0,
     )
     db.add(otp_entry)
     db.commit()
 
-    include_debug_otp = (
-        not settings.SMS_API_KEY
-        or settings.SMS_API_KEY in ("mock", "test")
-        or not sms_delivered
-    )
+    # Dispatch via the configured OTP provider (Development or SMS)
+    provider = get_otp_provider()
+    await provider.send_otp(normalized_phone, otp_code)
 
     return OTPResponse(
         status="success",
-        message="OTP sent to mobile" if sms_delivered else "OTP generated (logged to server console)",
+        message="Verification code sent to your mobile number.",
         expires_in_seconds=_OTP_EXPIRY_MINUTES * 60,
-        otp=otp_code if include_debug_otp else None,
-        sms_delivered=sms_delivered,
     )
 
 
-@router.post("/verify-otp")
+@router.post("/verify-otp", response_model=TokenResponse)
 def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
-    """Verifies the newest unused OTP and logs the user in if already registered."""
-    clean_phone = req.phone_number.strip()
-    clean_code = req.otp_code.strip()
+    """Verifies the OTP hash, enforces attempt limits, and logs in or creates the farmer account."""
+    raw_phone = req.phone_number.strip()
+    try:
+        normalized_phone = normalize_indian_phone(raw_phone)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+    code = req.code
+    if not code or len(code) != 6 or not code.isdigit():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please enter a valid 6-digit OTP code.",
+        )
 
     otp_entry = (
         db.query(OTPRecord)
         .filter(
-            OTPRecord.phone_number == clean_phone,
+            OTPRecord.phone_number == normalized_phone,
             OTPRecord.is_verified.is_(False),
         )
         .order_by(OTPRecord.created_at.desc())
@@ -319,49 +289,94 @@ def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
     if not otp_entry:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired OTP",
+            detail="No active OTP found. Please request a new verification code.",
         )
 
+    # Enforce attempt limit
+    if otp_entry.attempts >= _MAX_VERIFY_ATTEMPTS:
+        otp_entry.is_verified = True
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many failed attempts. Please request a new verification code.",
+        )
+
+    # Check expiry
     now = datetime.now(timezone.utc)
     expires_at = otp_entry.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at <= now or not secrets.compare_digest(otp_entry.otp_code, clean_code):
+
+    if expires_at <= now:
+        otp_entry.is_verified = True
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired OTP",
+            detail="Verification code has expired. Please request a new OTP.",
         )
 
+    # Constant-time cryptographic verification
+    is_valid = verify_otp_hash(normalized_phone, code, settings.SECRET_KEY, otp_entry.otp_code)
+    if not is_valid:
+        otp_entry.attempts += 1
+        db.commit()
+        remaining = _MAX_VERIFY_ATTEMPTS - otp_entry.attempts
+        detail_msg = (
+            f"Invalid OTP code. {remaining} attempt(s) remaining."
+            if remaining > 0
+            else "Too many failed attempts. Please request a new OTP."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail_msg,
+        )
+
+    # OTP is verified
     otp_entry.is_verified = True
     db.commit()
 
-    # Check if user with this phone number exists
-    user = db.query(User).filter(User.phone_number == clean_phone).first()
-    if user and user.is_active:
-        access_token = create_access_token(subject=user.id)
-        refresh_token = create_refresh_token(subject=user.id)
-        role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        return {
-            "status": "success",
-            "message": "OTP verified successfully",
-            "user_exists": True,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "user": {
-                "id": user.id,
-                "phone_number": user.phone_number,
-                "full_name": user.full_name or "",
-                "role": role_val,
-                "preferred_language": user.preferred_language,
-            },
-        }
+    # Look up existing user
+    user = db.query(User).filter(User.phone_number == normalized_phone).first()
+    is_new = False
 
-    return {
-        "status": "success",
-        "message": "OTP verified successfully",
-        "user_exists": False,
-        "phone_number": clean_phone,
-    }
+    if not user:
+        # Create new farmer account automatically
+        is_new = True
+        user = User(
+            phone_number=normalized_phone,
+            role=UserRole.FARMER,
+            preferred_language="ta",
+            is_active=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # Create default farmer profile
+        profile = FarmerProfile(
+            user_id=user.id,
+            state="",
+            district="",
+            voice_preference=True,
+        )
+        db.add(profile)
+        db.commit()
+
+    # Issue JWT tokens for persistent session
+    access_token = create_access_token(subject=user.id)
+    refresh_token = create_refresh_token(subject=user.id)
+
+    profile_resp = UserProfileResponse.model_validate(user)
+    profile_resp.access_token = access_token
+    profile_resp.refresh_token = refresh_token
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        is_new_user=is_new,
+        user=profile_resp,
+    )
 
 
 @router.get("/me", response_model=UserProfileResponse)

@@ -68,6 +68,7 @@ app.add_middleware(RateLimitMiddleware, max_requests=120, window_seconds=60)
 # Include Routers
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix="/api")  # Supports /api/auth/request-otp and /api/auth/verify-otp
 app.include_router(geo.router, prefix=settings.API_V1_STR)
 app.include_router(i18n.router, prefix=settings.API_V1_STR)
 app.include_router(onboarding.router, prefix=settings.API_V1_STR)

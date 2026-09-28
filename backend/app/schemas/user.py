@@ -10,16 +10,14 @@ class OTPRequest(BaseModel):
 
 
 class OTPResponse(BaseModel):
-    status: str
-    message: str
-    expires_in_seconds: int = 600
-    otp: Optional[str] = None
-    sms_delivered: bool = False
+    status: str = "success"
+    message: str = "OTP dispatched"
+    expires_in_seconds: int = 300
 
 
 class UserRegisterRequest(BaseModel):
     phone_number: str = Field(..., description="Mobile number with country code")
-    password: str = Field(..., min_length=6, description="User password")
+    password: Optional[str] = Field(default=None, description="Optional user password")
     full_name: Optional[str] = None
     role: UserRole = UserRole.FARMER
     preferred_language: str = "ta"
@@ -32,13 +30,20 @@ class UserLoginRequest(BaseModel):
 
 class OTPVerifyRequest(BaseModel):
     phone_number: str
-    otp_code: str
+    otp: Optional[str] = None
+    otp_code: Optional[str] = None
+
+    @property
+    def code(self) -> str:
+        return (self.otp or self.otp_code or "").strip()
 
 
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    is_new_user: bool = False
+    user: Optional["UserProfileResponse"] = None
 
 
 class UserProfileResponse(BaseModel):

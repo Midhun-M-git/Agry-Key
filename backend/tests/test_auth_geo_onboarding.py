@@ -114,27 +114,34 @@ def test_otp_recovery_and_verification_flow(monkeypatch):
     monkeypatch.setattr(settings, "SMS_API_KEY", "mock")
 
     test_phone = "+919123456780"
-    # Request OTP with properly encoded query param
-    resp = client.post("/api/v1/auth/recover", params={"phone_number": test_phone})
+    # Mock OTP code generation for deterministic testing
+    monkeypatch.setattr("app.routers.auth.generate_otp_code", lambda: "482913")
+
+    # Request OTP with properly encoded query param or json body
+    resp = client.post("/api/v1/auth/recover", json={"phone_number": test_phone})
     assert resp.status_code == 200
     assert resp.json()["status"] == "success"
 
-    # Query the generated OTP from DB to test verification
+    # Query the generated OTP from DB to test that hash is stored (not plaintext)
     from app.core.database import SessionLocal
     from app.models.user import OTPRecord
     db = SessionLocal()
     otp_record = db.query(OTPRecord).filter_by(phone_number=test_phone).order_by(OTPRecord.created_at.desc()).first()
     assert otp_record is not None
-    assert len(otp_record.otp_code) == 6
-    code = otp_record.otp_code
+    # Verify SHA-256 hash length (64 hex characters) - plaintext OTP is NEVER stored
+    assert len(otp_record.otp_code) == 64
     db.close()
 
     # Wrong OTP fails
     bad_resp = client.post("/api/v1/auth/verify-otp", json={"phone_number": test_phone, "otp_code": "000000"})
     assert bad_resp.status_code == 400
 
-    # Correct OTP succeeds
-    good_resp = client.post("/api/v1/auth/verify-otp", json={"phone_number": test_phone, "otp_code": code})
+    # Correct OTP succeeds and returns JWT tokens + auto-created farmer profile
+    good_resp = client.post("/api/v1/auth/verify-otp", json={"phone_number": test_phone, "otp": "482913"})
     assert good_resp.status_code == 200
-    assert good_resp.json()["status"] == "success"
+    data = good_resp.json()
+    assert data["token_type"] == "bearer"
+    assert "access_token" in data
+    assert "refresh_token" in data
+
 

@@ -117,7 +117,7 @@ class ApiService {
   static Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/send-otp'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/request-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"phone_number": phoneNumber}),
       );
@@ -126,19 +126,17 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           "success": true,
-          "message": data["message"] ?? "OTP sent successfully",
-          "otp": data["otp"],
-          "sms_delivered": data["sms_delivered"] ?? false,
+          "message": data["message"] ?? "Verification code sent to your mobile number.",
         };
       }
       return {
         "success": false,
-        "message": data["detail"] ?? data["message"] ?? "Failed to send OTP",
+        "message": data["detail"] ?? data["message"] ?? "Failed to send verification code. Please try again.",
       };
     } catch (e) {
       return {
         "success": false,
-        "message": e.toString(),
+        "message": "Unable to connect to Agry-Key server. Please check your internet connection.",
       };
     }
   }
@@ -154,7 +152,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "phone_number": phoneNumber,
-          "otp_code": otpCode,
+          "otp": otpCode,
         }),
       );
 
@@ -162,8 +160,8 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           "success": true,
-          "message": data["message"] ?? "OTP verified",
-          "user_exists": data["user_exists"] ?? false,
+          "message": data["message"] ?? "Verified successfully",
+          "is_new_user": data["is_new_user"] ?? false,
           "access_token": data["access_token"],
           "refresh_token": data["refresh_token"],
           "user": data["user"],
@@ -171,12 +169,12 @@ class ApiService {
       }
       return {
         "success": false,
-        "message": data["detail"] ?? data["message"] ?? "Invalid or expired OTP",
+        "message": data["detail"] ?? data["message"] ?? "Invalid or expired verification code.",
       };
     } catch (e) {
       return {
         "success": false,
-        "message": e.toString(),
+        "message": "Unable to connect to Agry-Key server. Please check your internet connection.",
       };
     }
   }

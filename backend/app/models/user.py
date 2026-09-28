@@ -31,7 +31,7 @@ class User(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    profile: Mapped[Optional["FarmerProfile"]] = relationship("FarmerProfile", back_populates="user", uselist=False)
+    profile: Mapped[Optional["FarmerProfile"]] = relationship("FarmerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class FarmerProfile(Base):
@@ -61,7 +61,8 @@ class OTPRecord(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     phone_number: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
-    otp_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    otp_code: Mapped[str] = mapped_column(String(64), nullable=False)  # Stores SHA-256 hash of OTP
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
