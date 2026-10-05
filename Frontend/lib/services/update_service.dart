@@ -30,6 +30,14 @@ class UpdateService {
   /// Returns true if latest > current.
   static bool isNewerVersion(String latestRaw, String currentRaw) {
     try {
+      // If current is default placeholder, always treat any real release as newer
+      final cleanCurrent = currentRaw.toLowerCase().replaceAll('v', '').trim();
+      if (cleanCurrent == '1.0.0' || cleanCurrent == '0.0.0') {
+        // Any tag from GitHub is newer than our default placeholder
+        final latestParts = _parseVersion(latestRaw);
+        return latestParts.isNotEmpty && latestParts.any((p) => p > 0);
+      }
+
       final latestParts = _parseVersion(latestRaw);
       final currentParts = _parseVersion(currentRaw);
 
@@ -128,15 +136,20 @@ class UpdateService {
     BuildContext context, {
     bool manual = false,
   }) async {
+    // Auto check: skip if already prompted this session
     if (!manual && _hasPromptedThisSession) return;
 
     if (manual) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Checking for updates..."),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      // Reset session flag so manual check always works
+      _hasPromptedThisSession = false;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Checking for updates..."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
 
     final info = await checkUpdate();
@@ -150,12 +163,17 @@ class UpdateService {
         builder: (_) => UpdateDialog(info: info),
       );
     } else if (manual) {
+      final currentVer = ApiConfig.appVersion;
+      final latestVer = info?.latestVersion ?? 'unknown';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "You are already using the latest version (${ApiConfig.appVersion})",
+            info == null
+              ? "Could not connect to update server. Check your internet connection."
+              : "You are already using the latest version ($currentVer) — Latest: $latestVer",
           ),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: info == null ? Colors.orange.shade700 : Colors.green.shade700,
+          duration: const Duration(seconds: 4),
         ),
       );
     }

@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../core/app_state.dart';
 import '../services/api_service.dart';
 import '../utils/localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 class FarmerOnboardingScreen extends ConsumerStatefulWidget {
   const FarmerOnboardingScreen({super.key});
 
@@ -14,6 +18,9 @@ class FarmerOnboardingScreen extends ConsumerStatefulWidget {
 
 class _FarmerOnboardingScreenState
   extends ConsumerState<FarmerOnboardingScreen> {
+
+  late stt.SpeechToText _speech;
+  bool _isProcessingVoice = false;
 
   final stateController =
       TextEditingController();
@@ -44,6 +51,12 @@ final pondSizeController = TextEditingController();
 final fishSpeciesController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+  }
+
+  @override
   void dispose() {
     stateController.dispose();
     districtController.dispose();
@@ -63,6 +76,7 @@ birdCountController.dispose();
 pondNameController.dispose();
 pondSizeController.dispose();
 fishSpeciesController.dispose();
+    _speech.stop();
     super.dispose();
   }
 
@@ -160,69 +174,114 @@ fishSpeciesController.dispose();
   void _startVoiceInterview() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: const [
-            Icon(Icons.mic, color: Colors.green),
-            SizedBox(width: 8),
-            Text("AI Voice Interview Setup", style: TextStyle(fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              "Conversational Assistant is listening. Speak clearly about your agricultural land, cattle, poultry, fish pond, and water source.",
-              style: TextStyle(fontSize: 13),
-            ),
-            SizedBox(height: 12),
-            Text(
-              "Spoken Prompt: 'How many acres of land do you cultivate, what soil type, and what animals or ponds do you maintain?'",
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.green),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                if (stateController.text.isEmpty) stateController.text = "Kerala";
-                if (districtController.text.isEmpty) districtController.text = "Palakkad";
-                farmNameController.text = "Green Valley Integrated Farm";
-                cropController.text = "Paddy & Banana";
-                acreageController.text = "3.5";
-                soilTypeController.text = "LATERITE";
-                waterSourceController.text = "Borewell & Canal";
-                animalTypeController.text = "Cow";
-                breedController.text = "Kasargod Dwarf";
-                headCountController.text = "3";
-                birdTypeController.text = "Country Hen";
-                birdCountController.text = "25";
-                pondNameController.text = "Main Farm Pond";
-                pondSizeController.text = "0.75";
-                fishSpeciesController.text = "Catla & Rohu";
-              });
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Voice interview response transcribed and auto-filled across all sectors."),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("Auto-Populate from Voice"),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (ctx) => _VoiceInterviewDialog(
+        speech: _speech,
+        onCompleted: (transcript) async {
+          if (transcript.isEmpty) return;
+          setState(() => _isProcessingVoice = true);
+          await _fillFromTranscript(transcript);
+          if (mounted) setState(() => _isProcessingVoice = false);
+        },
       ),
     );
+  }
+
+  /// Sends transcript to backend AI and parses the JSON response to fill fields.
+  Future<void> _fillFromTranscript(String transcript) async {
+    try {
+      final prompt = """
+      Extract farm details from this spoken text and respond ONLY with a JSON object.
+      If a field is not mentioned, use an empty string or 0.
+
+      Spoken text: \"$transcript\"
+
+      Required JSON format:
+      {
+        \"state\": \"\",
+        \"district\": \"\",
+        \"farm_name\": \"\",
+        \"crop\": \"\",
+        \"acreage\": \"\",
+        \"soil_type\": \"\",
+        \"water_source\": \"\",
+        \"animal_type\": \"\",
+        \"breed\": \"\",
+        \"head_count\": \"\",
+        \"bird_type\": \"\",
+        \"bird_count\": \"\",
+        \"pond_name\": \"\",
+        \"pond_size\": \"\",
+        \"fish_species\": \"\"
+      }
+      """;
+
+      final uri = Uri.parse('\${ApiConfig.baseUrl}/api/v1/advisory/chat');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'question': prompt,
+          'state': AppState.userState.isNotEmpty ? AppState.userState : 'Kerala',
+          'district': AppState.userDistrict,
+          'language': 'en',
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final rawAnswer = jsonDecode(response.body)['answer'] as String? ?? '';
+        // Extract JSON block from the response
+        final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(rawAnswer);
+        if (jsonMatch != null) {
+          final data = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
+          setState(() {
+            _setIfNotEmpty(stateController, data['state']);
+            _setIfNotEmpty(districtController, data['district']);
+            _setIfNotEmpty(farmNameController, data['farm_name']);
+            _setIfNotEmpty(cropController, data['crop']);
+            _setIfNotEmpty(acreageController, data['acreage']);
+            _setIfNotEmpty(soilTypeController, data['soil_type']);
+            _setIfNotEmpty(waterSourceController, data['water_source']);
+            _setIfNotEmpty(animalTypeController, data['animal_type']);
+            _setIfNotEmpty(breedController, data['breed']);
+            _setIfNotEmpty(headCountController, data['head_count']);
+            _setIfNotEmpty(birdTypeController, data['bird_type']);
+            _setIfNotEmpty(birdCountController, data['bird_count']);
+            _setIfNotEmpty(pondNameController, data['pond_name']);
+            _setIfNotEmpty(pondSizeController, data['pond_size']);
+            _setIfNotEmpty(fishSpeciesController, data['fish_species']);
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("✅ Voice interview auto-filled your farm details!"),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      // fall through to error message
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Could not parse voice response. Please fill manually."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  void _setIfNotEmpty(TextEditingController ctrl, dynamic value) {
+    final str = value?.toString().trim() ?? '';
+    if (str.isNotEmpty && str != '0' && str != 'null') {
+      ctrl.text = str;
+    }
   }
 
 
@@ -465,20 +524,204 @@ const SizedBox(height: 30),
 
             const SizedBox(height: 30),
 
+
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed:
-                    saveFarmDetails,
-                child: const Text(
-                  "Save & Continue",
-                ),
+                onPressed: saveFarmDetails,
+                child: const Text("Save & Continue"),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A self-contained dialog widget that manages the voice interview UI and STT lifecycle.
+class _VoiceInterviewDialog extends StatefulWidget {
+  final stt.SpeechToText speech;
+  final Future<void> Function(String transcript) onCompleted;
+
+  const _VoiceInterviewDialog({required this.speech, required this.onCompleted});
+
+  @override
+  State<_VoiceInterviewDialog> createState() => _VoiceInterviewDialogState();
+}
+
+class _VoiceInterviewDialogState extends State<_VoiceInterviewDialog> {
+  bool _isListening = false;
+  bool _isProcessing = false;
+  String _transcript = '';
+  String _statusMessage = 'Tap the mic and speak about your farm';
+
+  Future<void> _startListening() async {
+    final available = await widget.speech.initialize(
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _isListening = false;
+            _statusMessage = 'Error: ${error.errorMsg}. Try again.';
+          });
+        }
+      },
+    );
+    if (!available) {
+      if (mounted) {
+        setState(() => _statusMessage = 'Microphone not available. Check permissions.');
+      }
+      return;
+    }
+    setState(() {
+      _isListening = true;
+      _statusMessage = '🎙️ Listening... Speak about your farm now';
+      _transcript = '';
+    });
+    widget.speech.listen(
+      onResult: (result) {
+        if (mounted) {
+          setState(() {
+            _transcript = result.recognizedWords;
+          });
+        }
+      },
+      listenFor: const Duration(seconds: 45),
+      pauseFor: const Duration(seconds: 4),
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        cancelOnError: false,
+      ),
+    );
+  }
+
+  Future<void> _stopListening() async {
+    await widget.speech.stop();
+    if (mounted) {
+      setState(() {
+        _isListening = false;
+        _statusMessage = _transcript.isEmpty
+            ? 'Nothing heard. Tap mic to try again.'
+            : 'Got it! Tap "Auto-Fill" to apply.';
+      });
+    }
+  }
+
+  Future<void> _submitTranscript() async {
+    if (_transcript.isEmpty) return;
+    setState(() {
+      _isProcessing = true;
+      _statusMessage = 'AI is analyzing your speech...';
+    });
+    Navigator.of(context).pop();
+    await widget.onCompleted(_transcript);
+  }
+
+  @override
+  void dispose() {
+    widget.speech.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: const [
+          Icon(Icons.agriculture, color: Colors.green),
+          SizedBox(width: 8),
+          Text('AI Voice Farm Setup', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              'Say something like: "I have 3 acres of paddy in Kerala, Palakkad district. Red soil, borewell water. I keep 2 cows and 20 hens."',
+              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _isListening ? _stopListening : _startListening,
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _isListening ? Colors.red : Colors.green,
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isListening ? Colors.red : Colors.green).withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Icon(
+                _isListening ? Icons.mic_off : Icons.mic,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _statusMessage,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: _isListening ? Colors.red : Colors.grey.shade700,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          if (_transcript.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              constraints: const BoxConstraints(maxHeight: 100),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  '"$_transcript"',
+                  style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.black87),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (_transcript.isNotEmpty)
+          ElevatedButton.icon(
+            icon: const Icon(Icons.auto_fix_high, size: 18),
+            label: _isProcessing
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Auto-Fill'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _isProcessing ? null : _submitTranscript,
+          ),
+      ],
     );
   }
 }
