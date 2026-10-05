@@ -742,52 +742,73 @@ SizedBox(
                       children: [
                         Icon(Icons.medical_services, color: Colors.green.shade800),
                         const SizedBox(width: 8),
-                        Text(
-                          L10n.get(
-                            "Emergency Veterinary Support",
-                            "അടിയന്തിര വെറ്ററിനറി സഹായം",
-                            "आपातकालीन पशु चिकित्सा सहायता",
-                            "அவசர கால்நடை உதவி",
-                          ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade900,
+                        Expanded(
+                          child: Text(
+                            L10n.get(
+                              "Emergency Veterinary Support",
+                              "അടിയന്തിര വെറ്ററിനറി സഹായം",
+                              "आपातकालीन पशु चिकित्सा सहायता",
+                              "அவசர கால்நடை உதவி",
+                            ),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade900,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const Divider(height: 20),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.green.shade100,
-                        child: Icon(Icons.local_hospital, color: Colors.green.shade800),
-                      ),
-                      title: const Text(
-                        "District Veterinary Polyclinic",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      subtitle: const Text(
-                        "Government Hospital, Emergency & Mobile Ambulance Unit",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      trailing: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Calling Veterinary Helpline: +91 9447012345 / 1962"),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.call, size: 16),
-                        label: const Text("Call 1962"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    // Service row — properly laid out with Expanded text
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.green.shade100,
+                          child: Icon(Icons.local_hospital, color: Colors.green.shade800),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "District Veterinary Polyclinic",
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "Government Hospital, Emergency & Mobile Ambulance Unit",
+                                style: TextStyle(fontSize: 12, color: Colors.black54),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Calling Veterinary Helpline: +91 9447012345 / 1962"),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.call, size: 16),
+                                  label: const Text("Call 1962"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade700,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

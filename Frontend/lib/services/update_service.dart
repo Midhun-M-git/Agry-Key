@@ -68,65 +68,82 @@ class UpdateService {
     return nums.isNotEmpty ? nums : [0];
   }
 
-  /// Fetches update metadata from backend (or fallback to GitHub directly).
+  /// Fetches update metadata using both zero-rate-limit GitHub redirect and backend/API proxy.
   static Future<UpdateInfo?> checkUpdate() async {
     final currentVersion = ApiConfig.appVersion;
 
-    // 1. Try Backend Proxy first
+    String? redirectLatestTag;
+    // 1. Direct GitHub redirect check (Zero rate limits, instantaneous)
+    try {
+      final client = http.Client();
+      final request = http.Request(
+        'GET',
+        Uri.parse('https://github.com/Midhun-M-git/Agry-Key/releases/latest'),
+      )..followRedirects = false;
+      final streamed = await client.send(request).timeout(const Duration(seconds: 4));
+      final location = streamed.headers['location'];
+      if (location != null && location.contains('/releases/tag/')) {
+        redirectLatestTag = location.split('/releases/tag/').last.trim();
+      }
+    } catch (_) {}
+
+    // 2. Try Backend Proxy
+    Map<String, dynamic>? backendData;
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/services/app-update');
-      final res = await http.get(uri).timeout(const Duration(seconds: 5));
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final latest = (data['latest_version'] as String? ?? '').trim();
-        final hasUpdate = isNewerVersion(latest, currentVersion);
-
-        return UpdateInfo(
-          hasUpdate: hasUpdate,
-          latestVersion: latest.isNotEmpty ? latest : currentVersion,
-          currentVersion: currentVersion,
-          title: data['release_title'] as String? ?? 'AgriKey Update',
-          notes: data['release_notes'] as String? ?? 'New version available.',
-          downloadUrl: data['download_url'] as String? ??
-              'https://github.com/Midhun-M-git/Agry-Key/releases/latest',
-        );
+        backendData = jsonDecode(res.body) as Map<String, dynamic>;
       }
     } catch (_) {}
 
-    // 2. Direct GitHub Releases Fallback
-    try {
-      final ghUri = Uri.parse(
-          'https://api.github.com/repos/Midhun-M-git/Agry-Key/releases/latest');
-      final res = await http.get(
-        ghUri,
-        headers: {'Accept': 'application/vnd.github.v3+json'},
-      ).timeout(const Duration(seconds: 6));
+    // Determine the truly latest tag among redirect and backend
+    String latest = redirectLatestTag ?? '';
+    if (backendData != null) {
+      final backendTag = (backendData['latest_version'] as String? ?? '').trim();
+      if (latest.isEmpty || isNewerVersion(backendTag, latest)) {
+        latest = backendTag;
+      }
+    }
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final latest = (data['tag_name'] as String? ?? '').trim();
-        final hasUpdate = isNewerVersion(latest, currentVersion);
+    // 3. Fallback to GitHub Releases API if we still don't have a newer version
+    if (latest.isEmpty || !isNewerVersion(latest, currentVersion)) {
+      try {
+        final ghUri = Uri.parse(
+            'https://api.github.com/repos/Midhun-M-git/Agry-Key/releases/latest');
+        final res = await http.get(
+          ghUri,
+          headers: {'Accept': 'application/vnd.github.v3+json'},
+        ).timeout(const Duration(seconds: 4));
 
-        String downloadUrl =
-            'https://github.com/Midhun-M-git/Agry-Key/releases/latest';
-        final assets = data['assets'] as List<dynamic>? ?? [];
-        for (final asset in assets) {
-          if (asset['name'] == 'agrikey-latest.apk') {
-            downloadUrl = asset['browser_download_url'] as String? ?? downloadUrl;
-            break;
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          final ghTag = (data['tag_name'] as String? ?? '').trim();
+          if (isNewerVersion(ghTag, latest)) {
+            latest = ghTag;
           }
         }
+      } catch (_) {}
+    }
 
-        return UpdateInfo(
-          hasUpdate: hasUpdate,
-          latestVersion: latest.isNotEmpty ? latest : currentVersion,
-          currentVersion: currentVersion,
-          title: data['name'] as String? ?? 'AgriKey Release $latest',
-          notes: data['body'] as String? ?? 'New updates and bug fixes.',
-          downloadUrl: downloadUrl,
-        );
-      }
-    } catch (_) {}
+    if (latest.isNotEmpty) {
+      final hasUpdate = isNewerVersion(latest, currentVersion);
+      final title = backendData?['release_title'] as String? ??
+          'AgriKey Release $latest';
+      final notes = backendData?['release_notes'] as String? ??
+          'A new version of AgriKey is available with bug fixes and new features.';
+      final downloadUrl = backendData?['download_url'] as String? ??
+          'https://github.com/Midhun-M-git/Agry-Key/releases/download/$latest/agrikey-latest.apk';
+
+      return UpdateInfo(
+        hasUpdate: hasUpdate,
+        latestVersion: latest,
+        currentVersion: currentVersion,
+        title: title,
+        notes: notes,
+        downloadUrl: downloadUrl,
+      );
+    }
 
     return null;
   }

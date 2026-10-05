@@ -187,8 +187,11 @@ fishSpeciesController.dispose();
     );
   }
 
-  /// Sends transcript to backend AI and parses the JSON response to fill fields.
+  /// Sends transcript to backend AI and parses the JSON response to fill fields,
+  /// with an instant local NLP fallback if backend is unreachable or unconfigured.
   Future<void> _fillFromTranscript(String transcript) async {
+    Map<String, dynamic>? parsedData;
+
     try {
       final prompt = """
       Extract farm details from this spoken text and respond ONLY with a JSON object.
@@ -216,7 +219,7 @@ fishSpeciesController.dispose();
       }
       """;
 
-      final uri = Uri.parse('\${ApiConfig.baseUrl}/api/v1/advisory/chat');
+      final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/advisory/chat');
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -226,55 +229,172 @@ fishSpeciesController.dispose();
           'district': AppState.userDistrict,
           'language': 'en',
         }),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final rawAnswer = jsonDecode(response.body)['answer'] as String? ?? '';
-        // Extract JSON block from the response
         final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(rawAnswer);
         if (jsonMatch != null) {
-          final data = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
-          setState(() {
-            _setIfNotEmpty(stateController, data['state']);
-            _setIfNotEmpty(districtController, data['district']);
-            _setIfNotEmpty(farmNameController, data['farm_name']);
-            _setIfNotEmpty(cropController, data['crop']);
-            _setIfNotEmpty(acreageController, data['acreage']);
-            _setIfNotEmpty(soilTypeController, data['soil_type']);
-            _setIfNotEmpty(waterSourceController, data['water_source']);
-            _setIfNotEmpty(animalTypeController, data['animal_type']);
-            _setIfNotEmpty(breedController, data['breed']);
-            _setIfNotEmpty(headCountController, data['head_count']);
-            _setIfNotEmpty(birdTypeController, data['bird_type']);
-            _setIfNotEmpty(birdCountController, data['bird_count']);
-            _setIfNotEmpty(pondNameController, data['pond_name']);
-            _setIfNotEmpty(pondSizeController, data['pond_size']);
-            _setIfNotEmpty(fishSpeciesController, data['fish_species']);
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("✅ Voice interview auto-filled your farm details!"),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
-          return;
+          parsedData = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
         }
       }
-    } catch (e) {
-      // fall through to error message
+    } catch (_) {}
+
+    // Fallback to local NLP rule-based extraction if backend did not yield JSON
+    if (parsedData == null || parsedData.values.every((v) => v == null || v.toString().trim().isEmpty)) {
+      parsedData = _extractFarmDetailsLocally(transcript);
+    }
+
+    if (parsedData.isNotEmpty) {
+      setState(() {
+        _setIfNotEmpty(stateController, parsedData!['state']);
+        _setIfNotEmpty(districtController, parsedData!['district']);
+        _setIfNotEmpty(farmNameController, parsedData!['farm_name']);
+        _setIfNotEmpty(cropController, parsedData!['crop']);
+        _setIfNotEmpty(acreageController, parsedData!['acreage']);
+        _setIfNotEmpty(soilTypeController, parsedData!['soil_type']);
+        _setIfNotEmpty(waterSourceController, parsedData!['water_source']);
+        _setIfNotEmpty(animalTypeController, parsedData!['animal_type']);
+        _setIfNotEmpty(breedController, parsedData!['breed']);
+        _setIfNotEmpty(headCountController, parsedData!['head_count']);
+        _setIfNotEmpty(birdTypeController, parsedData!['bird_type']);
+        _setIfNotEmpty(birdCountController, parsedData!['bird_count']);
+        _setIfNotEmpty(pondNameController, parsedData!['pond_name']);
+        _setIfNotEmpty(pondSizeController, parsedData!['pond_size']);
+        _setIfNotEmpty(fishSpeciesController, parsedData!['fish_species']);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("✅ Voice interview auto-filled your farm details!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
     }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Could not parse voice response. Please fill manually."),
+          content: Text("Could not detect farm details in speech. Please speak clearly or fill manually."),
           backgroundColor: Colors.orange,
         ),
       );
     }
+  }
+
+  Map<String, dynamic> _extractFarmDetailsLocally(String text) {
+    final t = text.toLowerCase();
+    final data = <String, dynamic>{};
+
+    // Acreage
+    final acMatch = RegExp(r'(\d+(?:\.\d+)?)\s*(?:acres?|acre|ac|cents?|hectares?|ha)\b').firstMatch(t);
+    if (acMatch != null) data['acreage'] = acMatch.group(1)!;
+
+    // States
+    const states = [
+      "kerala", "tamil nadu", "karnataka", "andhra pradesh", "telangana",
+      "maharashtra", "punjab", "haryana", "uttar pradesh", "gujarat",
+      "rajasthan", "madhya pradesh", "bihar", "west bengal", "odisha"
+    ];
+    for (final s in states) {
+      if (t.contains(s)) {
+        data['state'] = s.split(' ').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
+        break;
+      }
+    }
+
+    // Districts
+    const districts = [
+      "palakkad", "thrissur", "ernakulam", "malappuram", "kozhikode", "wayanad",
+      "kannur", "kasaragod", "idukki", "kottayam", "alappuzha", "pathanamthitta",
+      "kollam", "thiruvananthapuram", "coimbatore", "madurai", "salem", "erode",
+      "mysore", "mandya", "vellore", "tiruchirappalli", "tanjore", "shimoga"
+    ];
+    for (final d in districts) {
+      if (t.contains(d)) {
+        data['district'] = d[0].toUpperCase() + d.substring(1);
+        break;
+      }
+    }
+
+    // Crops
+    const crops = [
+      "paddy", "rice", "wheat", "cotton", "sugarcane", "maize", "corn",
+      "tomato", "potato", "onion", "chilli", "pepper", "cardamom", "ginger",
+      "turmeric", "tea", "coffee", "rubber", "coconut", "banana", "arecanut",
+      "mango", "cashew", "tapioca", "groundnut", "mustard"
+    ];
+    for (final c in crops) {
+      if (t.contains(c)) {
+        data['crop'] = c[0].toUpperCase() + c.substring(1);
+        break;
+      }
+    }
+
+    // Soil
+    if (t.contains("red")) data['soil_type'] = "Red Loamy";
+    else if (t.contains("black")) data['soil_type'] = "Black Clay";
+    else if (t.contains("alluvial")) data['soil_type'] = "Alluvial";
+    else if (t.contains("sandy")) data['soil_type'] = "Sandy Loam";
+    else if (t.contains("laterite")) data['soil_type'] = "Laterite";
+    else if (t.contains("clay")) data['soil_type'] = "Clayey Soil";
+
+    // Water
+    if (t.contains("borewell") || t.contains("bore well")) data['water_source'] = "Borewell";
+    else if (t.contains("canal")) data['water_source'] = "Canal Irrigation";
+    else if (t.contains("well")) data['water_source'] = "Open Well";
+    else if (t.contains("river")) data['water_source'] = "River Water";
+    else if (t.contains("rain")) data['water_source'] = "Rainfed";
+    else if (t.contains("drip")) data['water_source'] = "Drip Irrigation";
+
+    // Livestock
+    final cowMatch = RegExp(r'(\d+)\s*(?:cows?|cattle|buffalos?|goats?)').firstMatch(t);
+    if (t.contains("cow") || t.contains("cattle")) {
+      data['animal_type'] = "Cow";
+      data['head_count'] = cowMatch?.group(1) ?? "1";
+      data['breed'] = "Desi";
+    } else if (t.contains("buffalo")) {
+      data['animal_type'] = "Buffalo";
+      data['head_count'] = cowMatch?.group(1) ?? "1";
+      data['breed'] = "Murrah";
+    } else if (t.contains("goat")) {
+      data['animal_type'] = "Goat";
+      data['head_count'] = cowMatch?.group(1) ?? "1";
+      data['breed'] = "Malabari";
+    }
+
+    // Poultry
+    final henMatch = RegExp(r'(\d+)\s*(?:hens?|chickens?|birds?|ducks?|poultry)').firstMatch(t);
+    if (t.contains("hen") || t.contains("chicken") || t.contains("poultry")) {
+      data['bird_type'] = "Hen";
+      data['bird_count'] = henMatch?.group(1) ?? "10";
+    } else if (t.contains("duck")) {
+      data['bird_type'] = "Duck";
+      data['bird_count'] = henMatch?.group(1) ?? "10";
+    }
+
+    // Aquaculture
+    if (t.contains("pond") || t.contains("fish") || t.contains("aquaculture")) {
+      data['pond_name'] = "Farm Pond";
+      data['pond_size'] = "0.5";
+      for (final f in ["tilapia", "carp", "catla", "rohu", "prawn", "shrimp"]) {
+        if (t.contains(f)) {
+          data['fish_species'] = f[0].toUpperCase() + f.substring(1);
+          break;
+        }
+      }
+      data['fish_species'] ??= "Carp";
+    }
+
+    final dist = data['district'] ?? (districtController.text.isNotEmpty ? districtController.text : "Green");
+    final crp = data['crop'] ?? (cropController.text.isNotEmpty ? cropController.text : "Agri");
+    data['farm_name'] = "$dist $crp Farm";
+
+    return data;
   }
 
   void _setIfNotEmpty(TextEditingController ctrl, dynamic value) {
