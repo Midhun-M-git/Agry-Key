@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/api_config.dart';
 import '../widgets/update_dialog.dart';
@@ -193,6 +196,63 @@ class UpdateService {
           duration: const Duration(seconds: 4),
         ),
       );
+    }
+  }
+
+  /// Downloads APK directly inside the app with byte-by-byte progress callback
+  /// and automatically triggers the Android Package Installer prompt via OpenFilex.
+  static Future<void> downloadAndInstallApk({
+    required String downloadUrl,
+    required void Function(double progress, int receivedBytes, int totalBytes) onProgress,
+    required void Function(String error) onError,
+  }) async {
+    try {
+      final client = http.Client();
+      final request = http.Request('GET', Uri.parse(downloadUrl))
+        ..followRedirects = true
+        ..maxRedirects = 5;
+
+      final streamedResponse = await client.send(request);
+
+      if (streamedResponse.statusCode != 200) {
+        onError('Failed to download update (HTTP ${streamedResponse.statusCode})');
+        return;
+      }
+
+      final totalBytes = streamedResponse.contentLength ?? 0;
+      final tempDir = await getTemporaryDirectory();
+      final apkFile = File('${tempDir.path}/agrikey_update.apk');
+      if (await apkFile.exists()) {
+        await apkFile.delete();
+      }
+
+      final sink = apkFile.openWrite();
+      int receivedBytes = 0;
+
+      await for (final chunk in streamedResponse.stream) {
+        sink.add(chunk);
+        receivedBytes += chunk.length;
+        if (totalBytes > 0) {
+          onProgress(receivedBytes / totalBytes, receivedBytes, totalBytes);
+        } else {
+          onProgress(-1.0, receivedBytes, 0);
+        }
+      }
+
+      await sink.flush();
+      await sink.close();
+
+      // Trigger Android Package Installer prompt directly
+      final result = await OpenFilex.open(
+        apkFile.path,
+        type: 'application/vnd.android.package-archive',
+      );
+
+      if (result.type != ResultType.done && result.type != ResultType.noAppToOpen) {
+        onError(result.message);
+      }
+    } catch (e) {
+      onError('Download error: ${e.toString().replaceAll("Exception: ", "")}');
     }
   }
 
