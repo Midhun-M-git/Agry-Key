@@ -110,3 +110,72 @@ def get_veterinary_contacts(
         # Fallback to all centers if specific district not yet matched
         results = db.query(VeterinaryService).all()
     return results
+
+
+import time
+import httpx
+
+_latest_release_cache = {
+    "timestamp": 0.0,
+    "data": None,
+}
+
+
+@router.get("/app-update")
+async def check_app_update(client_version: Optional[str] = Query(default=None)):
+    """
+    Checks GitHub Releases for the latest version of the Agry-Key mobile APK.
+    Caches release metadata for 5 minutes to avoid exceeding GitHub API limits.
+    """
+    now = time.time()
+    if _latest_release_cache["data"] and (now - _latest_release_cache["timestamp"] < 300):
+        data = dict(_latest_release_cache["data"])
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res = await client.get(
+                    "https://api.github.com/repos/Midhun-M-git/Agry-Key/releases/latest",
+                    headers={"Accept": "application/vnd.github.v3+json", "User-Agent": "Agry-Key-App"},
+                )
+                if res.status_code == 200:
+                    gh_data = res.json()
+                    tag = gh_data.get("tag_name", "v1.0.9")
+                    name = gh_data.get("name") or f"AgriKey Release {tag}"
+                    notes = gh_data.get("body", "")
+                    published_at = gh_data.get("published_at", "")
+
+                    download_url = f"https://github.com/Midhun-M-git/Agry-Key/releases/download/{tag}/agrikey-latest.apk"
+                    for asset in gh_data.get("assets", []):
+                        if asset.get("name") == "agrikey-latest.apk":
+                            download_url = asset.get("browser_download_url", download_url)
+                            break
+
+                    data = {
+                        "latest_version": tag,
+                        "release_title": name,
+                        "release_notes": notes,
+                        "published_at": published_at,
+                        "download_url": download_url,
+                        "html_url": gh_data.get("html_url", ""),
+                    }
+                    _latest_release_cache["timestamp"] = now
+                    _latest_release_cache["data"] = data
+                else:
+                    data = _latest_release_cache["data"] or {
+                        "latest_version": "v1.0.9",
+                        "release_title": "AgriKey Release v1.0.9",
+                        "release_notes": "Latest updates and performance improvements.",
+                        "download_url": "https://github.com/Midhun-M-git/Agry-Key/releases/download/v1.0.9/agrikey-latest.apk",
+                        "html_url": "https://github.com/Midhun-M-git/Agry-Key/releases/tag/v1.0.9",
+                    }
+        except Exception:
+            data = _latest_release_cache["data"] or {
+                "latest_version": "v1.0.9",
+                "release_title": "AgriKey Release v1.0.9",
+                "release_notes": "Latest updates and performance improvements.",
+                "download_url": "https://github.com/Midhun-M-git/Agry-Key/releases/download/v1.0.9/agrikey-latest.apk",
+                "html_url": "https://github.com/Midhun-M-git/Agry-Key/releases/tag/v1.0.9",
+            }
+
+    return data
+

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'buyer_profile_screen.dart';
+import '../services/update_service.dart';
 
 class BuyerScreen extends StatelessWidget {
   const BuyerScreen({super.key});
@@ -190,6 +191,9 @@ class BuyerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.checkForUpdate(context);
+    });
 
     return Scaffold(
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/api_config.dart';
 import '../core/app_state.dart';
+import '../services/update_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -97,7 +99,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text("Contact support"),
           ),
 
-          Divider(),
+          const Divider(),
+
+          ListTile(
+            leading: const Icon(
+              Icons.system_update_rounded,
+              color: Colors.green,
+            ),
+            title: const Text("App Update"),
+            subtitle: const Text("Current Version: ${ApiConfig.appVersion}"),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: const Text(
+                "Check",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            onTap: () => UpdateService.checkForUpdate(context, manual: true),
+          ),
+
+          const Divider(),
 
           const ListTile(
             leading: Icon(
@@ -105,7 +135,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: Colors.green,
             ),
             title: Text("About AGRI KEY"),
-            subtitle: Text("Version 1.0"),
+            subtitle: Text("Autonomous Agricultural Intelligence Companion"),
           ),
         ],
       ),

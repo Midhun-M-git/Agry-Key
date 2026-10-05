@@ -18,6 +18,7 @@ import 'settings_screen.dart';
 import 'alerts_screen.dart';
 import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
+import '../services/update_service.dart';
 
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchLiveWeather();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        UpdateService.checkForUpdate(context);
+      }
+    });
   }
 
   Future<void> _fetchLiveWeather() async {
