@@ -25,6 +25,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   bool _isResending = false;
   int _cooldownSeconds = 60;
   Timer? _cooldownTimer;
+  String? _displayedOtpCode; // Code shown on-screen when SMS isn't available
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     if (widget.autoFilledCode != null && widget.autoFilledCode!.length == 6) {
       _otpController.text = widget.autoFilledCode!;
+      _displayedOtpCode = widget.autoFilledCode;
     }
 
     // Auto-focus the OTP input
@@ -100,8 +102,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final result = await ApiService.sendOtp(phone);
 
     if (!mounted) return;
+
+    // Auto-fill and display the new OTP code (since SMS delivery via Twilio trial is unavailable)
+    final newOtpCode = result["otp_code"] as String?;
     setState(() {
       _isResending = false;
+      if (newOtpCode != null && newOtpCode.length == 6) {
+        _otpController.text = newOtpCode;
+        _displayedOtpCode = newOtpCode;
+      }
     });
 
     if (result["success"] == true) {
@@ -109,14 +118,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            L10n.get(
-              "New verification code sent to your phone",
-              "പുതിയ പരിശോധന കോഡ് അയച്ചു",
-              "नया सत्यापन कोड भेजा गया",
-              "புதிய சரிபார்ப்பு குறியீடு அனுப்பப்பட்டது",
-            ),
+            newOtpCode != null && newOtpCode.isNotEmpty
+                ? "🔐 New code: $newOtpCode (auto-filled)"
+                : L10n.get(
+                    "New verification code sent to your phone",
+                    "പുതിയ പരിശോധന കോഡ് അയച്ചു",
+                    "नया सत्यापन कोड भेजा गया",
+                    "புதிய சரிபார்ப்பு குறியீடு அனுப்பப்பட்டது",
+                  ),
           ),
           backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 5),
         ),
       );
     } else {
@@ -365,6 +377,60 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               ),
 
               const SizedBox(height: 35),
+
+              // ── OTP Display Banner (shown when SMS is not available) ──────────
+              if (_displayedOtpCode != null && _displayedOtpCode!.length == 6)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade700, Colors.green.shade500],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.lock_open_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'Your verification code',
+                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _displayedOtpCode!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Auto-filled below • Valid for 5 minutes',
+                        style: TextStyle(color: Colors.white60, fontSize: 11),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
 
               // 6-digit PIN Box Visual Display with Android OTP Autofill
               GestureDetector(
