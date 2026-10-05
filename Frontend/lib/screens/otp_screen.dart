@@ -10,7 +10,8 @@ import 'buyer_screen.dart';
 import 'farmer_onboarding_screen.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key});
+  final String? autoFilledCode;
+  const OtpScreen({super.key, this.autoFilledCode});
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -29,6 +30,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   void initState() {
     super.initState();
     _startCooldownTimer();
+
+    if (widget.autoFilledCode != null && widget.autoFilledCode!.length == 6) {
+      _otpController.text = widget.autoFilledCode!;
+    }
 
     // Auto-focus the OTP input
     WidgetsBinding.instance.addPostFrameCallback((_) {

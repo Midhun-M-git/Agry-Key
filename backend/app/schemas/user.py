@@ -13,6 +13,7 @@ class OTPResponse(BaseModel):
     status: str = "success"
     message: str = "OTP dispatched"
     expires_in_seconds: int = 300
+    otp_code: Optional[str] = None
 
 
 class UserRegisterRequest(BaseModel):

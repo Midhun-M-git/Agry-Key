@@ -127,6 +127,7 @@ class ApiService {
         return {
           "success": true,
           "message": data["message"] ?? "Verification code sent to your mobile number.",
+          "otp_code": data["otp_code"],
         };
       }
       return {

@@ -255,6 +255,7 @@ async def request_otp(
         status="success",
         message="Verification code sent to your mobile number.",
         expires_in_seconds=_OTP_EXPIRY_MINUTES * 60,
+        otp_code=otp_code,
     )
 
 
