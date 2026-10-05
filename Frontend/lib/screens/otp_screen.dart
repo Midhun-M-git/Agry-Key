@@ -198,6 +198,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
       final userName = userData["full_name"] as String? ?? "";
       final role = userData["role"] as String? ?? AppState.selectedRole;
+      final profileId = userData["farmer_profile_id"] ?? userData["id"];
+      if (profileId != null) {
+        AppState.farmerProfileId = int.tryParse(profileId.toString()) ?? 1;
+      }
       if (userName.isNotEmpty) {
         ref.read(userProvider.notifier).update(userName: userName);
       }

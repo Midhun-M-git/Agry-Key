@@ -52,7 +52,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
       }
 
       final response = await AIService.generateAdvisory(
-        farmerProfileId: 1,
+        farmerProfileId: AppState.farmerProfileId > 0 ? AppState.farmerProfileId : 1,
         state: AppState.userState.isNotEmpty ? AppState.userState : 'Kerala',
         district: AppState.userDistrict.isNotEmpty ? AppState.userDistrict : 'Palakkad',
         latitude: AppState.userLatitude != 0.0 ? AppState.userLatitude : 10.7867,

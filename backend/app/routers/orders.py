@@ -94,7 +94,11 @@ def create_order(
     db: Session = Depends(get_db),
 ):
     """Place an order for an active marketplace product."""
-    _require_role(current_user, UserRole.BUYER)
+    if current_user.role not in (UserRole.BUYER, UserRole.FARMER, UserRole.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user role required to place orders",
+        )
     product = (
         db.query(Product)
         .filter(Product.id == req.product_id, Product.is_active.is_(True))
@@ -130,12 +134,9 @@ def list_orders(
     db: Session = Depends(get_db),
 ):
     """List orders belonging to the current buyer or farmer."""
-    if current_user.role == UserRole.BUYER:
-        query = db.query(Order).filter(Order.buyer_id == current_user.id)
-    elif current_user.role == UserRole.FARMER:
-        query = db.query(Order).filter(Order.farmer_id == current_user.id)
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unsupported order role")
+    query = db.query(Order).filter(
+        (Order.buyer_id == current_user.id) | (Order.farmer_id == current_user.id)
+    )
     orders = query.order_by(Order.created_at.desc()).all()
     return [_to_response(order, db) for order in orders]
 

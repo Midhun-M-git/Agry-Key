@@ -75,6 +75,9 @@ def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
     requests.append(now)
 
 
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
@@ -94,6 +97,27 @@ def get_current_user(
             detail="User not found or inactive",
         )
     return user
+
+
+def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional), db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Dependency validating JWT access tokens if present, returning None if unauthenticated."""
+    if not token:
+        return None
+    payload = decode_token(token)
+    if not payload or payload.get("type") != "access":
+        return None
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+    try:
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if user and user.is_active:
+            return user
+    except Exception:
+        return None
+    return None
 
 
 @router.post("/register", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED)

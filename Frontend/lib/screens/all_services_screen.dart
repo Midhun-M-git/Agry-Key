@@ -251,7 +251,7 @@ class AllServicesScreen extends ConsumerWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const NotificationScreen(),
+          builder: (_) => const AlertsScreen(),
         ),
       );
     },

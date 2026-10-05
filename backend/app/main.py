@@ -16,6 +16,7 @@ from app.routers import (
     health,
     i18n,
     marketplace,
+    market,
     notifications,
     onboarding,
     orders,
@@ -75,6 +76,7 @@ app.include_router(onboarding.router, prefix=settings.API_V1_STR)
 app.include_router(advisory.router, prefix=f"{settings.API_V1_STR}/advisory", tags=["advisory"])
 app.include_router(weather.router, prefix=settings.API_V1_STR)
 app.include_router(marketplace.router, prefix=settings.API_V1_STR)
+app.include_router(market.router, prefix=settings.API_V1_STR)
 app.include_router(orders.router, prefix=settings.API_V1_STR)
 app.include_router(payment.router, prefix=settings.API_V1_STR)
 app.include_router(blockchain.router, prefix=settings.API_V1_STR)

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.community import Comment, Post, PostLike
 from app.models.user import User
-from app.routers.auth import get_current_user
+from app.routers.auth import get_current_user, get_optional_user
 from app.schemas.community import (
     CommentCreate,
     CommentResponse,
@@ -47,16 +47,18 @@ def _comment_response(comment: Comment, db: Session) -> CommentResponse:
 
 
 def _post_response(
-    post: Post, current_user: User, db: Session, include_comments: bool = False
+    post: Post, current_user: Optional[User], db: Session, include_comments: bool = False
 ) -> PostResponse:
     like_count = db.query(func.count(PostLike.id)).filter(PostLike.post_id == post.id).scalar() or 0
     comment_count = db.query(func.count(Comment.id)).filter(Comment.post_id == post.id).scalar() or 0
-    liked = (
-        db.query(PostLike)
-        .filter(PostLike.post_id == post.id, PostLike.user_id == current_user.id)
-        .first()
-        is not None
-    )
+    liked = False
+    if current_user:
+        liked = (
+            db.query(PostLike)
+            .filter(PostLike.post_id == post.id, PostLike.user_id == current_user.id)
+            .first()
+            is not None
+        )
     comments = []
     if include_comments:
         comments = [
@@ -69,7 +71,7 @@ def _post_response(
     return PostResponse(
         id=post.id,
         author_id=post.author_id,
-        author_name=_author_name(post.author_id, db),
+        author_name=_author_name(post.author_id, db) or "Kisan Mitra",
         content=post.content,
         district=post.district,
         image_url=post.image_url,
@@ -80,6 +82,48 @@ def _post_response(
         updated_at=post.updated_at,
         comments=comments,
     )
+
+
+def _seed_community_posts_if_empty(db: Session) -> None:
+    """Seed helpful farmer advisory discussions if community table is empty."""
+    if db.query(Post).count() > 0:
+        return
+    admin_user = db.query(User).first()
+    admin_id = admin_user.id if admin_user else 1
+
+    sample_posts = [
+        {
+            "content": "Rice crop showing yellow leaves and brown spots in Palakkad. Any organic solution to control blast?",
+            "district": "Palakkad",
+            "comments": [
+                "Spray Pseudomonas fluorescens at 10g per liter of water during morning hours.",
+                "Ensure proper drainage and avoid excess nitrogen fertilizer for the next 2 weeks.",
+            ],
+        },
+        {
+            "content": "Tomato wholesale price reached ₹38/kg in local APMC Mandi today! Strong demand for hybrid varieties.",
+            "district": "Wayanad",
+            "comments": [
+                "Great news! Prices were down last month.",
+            ],
+        },
+        {
+            "content": "Best organic fertilizer schedule for Nendran banana plantation before monsoon arrival?",
+            "district": "Thrissur",
+            "comments": [
+                "Apply 10 kg cow dung manure per pit along with 500g neem cake and wood ash.",
+            ],
+        },
+    ]
+
+    for p in sample_posts:
+        post = Post(author_id=admin_id, content=p["content"], district=p["district"])
+        db.add(post)
+        db.flush()
+        for c in p["comments"]:
+            comment = Comment(post_id=post.id, author_id=admin_id, content=c)
+            db.add(comment)
+    db.commit()
 
 
 @router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
@@ -101,10 +145,11 @@ def list_posts(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     district: Optional[str] = Query(default=None),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     """Return a paginated community feed, optionally limited to a district."""
+    _seed_community_posts_if_empty(db)
     query = db.query(Post)
     if district:
         query = query.filter(Post.district.ilike(district.strip()))
@@ -127,7 +172,7 @@ def list_posts(
 @router.get("/posts/{post_id}", response_model=PostResponse)
 def get_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     """Return a post with its comments and engagement state."""

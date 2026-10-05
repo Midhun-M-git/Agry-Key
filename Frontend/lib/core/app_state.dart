@@ -222,6 +222,7 @@ class AppState {
   static String district = '';
   static String accessToken = '';
   static String refreshToken = '';
+  static int farmerProfileId = 1;
   static Map<String, dynamic> farmPayload = {};
 
   static String get language => selectedLanguage;

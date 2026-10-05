@@ -7,6 +7,7 @@ from app.main import app
 from app.core.database import SessionLocal
 from app.models.marketplace import Product
 from app.models.order import Order, OrderStatus
+from app.models.payment import Payment
 from app.models.user import User, FarmerProfile, UserRole
 from app.routers.auth import get_current_user
 
@@ -100,19 +101,30 @@ def setup_test_entities():
 def test_payment_flow_and_order_confirmation():
     db = SessionLocal()
     buyer = db.query(User).filter(User.phone_number == "+919222222222").first()
+    buyer_id = buyer.id
     order = db.query(Order).filter(Order.product_name == "Highland Black Pepper").first()
+    order_id = None
+    if order:
+        order_id = order.id
+        db.query(Payment).filter(Payment.order_id == order.id).delete()
+        order.status = OrderStatus.PENDING
+        db.commit()
     db.close()
 
-    app.dependency_overrides[get_current_user] = lambda: buyer
+    def _get_test_buyer():
+        s = SessionLocal()
+        return s.query(User).filter(User.id == buyer_id).first()
+
+    app.dependency_overrides[get_current_user] = _get_test_buyer
 
     # 1. Create payment order
     create_resp = client.post(
         "/api/v1/payment/create-order",
-        json={"order_id": order.id},
+        json={"order_id": order_id},
     )
     assert create_resp.status_code == 200
     p_data = create_resp.json()
-    assert p_data["order_id"] == order.id
+    assert p_data["order_id"] == order_id
     assert p_data["amount"] == 6500.0
     rzp_order_id = p_data["razorpay_order_id"]
 
@@ -121,7 +133,7 @@ def test_payment_flow_and_order_confirmation():
         "/api/v1/payment/verify",
         json={
             "razorpay_order_id": rzp_order_id,
-            "razorpay_payment_id": f"pay_mock_{order.id}",
+            "razorpay_payment_id": f"pay_mock_{order_id}",
             "razorpay_signature": "mock_sig_valid_12345",
         },
     )
@@ -131,7 +143,7 @@ def test_payment_flow_and_order_confirmation():
     assert v_data["order_status"] == "CONFIRMED"
 
     # 3. Check payment status retrieval
-    get_pay = client.get(f"/api/v1/payment/order/{order.id}")
+    get_pay = client.get(f"/api/v1/payment/order/{order_id}")
     assert get_pay.status_code == 200
     assert get_pay.json()["status"] == "SUCCESS"
     app.dependency_overrides.clear()
@@ -140,12 +152,18 @@ def test_payment_flow_and_order_confirmation():
 def test_invoice_pdf_download():
     db = SessionLocal()
     buyer = db.query(User).filter(User.phone_number == "+919222222222").first()
+    buyer_id = buyer.id
     order = db.query(Order).filter(Order.product_name == "Highland Black Pepper").first()
+    order_id = order.id
     db.close()
 
-    app.dependency_overrides[get_current_user] = lambda: buyer
+    def _get_test_buyer():
+        s = SessionLocal()
+        return s.query(User).filter(User.id == buyer_id).first()
 
-    resp = client.get(f"/api/v1/orders/{order.id}/invoice")
+    app.dependency_overrides[get_current_user] = _get_test_buyer
+
+    resp = client.get(f"/api/v1/orders/{order_id}/invoice")
     app.dependency_overrides.clear()
 
     assert resp.status_code == 200

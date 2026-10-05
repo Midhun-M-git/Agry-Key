@@ -110,6 +110,20 @@ def list_products(
     return [_to_response(product, db) for product in products]
 
 
+@router.get("/my-listings", response_model=list[ProductResponse])
+def get_my_listings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List all active product listings owned by the logged-in farmer."""
+    _require_farmer(current_user)
+    products = db.query(Product).filter(
+        Product.farmer_id == current_user.id,
+        Product.is_active.is_(True),
+    ).order_by(Product.created_at.desc()).all()
+    return [_to_response(product, db) for product in products]
+
+
 @router.get("/products/{product_id}", response_model=ProductResponse)
 @router.get("/listings/{product_id}", response_model=ProductResponse)
 

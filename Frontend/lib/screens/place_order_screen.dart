@@ -4,33 +4,43 @@ import 'order_success_screen.dart';
 import 'payment_screen.dart';
 
 class PlaceOrderScreen extends StatefulWidget {
-  const PlaceOrderScreen({super.key});
+  final int? productId;
+  final String? productName;
+  final double? pricePerKg;
+  final String? unit;
+  final String? farmerName;
+
+  const PlaceOrderScreen({
+    super.key,
+    this.productId,
+    this.productName,
+    this.pricePerKg,
+    this.unit,
+    this.farmerName,
+  });
 
   @override
-  State<PlaceOrderScreen> createState() =>
-      _PlaceOrderScreenState();
+  State<PlaceOrderScreen> createState() => _PlaceOrderScreenState();
 }
 
-class _PlaceOrderScreenState
-    extends State<PlaceOrderScreen> {
+class _PlaceOrderScreenState extends State<PlaceOrderScreen> {
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
 
-  final TextEditingController quantityController =
-      TextEditingController();
-
-  final TextEditingController addressController =
-      TextEditingController();
-
-  final TextEditingController notesController =
-      TextEditingController();
-
-  double pricePerKg = 40;
+  late double pricePerKg;
+  late String unit;
   double totalAmount = 0;
 
-  void calculateTotal() {
-    double qty =
-        double.tryParse(quantityController.text) ??
-            0;
+  @override
+  void initState() {
+    super.initState();
+    pricePerKg = widget.pricePerKg ?? 40.0;
+    unit = widget.unit ?? "Kg";
+  }
 
+  void calculateTotal() {
+    double qty = double.tryParse(quantityController.text) ?? 0;
     setState(() {
       totalAmount = qty * pricePerKg;
     });
@@ -46,67 +56,47 @@ class _PlaceOrderScreenState
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
-
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text("Place Order"),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Card(
               elevation: 3,
               child: Padding(
-                padding:
-                    const EdgeInsets.all(16),
-
+                padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     const Text(
                       "Product Details",
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight:
-                            FontWeight.bold,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 15),
-
-                    const ListTile(
-                      leading: Icon(
+                    ListTile(
+                      leading: const Icon(
                         Icons.grass,
                         color: Colors.green,
                       ),
-                      title: Text("Rice"),
-                      subtitle:
-                          Text("Premium Quality"),
+                      title: Text(widget.productName ?? "Agricultural Produce"),
+                      subtitle: Text("Price: ₹$pricePerKg / $unit"),
                     ),
-
                     const Divider(),
-
-                    const Text(
-                      "Farmer: Ramesh Kumar",
+                    Text(
+                      "Farmer: ${widget.farmerName ?? 'Verified Farmer'}",
                     ),
-
                     const SizedBox(height: 5),
-
-                    const Text(
-                      "Price: ₹40 / Kg",
+                    Text(
+                      "Price: ₹$pricePerKg / $unit",
                     ),
                   ],
                 ),
@@ -292,10 +282,11 @@ class _PlaceOrderScreenState
                     context,
                     MaterialPageRoute(
                       builder: (_) => PaymentScreen(
+                        orderId: widget.productId,
                         totalAmount: total,
-                        productName: "Agricultural Produce Order",
+                        productName: widget.productName ?? "Agricultural Produce",
                         quantity: qty,
-                        unit: "kg",
+                        unit: unit,
                         deliveryAddress: addressController.text.trim(),
                       ),
                     ),
