@@ -161,13 +161,33 @@ class UpdateService {
     }
   }
 
-  /// Launches the APK download URL in phone's browser
-  static Future<void> launchDownload(String url) async {
+  /// Launches the APK download URL in phone's browser with on-screen guidance
+  static Future<void> launchDownload(BuildContext context, String url) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.downloading_rounded, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Downloading update... Tap the completed download in your notification bar to install.",
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 7),
+      ),
+    );
+
     final uri = Uri.parse(url);
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
-      // Fallback
       await launchUrl(uri);
     }
   }

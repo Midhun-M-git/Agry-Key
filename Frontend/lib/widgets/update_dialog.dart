@@ -120,7 +120,7 @@ class UpdateDialog extends StatelessWidget {
                     ),
                     onPressed: () {
                       Navigator.of(context).pop();
-                      UpdateService.launchDownload(info.downloadUrl);
+                      UpdateService.launchDownload(context, info.downloadUrl);
                     },
                   ),
                 ),
