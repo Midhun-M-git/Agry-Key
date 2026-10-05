@@ -268,7 +268,7 @@ fishSpeciesController.dispose();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("✅ Voice interview auto-filled your farm details!"),
+            content: Text("Voice interview auto-filled your farm details!"),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
           ),
@@ -762,7 +762,7 @@ class _VoiceInterviewDialogState extends State<_VoiceInterviewDialog> {
     }
     setState(() {
       _isListening = true;
-      _statusMessage = '🎙️ Listening... Speak about your farm now';
+      _statusMessage = 'Listening... Speak about your farm now';
       _transcript = '';
     });
     widget.speech.listen(

@@ -6,6 +6,7 @@ import '../services/tts_service.dart';
 import '../utils/localization.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
+import '../widgets/voice_companion_bar.dart';
 
 class CropAdvisoryScreen extends ConsumerStatefulWidget {
   const CropAdvisoryScreen({super.key});
@@ -619,6 +620,9 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
                     ),
                   ),
                 ),
+      bottomNavigationBar: const SafeArea(
+        child: VoiceCompanionBar(),
+      ),
     );
   }
 }

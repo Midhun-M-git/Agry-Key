@@ -19,7 +19,9 @@ import 'alerts_screen.dart';
 import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
 import '../services/update_service.dart';
-
+import '../services/tts_service.dart';
+import '../services/voice_navigation_service.dart';
+import '../widgets/voice_companion_bar.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -39,8 +41,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         UpdateService.checkForUpdate(context);
+        _speakDashboardGreeting();
       }
     });
+  }
+
+  void _speakDashboardGreeting() {
+    final lang = AppState.selectedLanguage;
+    String greeting = "Welcome to AgriKey. Your voice companion is ready. Speak any command or tap the microphone.";
+    if (lang == 'Malayalam') {
+      greeting = "നമസ്കാരം! നിങ്ങളുടെ കൃഷി സഹായി സദാ കൂടെയുണ്ട്. കാലാവസ്ഥയോ വിപണി വിലയോ അറിയാൻ സംസാരിക്കൂ.";
+    } else if (lang == 'Hindi') {
+      greeting = "नमस्ते! आपका कृषि मित्र तैयार है। मौसम या मंडी भाव देखने के लिए बोलें।";
+    } else if (lang == 'Tamil') {
+      greeting = "வணக்கம்! உங்கள் விவசாய நண்பன் தயாராக உள்ளான். தேவையான விவரங்களை கூறலாம்.";
+    }
+    TTSService.speak(greeting);
   }
 
   Future<void> _fetchLiveWeather() async {
@@ -100,6 +116,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
         actions: [
+          ValueListenableBuilder<bool>(
+            valueListenable: TTSService.muteNotifier,
+            builder: (ctx, isMuted, _) {
+              return IconButton(
+                tooltip: isMuted ? "Unmute Voice Companion" : "Mute Voice Companion",
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: isMuted ? Colors.white60 : Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    TTSService.toggleMute();
+                  });
+                },
+              );
+            },
+          ),
+
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -914,7 +948,11 @@ SizedBox(
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const VoiceCompanionBar(),
+          BottomNavigationBar(
   currentIndex: 0,
 
  onTap: (index) {
@@ -1009,7 +1047,9 @@ SizedBox(
   ),
 ],
       ),
-    );
+    ],
+  ),
+);
   }
 
   static Widget actionCard(

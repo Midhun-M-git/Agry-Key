@@ -182,7 +182,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
         // Title
         const Text(
-          "New Update Available! 🌾",
+          "New Update Available",
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,

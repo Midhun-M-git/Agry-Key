@@ -19,7 +19,7 @@ class _FarmerAdvisoryScreenState
       TextEditingController();
 
   String advisoryResult =
-      "🌱 Ask any farming question and get guidance.";
+      "Ask any farming question and get AI guidance.";
 void getAdvice() {
     if (questionController.text.trim().isEmpty) {
       return;
@@ -122,27 +122,27 @@ void getAdvice() {
               children: [
 
                 quickChip(
-                  "🌧 Weather",
+                  "Weather",
                   "Will it rain tomorrow?",
                 ),
 
                 quickChip(
-                  "🌾 Fertilizer",
+                  "Fertilizer",
                   "Best fertilizer for rice",
                 ),
 
                 quickChip(
-                  "🐛 Pest",
+                  "Pest Control",
                   "How to control pests?",
                 ),
 
                 quickChip(
-                  "🍌 Banana",
+                  "Banana",
                   "Best fertilizer for banana",
                 ),
 
                 quickChip(
-                  "🥥 Coconut",
+                  "Coconut",
                   "Tips for coconut farming",
                 ),
               ],

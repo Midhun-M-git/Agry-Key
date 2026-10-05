@@ -148,8 +148,8 @@ class _BrowseProductsScreenState extends State<BrowseProductsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text('👨‍🌾 $farmerName${district.isNotEmpty ? ' · $district' : ''}'),
-                                  if (quantity != null) Text('📦 ${quantity.toString()} $unit available'),
+                                  Text('$farmerName${district.isNotEmpty ? ' · $district' : ''}'),
+                                  if (quantity != null) Text('${quantity.toString()} $unit available'),
                                   if (grade != null && grade.isNotEmpty)
                                     Container(
                                       margin: const EdgeInsets.only(top: 4),

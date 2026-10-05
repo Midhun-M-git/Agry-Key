@@ -62,9 +62,9 @@ class _ThemeSelectionScreenState
               ),
               child: const Column(
                 children: [
-                  Text("🌦️ Weather"),
-                  Text("💹 Market"),
-                  Text("🎤 AI"),
+                  Text("Weather"),
+                  Text("Market"),
+                  Text("AI Assistant"),
                 ],
               ),
             ),

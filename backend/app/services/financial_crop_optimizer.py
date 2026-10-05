@@ -272,24 +272,24 @@ class FinancialCropOptimizer:
             },
             "strategies": {
                 "option_a_max_profit": {
-                    "badge": "🥇 Maximum Profit",
-                    "badge_ml": "🥇 ഉയർന്ന ലാഭം",
-                    "badge_hi": "🥇 अधिकतम लाभ",
-                    "badge_ta": "🥇 அதிகபட்ச லாபம்",
+                    "badge": "Option 1: Maximum Profit",
+                    "badge_ml": "1-ാം ഓപ്ഷൻ: ഉയർന്ന ലാഭം",
+                    "badge_hi": "विकल्प 1: अधिकतम लाभ",
+                    "badge_ta": "விருப்பம் 1: அதிகபட்ச லாபம்",
                     "crop": option_max_profit
                 },
                 "option_b_low_risk": {
-                    "badge": "🥈 Low Risk & Safe Return",
-                    "badge_ml": "🥈 കുറഞ്ഞ ചെലവ്, ഉറപ്പുള്ള വരുമാനം",
-                    "badge_hi": "🥈 कम जोखिम, सुरक्षित रिटर्न",
-                    "badge_ta": "🥈 குறைந்த ஆபத்து, பாதுகாப்பான வருமானம்",
+                    "badge": "Option 2: Low Risk & Safe Return",
+                    "badge_ml": "2-ാം ഓപ്ഷൻ: കുറഞ്ഞ ചെലവ്, ഉറപ്പുള്ള വരുമാനം",
+                    "badge_hi": "विकल्प 2: कम जोखिम, सुरक्षित रिटर्न",
+                    "badge_ta": "விருப்பம் 2: குறைந்த ஆபத்து, பாதுகாப்பான வருமானம்",
                     "crop": option_low_risk
                 },
                 "option_c_quick_cash": {
-                    "badge": "🥉 Quick 30-Day Cashflow",
-                    "badge_ml": "🥉 വേഗത്തിൽ വരുമാനം (30-40 ദിവസം)",
-                    "badge_hi": "🥉 त्वरित 30-दिवसीय नकदी",
-                    "badge_ta": "🥉 விரைவான 30-நாள் வருவாய்",
+                    "badge": "Option 3: Quick 30-Day Cashflow",
+                    "badge_ml": "3-ാം ഓപ്ഷൻ: വേഗത്തിൽ വരുമാനം (30-40 ദിവസം)",
+                    "badge_hi": "विकल्प 3: त्वरित 30-दिवसीय नकदी",
+                    "badge_ta": "விருப்பம் 3: விரைவான 30-நாள் வருவாய்",
                     "crop": option_quick
                 }
             },

@@ -100,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBar(
           content: Text(
             otpCode != null && otpCode.isNotEmpty
-                ? "🔐 Verification Code: $otpCode"
+                ? "Verification Code: $otpCode"
                 : L10n.get(
                     "OTP sent to your mobile number",
                     "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",

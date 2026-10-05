@@ -109,14 +109,20 @@ class RatingsReviewsScreen extends StatelessWidget {
 
                     SizedBox(height: 10),
 
-                    Text(
-                      "4.8 ★",
-                      style: TextStyle(
-                        fontSize: 30,
-                        color: Colors.green,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text(
+                          "4.8",
+                          style: TextStyle(
+                            fontSize: 30,
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.star, color: Colors.amber, size: 28),
+                      ],
                     ),
 
                     Text(

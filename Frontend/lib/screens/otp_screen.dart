@@ -119,7 +119,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         SnackBar(
           content: Text(
             newOtpCode != null && newOtpCode.isNotEmpty
-                ? "🔐 New code: $newOtpCode (auto-filled)"
+                ? "New code: $newOtpCode (auto-filled)"
                 : L10n.get(
                     "New verification code sent to your phone",
                     "പുതിയ പരിശോധന കോഡ് അയച്ചു",
