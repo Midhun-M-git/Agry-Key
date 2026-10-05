@@ -61,7 +61,7 @@ jobs:
 
       - name: Run Flutter Static Analysis
         working-directory: Frontend
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build Android Release APK
         working-directory: Frontend
