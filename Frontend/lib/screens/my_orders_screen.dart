@@ -165,7 +165,7 @@ class _MyOrdersScreenState extends ConsumerState<MyOrdersScreen> {
                                       decoration: BoxDecoration(
                                         color: statusColor.withOpacity(0.12),
                                         borderRadius: BorderRadius.circular(20),
-                                        border: BorderSide(color: statusColor.withOpacity(0.5)),
+                                        border: Border.all(color: statusColor.withOpacity(0.5)),
                                       ),
                                       child: Text(
                                         order.status,

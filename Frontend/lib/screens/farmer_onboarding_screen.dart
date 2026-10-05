@@ -355,44 +355,48 @@ fishSpeciesController.dispose();
     final cowMatch = RegExp(r'(\d+)\s*(?:cows?|cattle|buffalos?|goats?)').firstMatch(t);
     if (t.contains("cow") || t.contains("cattle")) {
       data['animal_type'] = "Cow";
-      data['head_count'] = cowMatch?.group(1) ?? "1";
-      data['breed'] = "Desi";
+      if (cowMatch != null) data['head_count'] = cowMatch.group(1)!;
     } else if (t.contains("buffalo")) {
       data['animal_type'] = "Buffalo";
-      data['head_count'] = cowMatch?.group(1) ?? "1";
-      data['breed'] = "Murrah";
+      if (cowMatch != null) data['head_count'] = cowMatch.group(1)!;
     } else if (t.contains("goat")) {
       data['animal_type'] = "Goat";
-      data['head_count'] = cowMatch?.group(1) ?? "1";
-      data['breed'] = "Malabari";
+      if (cowMatch != null) data['head_count'] = cowMatch.group(1)!;
+    }
+    // Extract breed if specifically spoken
+    const knownBreeds = ["jersey", "gir", "sahiwal", "hf", "holstein", "murrah", "jafrabadi", "malabari", "boer", "jamnapari", "desi", "cross"];
+    for (final b in knownBreeds) {
+      if (t.contains(b)) {
+        data['breed'] = b[0].toUpperCase() + b.substring(1);
+        break;
+      }
     }
 
     // Poultry
     final henMatch = RegExp(r'(\d+)\s*(?:hens?|chickens?|birds?|ducks?|poultry)').firstMatch(t);
     if (t.contains("hen") || t.contains("chicken") || t.contains("poultry")) {
       data['bird_type'] = "Hen";
-      data['bird_count'] = henMatch?.group(1) ?? "10";
+      if (henMatch != null) data['bird_count'] = henMatch.group(1)!;
     } else if (t.contains("duck")) {
       data['bird_type'] = "Duck";
-      data['bird_count'] = henMatch?.group(1) ?? "10";
+      if (henMatch != null) data['bird_count'] = henMatch.group(1)!;
     }
 
     // Aquaculture
     if (t.contains("pond") || t.contains("fish") || t.contains("aquaculture")) {
-      data['pond_name'] = "Farm Pond";
-      data['pond_size'] = "0.5";
       for (final f in ["tilapia", "carp", "catla", "rohu", "prawn", "shrimp"]) {
         if (t.contains(f)) {
           data['fish_species'] = f[0].toUpperCase() + f.substring(1);
           break;
         }
       }
-      data['fish_species'] ??= "Carp";
     }
 
-    final dist = data['district'] ?? (districtController.text.isNotEmpty ? districtController.text : "Green");
-    final crp = data['crop'] ?? (cropController.text.isNotEmpty ? cropController.text : "Agri");
-    data['farm_name'] = "$dist $crp Farm";
+    // Farm Name: only if spoken
+    final farmNameMatch = RegExp(r'(?:farm name is|called|named)\s+([a-zA-Z\s]+?)(?:farm|\.|$)', caseSensitive: false).firstMatch(t);
+    if (farmNameMatch != null && farmNameMatch.group(1) != null) {
+      data['farm_name'] = "${farmNameMatch.group(1)!.trim()} Farm";
+    }
 
     return data;
   }

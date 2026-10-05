@@ -291,7 +291,7 @@ class _SoilHealthScreenState extends ConsumerState<SoilHealthScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.amber.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                border: BorderSide(color: Colors.amber.shade200),
+                                border: Border.all(color: Colors.amber.shade200),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,

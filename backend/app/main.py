@@ -87,6 +87,13 @@ app.include_router(community.router, prefix=settings.API_V1_STR)
 app.include_router(soil.router, prefix=settings.API_V1_STR)
 app.include_router(services.router, prefix=settings.API_V1_STR)
 
+# Backward-compatible alias mounts without /api/v1 prefix
+app.include_router(community.router)
+app.include_router(market.router)
+app.include_router(marketplace.router)
+app.include_router(orders.router)
+app.include_router(soil.router)
+
 
 
 @app.get("/")

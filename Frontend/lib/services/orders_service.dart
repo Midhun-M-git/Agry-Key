@@ -76,7 +76,7 @@ class OrdersService {
     try {
       final headers = await _headers();
       final res = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/orders'), headers: headers)
+          .get(Uri.parse('${ApiConfig.baseUrl}/api/v1/orders'), headers: headers)
           .timeout(const Duration(seconds: 10));
 
       if (res.statusCode == 200) {
@@ -91,7 +91,7 @@ class OrdersService {
     try {
       final headers = await _headers();
       final res = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/orders/$orderId'), headers: headers)
+          .get(Uri.parse('${ApiConfig.baseUrl}/api/v1/orders/$orderId'), headers: headers)
           .timeout(const Duration(seconds: 10));
 
       if (res.statusCode == 200) {
@@ -106,7 +106,7 @@ class OrdersService {
       final headers = await _headers();
       final res = await http
           .put(
-            Uri.parse('${ApiConfig.baseUrl}/orders/$orderId/status'),
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/orders/$orderId/status'),
             headers: headers,
             body: jsonEncode({'status': newStatus}),
           )

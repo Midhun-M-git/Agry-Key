@@ -105,7 +105,7 @@ class SoilService {
     // 1. Fetch district soil recommendations and survey
     try {
       final recUri = Uri.parse(
-        '${ApiConfig.baseUrl}/soil/recommendations?district=${Uri.encodeComponent(district)}&soil_type=${Uri.encodeComponent(soilType)}',
+        '${ApiConfig.baseUrl}/api/v1/soil/recommendations?district=${Uri.encodeComponent(district)}&soil_type=${Uri.encodeComponent(soilType)}',
       );
       final res = await http.get(recUri).timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
@@ -135,7 +135,7 @@ class SoilService {
       try {
         final token = await TokenService.getAccessToken();
         if (token != null && token.isNotEmpty) {
-          final repUri = Uri.parse('${ApiConfig.baseUrl}/soil/report?farmer_profile_id=$farmerProfileId');
+          final repUri = Uri.parse('${ApiConfig.baseUrl}/api/v1/soil/report?farmer_profile_id=$farmerProfileId');
           final repRes = await http
               .get(repUri, headers: {'Authorization': 'Bearer $token'})
               .timeout(const Duration(seconds: 10));
