@@ -423,6 +423,100 @@ subtitle: Text(
               ),
             ),
 
+            const SizedBox(height: 16),
+
+            // AI Crop Profit Maximizer Hero Card
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CropAdvisoryScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF1B5E20),
+                      Colors.green.shade800,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                L10n.get(
+                                  "Crop Profit Maximizer",
+                                  "വിള ലാഭ ഉപദേശം",
+                                  "फसल लाभ सलाहकार",
+                                  "பயிர் லாப ஆலோசகர்",
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  "NEW",
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            L10n.get(
+                              "Calculates net profit after fertilizer, mandi transport & weather risks.",
+                              "വളം, മണ്ടി ചരക്കുകൂലി, കാലാവസ്ഥ എന്നിവ കണക്കാക്കി ലാഭം കണ്ടെത്തൂ.",
+                              "खाद, मंडी परिवहन और मौसम जोखिम के बाद शुद्ध लाभ की गणना करें।",
+                              "உர மற்றும் போக்குவரத்து செலவு போக நிகர லாபத்தை கணக்கிடுங்கள்.",
+                            ),
+                            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                  ],
+                ),
+              ),
+            ),
+
             const SizedBox(height: 25),
 
             Text(

@@ -22,6 +22,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-apk:
     name: Build Android Release APK
@@ -33,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "temurin"
           java-version: "17"
@@ -54,6 +58,10 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: Frontend
         run: flutter pub get
+
+      - name: Run Flutter Static Analysis
+        working-directory: Frontend
+        run: flutter analyze --no-fatal-infos
 
       - name: Build Android Release APK
         working-directory: Frontend

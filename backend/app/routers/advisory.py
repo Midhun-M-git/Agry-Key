@@ -1,11 +1,46 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import Optional, Dict, Any
 from app.schemas.advisory import AdvisoryRequest, AdvisoryResponse
 from app.agents.advisory import advisory_agent
 from app.agents.verifier import verifier_agent
 from app.agents.llm_client import llm_client
+from app.services.financial_crop_optimizer import financial_crop_optimizer
 
 router = APIRouter()
+
+
+class CropOptimizationRequest(BaseModel):
+    state: str = "Kerala"
+    district: str = "Palakkad"
+    acreage: float = 1.0
+    soil_type: str = "RED_LOAMY"
+    water_source: str = "BOREWELL"
+    latitude: float = 10.7867
+    longitude: float = 76.6547
+
+
+@router.post("/crop-recommendations")
+async def get_crop_recommendations(request: CropOptimizationRequest):
+    """
+    Computes multi-factor crop recommendations based on soil chemistry,
+    weather forecast, input costs, logistics, and harvest-window price forecasts.
+    Returns ranked alternative options for maximum profit, low risk, and quick cashflow.
+    """
+    try:
+        recommendations = financial_crop_optimizer.optimize(
+            state=request.state,
+            district=request.district,
+            acreage=request.acreage,
+            soil_type=request.soil_type,
+            water_source=request.water_source,
+            latitude=request.latitude,
+            longitude=request.longitude
+        )
+        return recommendations
+    except Exception as e:
+        print(f"[Router] Error optimizing crops: {e}")
+        raise HTTPException(status_code=500, detail="Failed to calculate financial crop optimization.")
 
 
 class ChatRequest(BaseModel):

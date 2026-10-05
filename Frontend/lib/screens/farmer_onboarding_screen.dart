@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../utils/localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../services/tts_service.dart';
 
 class FarmerOnboardingScreen extends ConsumerStatefulWidget {
   const FarmerOnboardingScreen({super.key});
@@ -428,22 +429,71 @@ fishSpeciesController.dispose();
           children: [
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 14),
               child: ElevatedButton.icon(
                 onPressed: _startVoiceInterview,
                 icon: const Icon(Icons.mic, color: Colors.white),
-                label: const Text(
-                  "AI Voice Interview Portfolio Setup",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                label: Text(
+                  L10n.get(
+                    "AI Voice Assisted Farm Setup",
+                    "AI വോയ്സ് അസിസ്റ്റഡ് ഫാം സെറ്റപ്പ്",
+                    "AI वॉयस फार्म सेटअप",
+                    "AI குரல் வழி பண்ணை அமைப்பு",
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade800,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+              ),
+            ),
+
+            // Reassuring Confidentiality Banner
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F8F1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_user_rounded, color: Colors.green, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          L10n.get(
+                            "100% Confidential Farm Profile",
+                            "100% സുരക്ഷിതവും രഹസ്യവുമായ വിവരങ്ങൾ",
+                            "100% गोपनीय फार्म प्रोफाइल",
+                            "100% பாதுகாப்பான பண்ணை சுயவிவரம்",
+                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green.shade900),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          L10n.get(
+                            "Your land and financial details remain strictly private and are used only to calculate your custom crop profit plan.",
+                            "നിങ്ങളുടെ കൃഷി വിവരങ്ങൾ രഹസ്യമായി സൂക്ഷിക്കുകയും ലാഭവിളകൾ കണ്ടെത്താൻ മാത്രം ഉപയോഗിക്കുകയും ചെയ്യുന്നു.",
+                            "आपकी जानकारी पूरी तरह सुरक्षित है और केवल आपके फसल लाभ की गणना के लिए उपयोग की जाती है।",
+                            "உங்கள் பண்ணை தகவல்கள் முற்றிலும் ரகசியமாக வைக்கப்பட்டு லாப ஆலோசனைக்கு மட்டுமே பயன்படும்.",
+                          ),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade800, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -681,6 +731,18 @@ class _VoiceInterviewDialogState extends State<_VoiceInterviewDialog> {
   String _transcript = '';
   String _statusMessage = 'Tap the mic and speak about your farm';
 
+  @override
+  void initState() {
+    super.initState();
+    final prompt = L10n.get(
+      "Hello! Your farm details remain 100% confidential. Please tell me about your land: acreage, soil type, and main crops.",
+      "നമസ്കാരം! നിങ്ങളുടെ വിവരങ്ങൾ തികച്ചും രഹസ്യമായിരിക്കും. കൃഷിസ്ഥലത്തിന്റെ വിസ്തീർണം, മണ്ണ്, വിളകൾ എന്നിവ പറയൂ.",
+      "नमस्ते! आपकी जानकारी पूरी तरह सुरक्षित है। कृपया अपनी जमीन का आकार, मिट्टी का प्रकार और फसलें बताएं।",
+      "வணக்கம்! உங்கள் பண்ணை தகவல்கள் முற்றிலும் பாதுகாப்பானது. நில அளவு, மண் வகை மற்றும் பயிர்களை கூறுங்கள்.",
+    );
+    TTSService.speak(prompt);
+  }
+
   Future<void> _startListening() async {
     final available = await widget.speech.initialize(
       onError: (error) {
@@ -745,6 +807,7 @@ class _VoiceInterviewDialogState extends State<_VoiceInterviewDialog> {
   @override
   void dispose() {
     widget.speech.stop();
+    TTSService.stop();
     super.dispose();
   }
 

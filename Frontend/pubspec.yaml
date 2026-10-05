@@ -21,6 +21,7 @@ dependencies:
 
   # Voice Assistant
   speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.2
 
   # Camera & Gallery
   image_picker: ^1.1.2
