@@ -17,7 +17,7 @@ import 'community_screen.dart';
 import 'crop_calendar_screen.dart';
 import 'experts_screen.dart';
 import 'ai_assistant_screen.dart';
-import 'notifications_screen.dart';
+import 'alerts_screen.dart';
 class AllServicesScreen extends ConsumerWidget {
   const AllServicesScreen({super.key});
 @override
