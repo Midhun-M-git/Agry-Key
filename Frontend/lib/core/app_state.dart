@@ -224,6 +224,9 @@ class AppState {
   static String refreshToken = '';
   static Map<String, dynamic> farmPayload = {};
 
+  static String get language => selectedLanguage;
+  static set language(String val) => selectedLanguage = val;
+
   static String get userState => state;
   static set userState(String val) => state = val;
 
