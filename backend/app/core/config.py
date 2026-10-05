@@ -22,13 +22,14 @@ class Settings(BaseSettings):
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")
-    OTP_PROVIDER: str = Field(default="development")
+    OTP_PROVIDER: str = Field(default="twilio")
     SMS_API_KEY: str = Field(default="")
     SMS_OTP_TEMPLATE_ID: str = Field(default="")
-    SMS_PROVIDER: str = Field(default="msg91")
+    SMS_PROVIDER: str = Field(default="twilio")
     TWILIO_ACCOUNT_SID: str = Field(default="")
     TWILIO_AUTH_TOKEN: str = Field(default="")
     TWILIO_FROM_NUMBER: str = Field(default="")
+    TWILIO_VERIFY_SERVICE_SID: str = Field(default="")
     
     # Hugging Face API keys and Microservice URLs
     HUGGINGFACE_API_KEY: str = Field(default="sample_hf_key")

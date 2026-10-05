@@ -362,68 +362,74 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: 35),
 
               // 6-digit PIN Box Visual Display with Android OTP Autofill
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 6 Styled visual boxes
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(6, (index) {
-                      final isFilled = index < currentCode.length;
-                      final isCurrent = index == currentCode.length;
-                      final digit = isFilled ? currentCode[index] : "";
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _focusNode.requestFocus(),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 6 Styled visual boxes
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(6, (index) {
+                        final isFilled = index < currentCode.length;
+                        final isCurrent = index == currentCode.length;
+                        final digit = isFilled ? currentCode[index] : "";
 
-                      return Container(
-                        width: 46,
-                        height: 54,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isCurrent
-                                ? Colors.green
-                                : (isFilled ? Colors.green.shade600 : Colors.grey.shade300),
-                            width: isCurrent || isFilled ? 2 : 1.2,
+                        return Container(
+                          width: 46,
+                          height: 54,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isCurrent
+                                  ? Colors.green
+                                  : (isFilled ? Colors.green.shade600 : Colors.grey.shade300),
+                              width: isCurrent || isFilled ? 2 : 1.2,
+                            ),
+                            boxShadow: isCurrent
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.green.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    )
+                                  ]
+                                : null,
                           ),
-                          boxShadow: isCurrent
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.green.withOpacity(0.2),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Text(
-                          digit,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                          child: Text(
+                            digit,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                      );
-                    }),
-                  ),
+                        );
+                      }),
+                    ),
 
-                  // Transparent underlying TextField with Android SMS oneTimeCode autofill
-                  Opacity(
-                    opacity: 0.0,
-                    child: TextField(
-                      controller: _otpController,
-                      focusNode: _focusNode,
-                      keyboardType: TextInputType.number,
-                      autofillHints: const [AutofillHints.oneTimeCode],
-                      maxLength: 6,
-                      decoration: const InputDecoration(
-                        counterText: "",
-                        border: InputBorder.none,
+                    // Full-width touch-receptive TextField with Android SMS oneTimeCode autofill
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.0,
+                        child: TextField(
+                          controller: _otpController,
+                          focusNode: _focusNode,
+                          keyboardType: TextInputType.number,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          maxLength: 6,
+                          decoration: const InputDecoration(
+                            counterText: "",
+                            border: InputBorder.none,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               const SizedBox(height: 35),

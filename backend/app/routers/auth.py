@@ -259,7 +259,7 @@ async def request_otp(
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
-def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
+async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
     """Verifies the OTP hash, enforces attempt limits, and logs in or creates the farmer account."""
     raw_phone = req.phone_number.strip()
     try:
@@ -315,8 +315,14 @@ def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
             detail="Verification code has expired. Please request a new OTP.",
         )
 
-    # Constant-time cryptographic verification
+    # Cryptographic hash verification against stored DB entry
     is_valid = verify_otp_hash(normalized_phone, code, settings.SECRET_KEY, otp_entry.otp_code)
+
+    # Or verify via Twilio Verify API if configured
+    if not is_valid and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
+        from app.services.otp_provider import TwilioVerifyOTPProvider
+        is_valid = await TwilioVerifyOTPProvider.verify_code(normalized_phone, code)
+
     if not is_valid:
         otp_entry.attempts += 1
         db.commit()
