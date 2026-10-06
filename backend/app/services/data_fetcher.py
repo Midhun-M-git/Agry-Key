@@ -1,6 +1,4 @@
-import openmeteo_requests
-import requests_cache
-from retry_requests import retry
+import httpx
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
 
@@ -8,82 +6,59 @@ class DataFetcherService:
     """Service to fetch real-time and historical data from official APIs."""
 
     def __init__(self):
-        # Setup the Open-Meteo API client with cache and retry on error
-        cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
-        retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
-        self.openmeteo = openmeteo_requests.Client(session=retry_session)
-        self.climate_url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
+        self.forecast_url = "https://api.open-meteo.com/v1/forecast"
 
     def fetch_climate_baseline(self, latitude: float, longitude: float) -> Dict[str, Any]:
-        """Fetch climate aggregates, current conditions, and a seven-day forecast."""
-        # Note: In a full production app, this would query the historical archive
-        # for a 20-year baseline. For this implementation, we use the free forecast API
-        # as a proxy for current seasonal conditions.
-        
+        """Fetch real-time climate conditions and a seven-day forecast."""
         params = {
             "latitude": latitude,
             "longitude": longitude,
-            "current": [
-                "temperature_2m",
-                "relative_humidity_2m",
-                "wind_speed_10m",
-                "precipitation",
-                "weather_code",
-            ],
-            "daily": [
-                "temperature_2m_max",
-                "temperature_2m_min",
-                "precipitation_sum",
-                "wind_speed_10m_max",
-                "weather_code",
-                "precipitation_probability_max",
-            ],
+            "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code",
+            "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code,precipitation_probability_max",
             "timezone": "auto",
-            "past_days": 30,
             "forecast_days": 7,
         }
         
         try:
-            responses = self.openmeteo.weather_api(self.climate_url, params=params)
-            response = responses[0]
-            
-            daily = response.Daily()
-            daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy()
-            daily_temperature_2m_min = daily.Variables(1).ValuesAsNumpy()
-            daily_precipitation_sum = daily.Variables(2).ValuesAsNumpy()
-            daily_wind_speed_max = daily.Variables(3).ValuesAsNumpy()
-            daily_weather_code = daily.Variables(4).ValuesAsNumpy()
-            daily_precipitation_probability = daily.Variables(5).ValuesAsNumpy()
+            with httpx.Client(timeout=8.0) as client:
+                resp = client.get(self.forecast_url, params=params)
+                resp.raise_for_status()
+                data = resp.json()
 
-            forecast_start = max(0, len(daily_temperature_2m_max) - 7)
+            current_raw = data.get("current", {})
+            daily_raw = data.get("daily", {})
+
+            daily_max = daily_raw.get("temperature_2m_max", [])
+            daily_min = daily_raw.get("temperature_2m_min", [])
+            daily_precip = daily_raw.get("precipitation_sum", [])
+            daily_wind = daily_raw.get("wind_speed_10m_max", [])
+            daily_code = daily_raw.get("weather_code", [])
+            daily_prob = daily_raw.get("precipitation_probability_max", [])
+            daily_time = daily_raw.get("time", [])
+
             forecast = []
-            for index in range(forecast_start, len(daily_temperature_2m_max)):
-                forecast_date = datetime.fromtimestamp(
-                    daily.Time() + index * daily.Interval(), tz=timezone.utc
-                ).date().isoformat()
+            for i in range(len(daily_time)):
                 forecast.append(
                     {
-                        "date": forecast_date,
-                        "temperature_max_c": round(float(daily_temperature_2m_max[index]), 1),
-                        "temperature_min_c": round(float(daily_temperature_2m_min[index]), 1),
-                        "precipitation_mm": round(float(daily_precipitation_sum[index]), 1),
-                        "precipitation_probability_percent": int(
-                            daily_precipitation_probability[index]
-                        ),
-                        "wind_speed_max_kmh": round(float(daily_wind_speed_max[index]), 1),
-                        "weather_code": int(daily_weather_code[index]),
+                        "date": daily_time[i],
+                        "temperature_max_c": round(float(daily_max[i]), 1) if i < len(daily_max) else 30.0,
+                        "temperature_min_c": round(float(daily_min[i]), 1) if i < len(daily_min) else 22.0,
+                        "precipitation_mm": round(float(daily_precip[i]), 1) if i < len(daily_precip) else 0.0,
+                        "precipitation_probability_percent": int(daily_prob[i]) if (i < len(daily_prob) and daily_prob[i] is not None) else 15,
+                        "wind_speed_max_kmh": round(float(daily_wind[i]), 1) if i < len(daily_wind) else 10.0,
+                        "weather_code": int(daily_code[i]) if i < len(daily_code) else 1,
                     }
                 )
 
-            avg_max_temp = float(daily_temperature_2m_max.mean())
-            total_rainfall = float(daily_precipitation_sum.sum())
-            current = response.Current()
+            avg_max_temp = float(sum(daily_max) / len(daily_max)) if daily_max else 30.0
+            total_rainfall = float(sum(daily_precip)) if daily_precip else 0.0
+
             current_conditions = {
-                "temperature_c": round(float(current.Variables(0).Value()), 1),
-                "humidity_percent": int(current.Variables(1).Value()),
-                "wind_speed_kmh": round(float(current.Variables(2).Value()), 1),
-                "precipitation_mm": round(float(current.Variables(3).Value()), 1),
-                "weather_code": int(current.Variables(4).Value()),
+                "temperature_c": round(float(current_raw.get("temperature_2m", 28.0)), 1),
+                "humidity_percent": int(current_raw.get("relative_humidity_2m", 70)),
+                "wind_speed_kmh": round(float(current_raw.get("wind_speed_10m", 10.0)), 1),
+                "precipitation_mm": round(float(current_raw.get("precipitation", 0.0)), 1),
+                "weather_code": int(current_raw.get("weather_code", 1)),
             }
             
             return {

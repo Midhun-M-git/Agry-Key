@@ -32,3 +32,11 @@ services:
         value: "mock"
       - key: DL_FORECAST_SERVICE_URL
         value: "https://agry-key-dl-space.hf.space/api/predict"
+      - key: LLM_PROVIDER
+        value: "huggingface"
+      - key: HF_INFERENCE_ENDPOINT_URL
+        value: "https://router.huggingface.co/v1"
+      - key: HF_MODEL_ID
+        value: "Qwen/Qwen2.5-72B-Instruct"
+      - key: HUGGINGFACE_API_KEY
+        sync: false # Set your personal hf_... token securely in Render dashboard

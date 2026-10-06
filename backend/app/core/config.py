@@ -31,10 +31,16 @@ class Settings(BaseSettings):
     TWILIO_FROM_NUMBER: str = Field(default="")
     TWILIO_VERIFY_SERVICE_SID: str = Field(default="")
     
-    # Hugging Face API keys and Microservice URLs
+    # Hugging Face API keys, Microservice URLs, and GPU LLM Endpoints
     HUGGINGFACE_API_KEY: str = Field(default="sample_hf_key")
     DL_FORECAST_SERVICE_URL: str = Field(default="https://agry-key-dl-space.hf.space/api/predict")
     DL_FORECAST_SERVICE_TOKEN: str = Field(default="secret-service-token-123")
+    
+    # LLM Configuration (supports Hugging Face Serverless/GPU, Gemini, or local Ollama)
+    LLM_PROVIDER: str = Field(default="huggingface")
+    HF_INFERENCE_ENDPOINT_URL: str = Field(default="https://router.huggingface.co/v1")
+    HF_MODEL_ID: str = Field(default="Qwen/Qwen2.5-72B-Instruct")
+    LOCAL_LLM_URL: str = Field(default="http://localhost:11434/v1")
 
     # Payment Gateway (Razorpay)
     RAZORPAY_KEY_ID: str = Field(default="")
