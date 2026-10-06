@@ -33,6 +33,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _temperature = WeatherService.temperature;
   String _humidity = WeatherService.humidity;
+  String _locationName = AppState.district.isNotEmpty ? "${AppState.district}, ${AppState.state}" : "Live Weather";
+  String _weatherCondition = "Clear";
 
   @override
   void initState() {
@@ -41,20 +43,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         UpdateService.checkForUpdate(context);
-        _speakDashboardGreeting();
       }
     });
   }
 
   void _speakDashboardGreeting() {
     final lang = AppState.selectedLanguage;
-    String greeting = "Welcome to AgriKey. Your voice companion is ready. Speak any command or tap the microphone.";
+    final loc = _locationName != "Live Weather" ? _locationName : "your area";
+    String greeting = "Welcome to AgriKey. Current temperature in $loc is $_temperature. Tap Crop Advisory to hear the best crops for your farm.";
     if (lang == 'Malayalam') {
-      greeting = "നമസ്കാരം! നിങ്ങളുടെ കൃഷി സഹായി സദാ കൂടെയുണ്ട്. കാലാവസ്ഥയോ വിപണി വിലയോ അറിയാൻ സംസാരിക്കൂ.";
+      greeting = "നമസ്കാരം! $loc ൽ ഇന്നത്തെ കാലാവസ്ഥ $_temperature ആണ്. നിങ്ങളുടെ മണ്ണിന് അനുയോജ്യമായ വിള നിർദ്ദേശങ്ങൾ പരിശോധിക്കൂ.";
     } else if (lang == 'Hindi') {
-      greeting = "नमस्ते! आपका कृषि मित्र तैयार है। मौसम या मंडी भाव देखने के लिए बोलें।";
+      greeting = "नमस्ते! $loc में आज का तापमान $_temperature है। अपनी भूमि के लिए सर्वोत्तम फसल सलाह देखने के लिए टैप करें।";
     } else if (lang == 'Tamil') {
-      greeting = "வணக்கம்! உங்கள் விவசாய நண்பன் தயாராக உள்ளான். தேவையான விவரங்களை கூறலாம்.";
+      greeting = "வணக்கம்! $loc இல் இன்றைய வெப்பநிலை $_temperature ஆகும். உங்கள் பண்ணைக்கான சிறந்த பயிர் ஆலோசனையை பாருங்கள்.";
     }
     TTSService.speak(greeting);
   }
@@ -68,7 +70,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         setState(() {
           _temperature = "${data.temperature.toStringAsFixed(1)}°C";
           _humidity = "${data.humidity}%";
+          _locationName = "${data.district}, ${data.state}";
+          _weatherCondition = data.condition;
         });
+        _speakDashboardGreeting();
       }
     } catch (_) {}
   }
@@ -293,7 +298,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ],
                           ),
 
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 6),
+
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, size: 14, color: Colors.green),
+                              const SizedBox(width: 4),
+                              Text(
+                                _locationName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 6),
 
                           Text(
                             _temperature,
@@ -306,10 +328,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
 
                           Text(
-                            "${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
+                            "$_condition · ${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
                             style: TextStyle(
                               color: Colors.grey.shade700,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ],

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../core/app_state.dart';
@@ -16,23 +17,46 @@ class WeatherService {
 
   static WeatherData? get cachedWeather => _lastCachedWeather;
 
-  /// Fetches real-time weather from Open-Meteo backend proxy for GPS coordinates.
+  /// Fetches real-time weather from Open-Meteo for exact GPS coordinates.
   static Future<WeatherData> fetchWeather({double? lat, double? lng}) async {
-    double latitude = lat ?? 10.7867;
-    double longitude = lng ?? 76.6547;
+    double? latitude = lat ?? (AppState.latitude != 0.0 ? AppState.latitude : null);
+    double? longitude = lng ?? (AppState.longitude != 0.0 ? AppState.longitude : null);
 
-    if (lat == null || lng == null) {
+    if (latitude == null || longitude == null) {
       try {
-        final position = await LocationService.getCurrentPosition();
-        if (position != null) {
-          latitude = position.latitude;
-          longitude = position.longitude;
+        final loc = await LocationService.resolveRealLocation();
+        latitude = loc.latitude;
+        longitude = loc.longitude;
+      } catch (_) {}
+    }
+
+    latitude ??= 9.9406;
+    longitude ??= 76.2653;
+
+    String effectiveDistrict = AppState.district;
+    String effectiveState = AppState.state;
+
+    // Resolve real district and state via GPS if not yet set in profile
+    if (effectiveDistrict.isEmpty) {
+      try {
+        final placemarks = await placemarkFromCoordinates(latitude, longitude);
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          final d = place.subAdministrativeArea?.isNotEmpty == true
+              ? place.subAdministrativeArea!
+              : (place.locality?.isNotEmpty == true ? place.locality! : "");
+          if (d.isNotEmpty) effectiveDistrict = d;
+          if (place.administrativeArea?.isNotEmpty == true) effectiveState = place.administrativeArea!;
+          AppState.district = effectiveDistrict;
+          AppState.state = effectiveState;
+          AppState.userDistrict = effectiveDistrict;
+          AppState.userState = effectiveState;
         }
       } catch (_) {}
     }
 
-    String effectiveDistrict = AppState.district.isNotEmpty ? AppState.district : 'Palakkad';
-    String effectiveState = AppState.state.isNotEmpty ? AppState.state : 'Kerala';
+    if (effectiveDistrict.isEmpty) effectiveDistrict = 'Your Farm';
+    if (effectiveState.isEmpty) effectiveState = 'Kerala';
 
     // 1. Try Backend Proxy
     try {

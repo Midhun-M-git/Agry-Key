@@ -76,18 +76,30 @@ Future<void> getCurrentLocation() async {
       );
 
       Placemark place = placemarks.first;
-
-      String detectedLocation =
-          "${place.locality}, ${place.administrativeArea}, ${place.country}";
+      String district = place.subAdministrativeArea?.isNotEmpty == true
+          ? place.subAdministrativeArea!
+          : (place.locality?.isNotEmpty == true ? place.locality! : "");
+      String state = place.administrativeArea ?? "";
+      String detectedLocation = "${district.isNotEmpty ? district : place.locality}, $state, ${place.country}";
 
       setState(() {
-        locationController.text =
-            detectedLocation;
+        locationController.text = detectedLocation;
       });
 
       ref.read(locationProvider.notifier).update(
         userLocation: detectedLocation,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        regionState: state,
+        district: district,
       );
+
+      AppState.userLatitude = position.latitude;
+      AppState.userLongitude = position.longitude;
+      AppState.latitude = position.latitude;
+      AppState.longitude = position.longitude;
+      AppState.district = district;
+      AppState.state = state;
 
     } catch (e) {
 

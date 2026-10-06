@@ -167,7 +167,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                             leading: const Icon(Icons.location_on, color: Colors.green),
                             title: Text(
                               AppState.userLocation.isEmpty
-                                  ? '${_weatherData?.district ?? "Palakkad"}, ${_weatherData?.state ?? "Kerala"}'
+                                  ? '${_weatherData?.district ?? (AppState.district.isNotEmpty ? AppState.district : "Your Location")}, ${_weatherData?.state ?? (AppState.state.isNotEmpty ? AppState.state : "Kerala")}'
                                   : AppState.userLocation,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),

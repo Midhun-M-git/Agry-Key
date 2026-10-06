@@ -160,7 +160,15 @@ fishSpeciesController.dispose();
       userCrop: cropController.text,
       farmPayload: payload,
     );
-    ref.read(locationProvider.notifier).update(userLocation: location);
+    ref.read(locationProvider.notifier).update(
+      userLocation: location,
+      regionState: stateController.text.trim(),
+      district: districtController.text.trim(),
+    );
+    AppState.state = stateController.text.trim();
+    AppState.district = districtController.text.trim();
+    AppState.userState = stateController.text.trim();
+    AppState.userDistrict = districtController.text.trim();
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

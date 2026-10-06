@@ -7,18 +7,17 @@ import 'core/app_router.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Synchronize System UI (Status Bar & Gesture Navigation Bar) across all Android & iOS devices
+  // Clean status bar and navigation bar styling that does not overlap screen content
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarColor: Color(0xFFF8FBF5),
       systemNavigationBarDividerColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(const ProviderScope(child: AgriKeyApp()));
 }
@@ -31,8 +30,7 @@ class AgriKeyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       routerConfig: AppRouter.create(),
     );
   }

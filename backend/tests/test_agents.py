@@ -108,9 +108,11 @@ def test_llm_retries_then_returns_fallback():
     client.max_retries = 2
     client.model.generate_content.side_effect = RuntimeError("temporary failure")
 
-    with patch("app.agents.llm_client.time.sleep") as sleep:
+    with patch.object(client, "_has_configured_hf", return_value=False), \
+         patch("app.agents.llm_client.time.sleep") as sleep:
         result = client.generate_response("prompt")
 
     assert result == llm_client_module.LLMClient.FALLBACK_RESPONSE
     assert client.model.generate_content.call_count == 2
     assert sleep.call_count == 1
+
