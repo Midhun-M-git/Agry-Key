@@ -78,14 +78,19 @@ class LLMClient:
                 return data["generated_text"].strip()
             raise ValueError(f"Unexpected response structure: {data}")
 
+    def _has_configured_hf(self) -> bool:
+        return bool(
+            settings.LLM_PROVIDER in ["huggingface", "hf"]
+            and settings.HUGGINGFACE_API_KEY
+            and settings.HUGGINGFACE_API_KEY != "sample_hf_key"
+            and settings.HF_INFERENCE_ENDPOINT_URL.strip()
+        )
+
     def generate_response(self, prompt: str, system_message: str = "") -> str:
         """Generate a response using configured Hugging Face GPU or Gemini, retrying on transient errors."""
-        # 1. Check if Hugging Face or Local GPU endpoint is specified
-        endpoint_url = settings.HF_INFERENCE_ENDPOINT_URL.strip()
-        if not endpoint_url and settings.LLM_PROVIDER in ["ollama", "local"]:
-            endpoint_url = settings.LOCAL_LLM_URL.strip()
-
-        if endpoint_url:
+        # 1. Use Hugging Face if explicitly configured with a valid key
+        if self._has_configured_hf():
+            endpoint_url = settings.HF_INFERENCE_ENDPOINT_URL.strip()
             for attempt in range(self.max_retries):
                 try:
                     resp = self._call_hf_or_openai_endpoint(endpoint_url, prompt, system_message)
@@ -96,8 +101,22 @@ class LLMClient:
                     if attempt < self.max_retries - 1:
                         time.sleep(2**attempt)
 
-        # 2. Try Gemini LLM if configured
-        if self.model:
+        # 2. Use Local LLM (Ollama) if selected
+        elif settings.LLM_PROVIDER in ["ollama", "local"]:
+            endpoint_url = settings.LOCAL_LLM_URL.strip()
+            if endpoint_url:
+                for attempt in range(self.max_retries):
+                    try:
+                        resp = self._call_hf_or_openai_endpoint(endpoint_url, prompt, system_message)
+                        if resp:
+                            return resp
+                    except Exception as exc:
+                        print(f"[LLM-Client] Local LLM request failed (attempt {attempt + 1}/{self.max_retries}): {exc}")
+                        if attempt < self.max_retries - 1:
+                            time.sleep(2**attempt)
+
+        # 3. Use Gemini LLM if configured
+        if getattr(self, "model", None):
             contents = f"{system_message}\n\n{prompt}" if system_message else prompt
             for attempt in range(self.max_retries):
                 try:

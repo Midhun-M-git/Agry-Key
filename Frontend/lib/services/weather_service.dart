@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
+import '../core/app_state.dart';
 import '../models/weather.dart';
 import 'location_service.dart';
 
