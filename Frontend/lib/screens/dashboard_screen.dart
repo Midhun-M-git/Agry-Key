@@ -328,7 +328,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
 
                           Text(
-                            "$_condition · ${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
+                            "$_weatherCondition · ${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
                             style: TextStyle(
                               color: Colors.grey.shade700,
                               fontSize: 13,

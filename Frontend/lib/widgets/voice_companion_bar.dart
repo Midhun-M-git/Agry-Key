@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../core/app_state.dart';
 import '../services/tts_service.dart';
 import '../services/voice_navigation_service.dart';
 import '../utils/localization.dart';
