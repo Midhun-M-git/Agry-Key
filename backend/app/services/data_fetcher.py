@@ -1,4 +1,7 @@
-import httpx
+try:
+    import httpx
+except ImportError:
+    httpx = None
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
 
@@ -19,12 +22,38 @@ class DataFetcherService:
             "forecast_days": 7,
         }
         
-        try:
-            with httpx.Client(timeout=8.0) as client:
-                resp = client.get(self.forecast_url, params=params)
-                resp.raise_for_status()
-                data = resp.json()
+        headers = {
+            "User-Agent": "AgryKey-Agriculture/1.0 (https://agrykey.in; support@agrykey.in)",
+            "Accept": "application/json",
+        }
+        
+        data = None
+        if httpx is not None:
+            try:
+                with httpx.Client(timeout=10.0, headers=headers) as client:
+                    resp = client.get(self.forecast_url, params=params)
+                    resp.raise_for_status()
+                    data = resp.json()
+            except Exception as e:
+                print(f"[DataFetcher] httpx weather request failed: {e}. Trying urllib fallback...")
 
+        if data is None:
+            try:
+                import urllib.parse
+                import urllib.request
+                import json
+                qs = urllib.parse.urlencode(params)
+                req = urllib.request.Request(
+                    f"{self.forecast_url}?{qs}",
+                    headers=headers,
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    if response.getcode() == 200:
+                        data = json.loads(response.read().decode("utf-8"))
+            except Exception as ur_err:
+                print(f"[DataFetcher] urllib weather request failed: {ur_err}")
+
+        if data and "current" in data:
             current_raw = data.get("current", {})
             daily_raw = data.get("daily", {})
 
@@ -68,36 +97,41 @@ class DataFetcherService:
                 "current": current_conditions,
                 "forecast": forecast,
                 "alerts": self._build_weather_alerts(forecast),
+                "is_live": True,
             }
-        except Exception as e:
-            print(f"Error fetching climate data: {e}. Using resilient regional baseline.")
-            today = datetime.now(timezone.utc).date()
-            fallback_forecast = [
-                {
-                    "date": (today + timedelta(days=i)).isoformat(),
-                    "temperature_max_c": 32.0 - (i * 0.5),
-                    "temperature_min_c": 24.0,
-                    "precipitation_mm": 2.0 if i % 2 == 0 else 0.0,
-                    "precipitation_probability_percent": 20,
-                    "wind_speed_max_kmh": 12.0,
-                    "weather_code": 1,
-                }
-                for i in range(7)
-            ]
-            return {
-                "avg_max_temperature_c": 31.5,
-                "total_precipitation_mm": 15.0,
-                "climate_condition": "Favorable",
-                "current": {
-                    "temperature_c": 28.5,
-                    "humidity_percent": 72,
-                    "wind_speed_kmh": 11.0,
-                    "precipitation_mm": 0.0,
-                    "weather_code": 1,
-                },
-                "forecast": fallback_forecast,
-                "alerts": [],
+
+        # Dynamic regional estimate when completely disconnected from satellite feeds
+        print("[DataFetcher] Using dynamically interpolated coordinates baseline.")
+        today = datetime.now(timezone.utc).date()
+        lat_factor = max(0.0, min(1.0, (latitude - 8.0) / 25.0))
+        base_temp = round(31.0 - (lat_factor * 3.0), 1)
+        fallback_forecast = [
+            {
+                "date": (today + timedelta(days=i)).isoformat(),
+                "temperature_max_c": round(base_temp + 2.0 - (i * 0.3), 1),
+                "temperature_min_c": round(base_temp - 6.0, 1),
+                "precipitation_mm": 1.5 if i % 2 == 0 else 0.0,
+                "precipitation_probability_percent": 25,
+                "wind_speed_max_kmh": 12.0,
+                "weather_code": 1,
             }
+            for i in range(7)
+        ]
+        return {
+            "avg_max_temperature_c": round(base_temp + 1.5, 1),
+            "total_precipitation_mm": 10.5,
+            "climate_condition": "Favorable",
+            "current": {
+                "temperature_c": base_temp,
+                "humidity_percent": 68,
+                "wind_speed_kmh": 12.0,
+                "precipitation_mm": 0.0,
+                "weather_code": 1,
+            },
+            "forecast": fallback_forecast,
+            "alerts": [],
+            "is_live": False,
+        }
 
     @staticmethod
     def _build_weather_alerts(forecast: List[Dict[str, Any]]) -> List[Dict[str, str]]:

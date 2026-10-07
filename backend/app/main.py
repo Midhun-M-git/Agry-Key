@@ -37,6 +37,11 @@ async def lifespan(_app: FastAPI):
     db = SessionLocal()
     try:
         seed_schemes(db)
+        try:
+            from scripts.seed_db import seed_database
+            seed_database()
+        except Exception as seed_err:
+            print(f"[Lifespan] Initial database check/seeding note: {seed_err}")
         yield
     finally:
         db.close()

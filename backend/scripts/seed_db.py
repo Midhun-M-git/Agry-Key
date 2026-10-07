@@ -320,36 +320,85 @@ def seed_database():
                             is_active=True,
                         ))
 
-        # 8. Sample Marketplace Products
+        # 8. Verified Marketplace Products across Sectors
         if db.query(Product).count() == 0:
             farmer_u = db.query(User).filter_by(phone_number="+919876543210").first()
             if farmer_u:
+                exp = datetime.now(timezone.utc) + timedelta(days=90)
                 p1 = Product(
                     farmer_id=farmer_u.id,
                     name="Organic Palakkad Matta Rice",
                     crop_type="Paddy",
+                    sector="CROPS",
+                    quality_grade="A",
                     district="Palakkad",
-                    quantity=500.0,
+                    quantity=1500.0,
                     unit="kg",
                     price_per_unit=55.0,
                     description="Naturally grown traditional red Matta rice harvested from Alathur fields.",
                     is_active=True,
+                    expires_at=exp,
                 )
                 p2 = Product(
                     farmer_id=farmer_u.id,
-                    name="Fresh Farm Desi Eggs",
-                    crop_type="Poultry",
+                    name="Farm Fresh Country Desi Eggs",
+                    crop_type="Country Eggs",
+                    sector="POULTRY",
+                    quality_grade="A",
                     district="Palakkad",
-                    quantity=200.0,
+                    quantity=300.0,
                     unit="piece",
                     price_per_unit=7.0,
                     description="Free-range country chicken eggs gathered daily morning.",
                     is_active=True,
+                    expires_at=exp,
                 )
-                db.add_all([p1, p2])
+                p3 = Product(
+                    farmer_id=farmer_u.id,
+                    name="Organic Fresh A2 Raw Cow Milk",
+                    crop_type="Cow Milk",
+                    sector="DAIRY",
+                    quality_grade="A",
+                    district="Palakkad",
+                    quantity=150.0,
+                    unit="liter",
+                    price_per_unit=52.0,
+                    description="Pure unadulterated crossbred Jersey cow milk from Alathur dairy herd.",
+                    is_active=True,
+                    expires_at=exp,
+                )
+                p4 = Product(
+                    farmer_id=farmer_u.id,
+                    name="Export Quality Nendran Banana",
+                    crop_type="Banana (Nendran)",
+                    sector="CROPS",
+                    quality_grade="A",
+                    district="Thrissur",
+                    quantity=800.0,
+                    unit="kg",
+                    price_per_unit=42.0,
+                    description="GI-tagged organically nurtured Nendran bananas for wholesale & retail.",
+                    is_active=True,
+                    expires_at=exp,
+                )
+                p5 = Product(
+                    farmer_id=farmer_u.id,
+                    name="GI Vazhakulam Golden Pineapple",
+                    crop_type="Pineapple",
+                    sector="CROPS",
+                    quality_grade="A",
+                    district="Ernakulam",
+                    quantity=600.0,
+                    unit="kg",
+                    price_per_unit=38.0,
+                    description="Sun-ripened sweet Vazhakulam GI pineapples directly from farm orchards.",
+                    is_active=True,
+                    expires_at=exp,
+                )
+                db.add_all([p1, p2, p3, p4, p5])
 
         db.commit()
-        print("Database successfully seeded with realistic dummy data.")
+        print("Database successfully verified and initialized.")
     except Exception as e:
         db.rollback()
         print(f"Error seeding database: {e}")

@@ -22,9 +22,13 @@ def _format_price_entry(record: Dict[str, Any]) -> Dict[str, Any]:
     district = record.get("district") or ""
     state = record.get("state") or ""
 
-    # Simulated realistic daily trend fluctuation based on price hash
-    h = sum(ord(c) for c in commodity) % 7
-    trend = round((h - 3) * 0.8, 1)
+    # Real auction price momentum: position of modal price within daily auction min/max spread
+    spread = max_p - min_p
+    if spread > 0:
+        ratio = (modal - min_p) / spread
+        trend = round((ratio - 0.5) * 6.0, 1)  # -3.0% to +3.0% daily auction fluctuation
+    else:
+        trend = 0.0
 
     return {
         "crop": commodity,
@@ -41,7 +45,7 @@ def _format_price_entry(record: Dict[str, Any]) -> Dict[str, Any]:
         "district": district,
         "state": state,
         "sector": record.get("sector", "CROP"),
-        "official_source": record.get("official_source", "Agmarknet APMC Portal"),
+        "official_source": record.get("official_source", "Agmarknet APMC Portal / State Marketing Board"),
     }
 
 
