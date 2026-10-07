@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../utils/localization.dart';
-
+import '../core/api_config.dart';
+import '../services/orders_service.dart';
 import '../core/app_state.dart';
 import '../widgets/voice_text_field.dart';
 
@@ -24,13 +27,52 @@ class _BuyerDashboardScreenState
 
   final TextEditingController searchController =
       TextEditingController();
+  int _ordersCount = 0;
+  int _farmersCount = 0;
+  bool _statsLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final orders = await OrdersService.getOrders();
+      var farmersCount = 4;
+      try {
+        final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/services/farmers');
+        final res = await http.get(uri).timeout(const Duration(seconds: 6));
+        if (res.statusCode == 200) {
+          final list = jsonDecode(res.body) as List<dynamic>;
+          farmersCount = list.length;
+        }
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _ordersCount = orders.length;
+          _farmersCount = farmersCount;
+          _statsLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _statsLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
     searchController.dispose();
     super.dispose();
   }
-Widget statCard(
+
+  Widget statCard(
     String value,
     String title,
     IconData icon,
@@ -179,18 +221,15 @@ Widget statCard(
             const SizedBox(height: 15),
 
             // Quick Statistics
-
             Row(
               children: [
-
                 statCard(
-                  "12",
+                  _statsLoading ? "..." : "$_ordersCount",
                   "Orders",
                   Icons.shopping_bag,
                 ),
-
                 statCard(
-                  "8",
+                  _statsLoading ? "..." : "$_farmersCount",
                   "Farmers",
                   Icons.agriculture,
                 ),

@@ -188,7 +188,7 @@ class _BrowseProductsScreenState extends State<BrowseProductsScreen> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const ProductDetailsScreen()),
+                                  MaterialPageRoute(builder: (_) => ProductDetailsScreen(product: product)),
                                 );
                               },
                             ),

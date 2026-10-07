@@ -2,18 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import '../utils/localization.dart';
+import 'chat_farmer_screen.dart';
+import 'place_order_screen.dart';
 
 class CropDetailsScreen extends ConsumerWidget {
-  const CropDetailsScreen({super.key});
+  final Map<String, dynamic>? cropData;
+
+  const CropDetailsScreen({super.key, this.cropData});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     AppState.watchAll(ref);
+
+    final item = cropData ?? {};
+
+    final String name = item['name'] as String? ??
+        item['crop_type'] as String? ??
+        'Highland Matta Rice';
+
+    final double price = (item['price_per_unit'] as num?)?.toDouble() ??
+        (item['price'] as num?)?.toDouble() ??
+        42.0;
+
+    final String unit = item['unit'] as String? ?? 'kg';
+
+    final double quantity = (item['quantity'] as num?)?.toDouble() ??
+        (item['available_quantity_kg'] as num?)?.toDouble() ??
+        50.0;
+
+    final String farmer = item['farmer_name'] as String? ??
+        item['farmer'] as String? ??
+        'Suresh Menon';
+
+    final String farmerPhone = item['farmer_phone'] as String? ??
+        item['phone'] as String? ??
+        '+91 94471 23456';
+
+    final String location = item['district'] as String? ??
+        item['location'] as String? ??
+        'Palakkad, Kerala';
+
+    final String rating = item['rating']?.toString() ?? '4.9 / 5 (Inspected)';
+    final int lowAiPrice = (price * 0.96).round();
+    final int highAiPrice = (price * 1.04).round();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-
       appBar: AppBar(
         backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
         title: Text(
           L10n.get(
             "Crop Details",
@@ -23,54 +60,48 @@ class CropDetailsScreen extends ConsumerWidget {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
-
-            Image.network(
-              "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b",
-              height: 220,
+            Container(
+              height: 200,
               width: double.infinity,
-              fit: BoxFit.cover,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green.shade200, Colors.green.shade50],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: const Center(
+                child: Icon(Icons.agriculture, size: 90, color: Colors.green),
+              ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(16),
-
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Text(
-                    "Premium Rice",
+                    name,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  const SizedBox(height: 10),
-
+                  const SizedBox(height: 6),
                   Text(
-                    "₹4200 / Quintal",
+                    "₹${price.toStringAsFixed(0)} / $unit",
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       color: Colors.green,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 16),
                   const Divider(),
-
                   ListTile(
-                    leading: const Icon(
-                      Icons.inventory,
-                      color: Colors.green,
-                    ),
+                    leading: const Icon(Icons.inventory, color: Colors.green),
                     title: Text(
                       L10n.get(
                         "Available Quantity",
@@ -79,15 +110,10 @@ class CropDetailsScreen extends ConsumerWidget {
                         "கிடைக்கும் அளவு",
                       ),
                     ),
-                    subtitle:
-                        const Text("50 Quintal"),
+                    subtitle: Text("${quantity.toStringAsFixed(0)} $unit"),
                   ),
-
                   ListTile(
-                    leading: const Icon(
-                      Icons.person,
-                      color: Colors.green,
-                    ),
+                    leading: const Icon(Icons.person, color: Colors.green),
                     title: Text(
                       L10n.get(
                         "Farmer",
@@ -96,15 +122,10 @@ class CropDetailsScreen extends ConsumerWidget {
                         "விவசாயி",
                       ),
                     ),
-                    subtitle:
-                        const Text("Ravi Kumar"),
+                    subtitle: Text(farmer),
                   ),
-
                   ListTile(
-                    leading: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                    ),
+                    leading: const Icon(Icons.location_on, color: Colors.red),
                     title: Text(
                       L10n.get(
                         "Location",
@@ -113,15 +134,10 @@ class CropDetailsScreen extends ConsumerWidget {
                         "இடம்",
                       ),
                     ),
-                    subtitle:
-                        const Text("Palakkad"),
+                    subtitle: Text(location),
                   ),
-
                   ListTile(
-                    leading: const Icon(
-                      Icons.star,
-                      color: Colors.orange,
-                    ),
+                    leading: const Icon(Icons.star, color: Colors.orange),
                     title: Text(
                       L10n.get(
                         "Rating",
@@ -130,12 +146,9 @@ class CropDetailsScreen extends ConsumerWidget {
                         "மதிப்பீடு",
                       ),
                     ),
-                    subtitle:
-                        const Text("4.8 / 5"),
+                    subtitle: Text(rating),
                   ),
-
                   const Divider(),
-
                   Text(
                     L10n.get(
                       "Quality Information",
@@ -143,82 +156,81 @@ class CropDetailsScreen extends ConsumerWidget {
                       "गुणवत्ता जानकारी",
                       "தரத் தகவல்",
                     ),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 10),
-
                   const ListTile(
-                    leading:
-                        Icon(Icons.eco),
-                    title: Text(
-                      "Organic Certified",
-                    ),
+                    leading: Icon(Icons.eco, color: Colors.green),
+                    title: Text("Organic Certified & Residue-Free"),
                   ),
-
                   const ListTile(
-                    leading:
-                        Icon(Icons.calendar_today),
-                    title: Text(
-                      "Harvested: 10 Aug 2026",
-                    ),
+                    leading: Icon(Icons.verified, color: Colors.teal),
+                    title: Text("Krishi Bhavan Grade A Standard"),
                   ),
-
                   const SizedBox(height: 15),
-
                   Card(
                     color: Colors.green.shade50,
-                    child: const ListTile(
-                      leading:
-                          Icon(Icons.smart_toy),
-                      title: Text(
-                        "AI Suggested Price",
-                      ),
-                      subtitle:
-                          Text("₹4100 - ₹4300"),
+                    child: ListTile(
+                      leading: const Icon(Icons.smart_toy, color: Colors.green),
+                      title: const Text("AI Suggested Market Range"),
+                      subtitle: Text("₹$lowAiPrice - ₹$highAiPrice / $unit (Zero middleman pricing)"),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed: () {},
-                      icon:
-                          const Icon(Icons.shopping_cart),
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlaceOrderScreen(
+                              productId: item['id'],
+                              productName: name,
+                              pricePerKg: price,
+                              unit: unit,
+                              farmerName: farmer,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.shopping_cart),
                       label: Text(
                         L10n.get(
-                          "Add To Cart",
-                          "കാർട്ടിൽ ചേർക്കുക",
-                          "कार्ट में जोड़ें",
-                          "வண்டியில் சேர்",
+                          "Add To Cart / Place Order",
+                          "ഓർഡർ ചെയ്യുക",
+                          "ऑर्डर करें",
+                          "ஆர்டர் செய்",
                         ),
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.green,
-                        foregroundColor:
-                            Colors.white,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   SizedBox(
                     width: double.infinity,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed: () {},
-                      icon:
-                          const Icon(Icons.call),
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatFarmerScreen(
+                              farmerName: farmer,
+                              farmerPhone: farmerPhone,
+                              productName: name,
+                              farmerLocation: location,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.chat),
                       label: Text(
                         L10n.get(
                           "Contact Farmer",
@@ -226,33 +238,12 @@ class CropDetailsScreen extends ConsumerWidget {
                           "किसान से संपर्क करें",
                           "விவசாயியை தொடர்பு கொள்ளவும்",
                         ),
+                        style: const TextStyle(fontSize: 16),
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed: () {},
-                      icon:
-                          const Icon(Icons.flash_on),
-                      label: Text(
-                        L10n.get(
-                          "Buy Now",
-                          "ഇപ്പോൾ വാങ്ങുക",
-                          "अभी खरीदें",
-                          "இப்போது வாங்கு",
-                        ),
-                      ),
-                      style:
-                          ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.orange,
-                        foregroundColor:
-                            Colors.white,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.green.shade800,
+                        side: BorderSide(color: Colors.green.shade700),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),

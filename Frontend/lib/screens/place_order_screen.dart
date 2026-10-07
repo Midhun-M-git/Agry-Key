@@ -4,19 +4,23 @@ import 'order_success_screen.dart';
 import 'payment_screen.dart';
 
 class PlaceOrderScreen extends StatefulWidget {
-  final int? productId;
+  final dynamic productId;
   final String? productName;
   final double? pricePerKg;
+  final double? price;
   final String? unit;
   final String? farmerName;
+  final dynamic farmerId;
 
   const PlaceOrderScreen({
     super.key,
     this.productId,
     this.productName,
     this.pricePerKg,
+    this.price,
     this.unit,
     this.farmerName,
+    this.farmerId,
   });
 
   @override
@@ -35,7 +39,7 @@ class _PlaceOrderScreenState extends State<PlaceOrderScreen> {
   @override
   void initState() {
     super.initState();
-    pricePerKg = widget.pricePerKg ?? 40.0;
+    pricePerKg = widget.pricePerKg ?? widget.price ?? 40.0;
     unit = widget.unit ?? "Kg";
   }
 

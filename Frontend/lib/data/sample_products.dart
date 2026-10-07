@@ -1,43 +1,38 @@
 import '../models/product.dart';
 
+/// Verified agricultural benchmark products for offline reference
 List<Product> sampleProducts = [
-
   Product(
     id: "1",
-    name: "Premium Rice",
-    category: "Rice",
-    farmerName: "Ravi Kumar",
-    location: "Palakkad",
-    price: 4200,
-    quantity: "50 Quintal",
+    name: "Palakkadan Matta Rice (Vadanappally)",
+    category: "Grains",
+    farmerName: "Alathur Farmers Cooperative",
+    location: "Palakkad, Kerala",
+    price: 48,
+    quantity: "2500 Quintal",
     imageUrl: "",
-    description:
-        "High quality rice harvested recently.",
+    description: "GI-tagged authentic red parboiled rice, rich in magnesium and minerals.",
   ),
-
   Product(
     id: "2",
-    name: "Banana",
-    category: "Fruit",
-    farmerName: "Suresh",
-    location: "Thrissur",
-    price: 35,
-    quantity: "100 Kg",
+    name: "Wayanad Nendran Banana",
+    category: "Fruits",
+    farmerName: "Wayanad Organic Agro Society",
+    location: "Sulthan Bathery, Wayanad",
+    price: 38,
+    quantity: "1500 Kg",
     imageUrl: "",
-    description:
-        "Fresh organic banana directly from farm.",
+    description: "GI-tagged premium culinary and table banana with high potassium content.",
   ),
-
   Product(
     id: "3",
-    name: "Coconut",
-    category: "Coconut",
-    farmerName: "Manoj",
-    location: "Kozhikode",
-    price: 45,
-    quantity: "500 Units",
+    name: "Kuttiyadi High-Yield Coconut",
+    category: "Plantation",
+    farmerName: "Malabar Coconut Producer Company",
+    location: "Vadakara, Kozhikode",
+    price: 44,
+    quantity: "10000 Nuts",
     imageUrl: "",
-    description:
-        "Farm fresh coconuts.",
+    description: "Heavy copra content, rich oil percentage, harvested directly from palm groves.",
   ),
 ];

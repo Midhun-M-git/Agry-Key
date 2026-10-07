@@ -67,6 +67,7 @@ class WeatherService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final isLive = data['is_live'] as bool? ?? true;
         final current = data['current'] as Map<String, dynamic>? ?? {};
         final rawForecast = data['forecast'] as List<dynamic>? ?? [];
         final alerts = data['alerts'] as List<dynamic>? ?? [];
@@ -76,44 +77,47 @@ class WeatherService {
         final windVal = (current['wind_speed_kmh'] as num?)?.toDouble() ?? 10.0;
         final rainVal = (current['precipitation_mm'] as num?)?.toDouble() ?? 0.0;
 
-        // Update legacy static fields
-        temperature = "${tempVal.toStringAsFixed(1)}°C";
-        humidity = "$humidVal%";
-        windSpeed = "${windVal.toStringAsFixed(1)} km/h";
-        rainChance = "${rainVal > 0 ? (rainVal * 20).clamp(10, 95).toInt() : 15}%";
+        // If backend explicitly provided live verified data and not static fallback, use it
+        if (isLive && !(tempVal == 28.5 && humidVal == 72)) {
+          // Update legacy static fields
+          temperature = "${tempVal.toStringAsFixed(1)}°C";
+          humidity = "$humidVal%";
+          windSpeed = "${windVal.toStringAsFixed(1)} km/h";
+          rainChance = "${rainVal > 0 ? (rainVal * 20).clamp(10, 95).toInt() : 15}%";
 
-        final forecastList = rawForecast.map((f) {
-          final item = f as Map<String, dynamic>;
-          return ForecastDay(
-            date: item['date'] as String? ?? '',
-            minTemp: (item['temperature_min_c'] as num?)?.toDouble() ?? 24.0,
-            maxTemp: (item['temperature_max_c'] as num?)?.toDouble() ?? 32.0,
-            condition: _mapWeatherCode(item['weather_code'] as int? ?? 0),
-            rainfallProbability: (item['precipitation_probability_percent'] as num?)?.toDouble() ?? 0.0,
+          final forecastList = rawForecast.map((f) {
+            final item = f as Map<String, dynamic>;
+            return ForecastDay(
+              date: item['date'] as String? ?? '',
+              minTemp: (item['temperature_min_c'] as num?)?.toDouble() ?? 24.0,
+              maxTemp: (item['temperature_max_c'] as num?)?.toDouble() ?? 32.0,
+              condition: _mapWeatherCode(item['weather_code'] as int? ?? 0),
+              rainfallProbability: (item['precipitation_probability_percent'] as num?)?.toDouble() ?? 0.0,
+            );
+          }).toList();
+
+          String? alertMsg;
+          if (alerts.isNotEmpty) {
+            final firstAlert = alerts.first as Map<String, dynamic>;
+            alertMsg = "${firstAlert['title'] ?? 'Alert'}: ${firstAlert['description'] ?? ''}";
+          }
+
+          final weatherData = WeatherData(
+            district: effectiveDistrict,
+            state: effectiveState,
+            temperature: tempVal,
+            condition: _mapWeatherCode(current['weather_code'] as int? ?? 0),
+            humidity: humidVal,
+            windSpeedKmH: windVal,
+            rainfallMm: rainVal,
+            forecast: forecastList,
+            agriculturalAdvisory: alertMsg ?? "Live weather active. Favorable conditions for farming operations.",
+            updatedAt: DateTime.now(),
           );
-        }).toList();
 
-        String? alertMsg;
-        if (alerts.isNotEmpty) {
-          final firstAlert = alerts.first as Map<String, dynamic>;
-          alertMsg = "${firstAlert['title'] ?? 'Alert'}: ${firstAlert['description'] ?? ''}";
+          _lastCachedWeather = weatherData;
+          return weatherData;
         }
-
-        final weatherData = WeatherData(
-          district: effectiveDistrict,
-          state: effectiveState,
-          temperature: tempVal,
-          condition: _mapWeatherCode(current['weather_code'] as int? ?? 0),
-          humidity: humidVal,
-          windSpeedKmH: windVal,
-          rainfallMm: rainVal,
-          forecast: forecastList,
-          agriculturalAdvisory: alertMsg ?? "Live weather active. Favorable conditions for farming operations.",
-          updatedAt: DateTime.now(),
-        );
-
-        _lastCachedWeather = weatherData;
-        return weatherData;
       }
     } catch (_) {}
 

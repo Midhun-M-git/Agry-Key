@@ -5,6 +5,7 @@ import '../core/api_config.dart';
 import '../utils/localization.dart';
 import 'create_listing_screen.dart';
 import 'payment_screen.dart';
+import 'product_details_screen.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
@@ -252,103 +253,130 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.green.shade50,
-                  radius: 24,
-                  child: Icon(sectorIcon, color: Colors.green.shade800),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailsScreen(product: item),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.green.shade50,
+                    radius: 24,
+                    child: Icon(sectorIcon, color: Colors.green.shade800),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          "Seller: $seller • $district",
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.green.shade300),
+                    ),
+                    child: Text(
+                      "Grade $grade",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        "Available: $quantity $unit",
+                        style: const TextStyle(fontSize: 12, color: Colors.black54),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
-                        "Seller: $seller • $district",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        "INR $price / $unit",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade900,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.green.shade300),
-                  ),
-                  child: Text(
-                    "Grade $grade",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Available: $quantity $unit",
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "INR $price / $unit",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade900,
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductDetailsScreen(product: item),
+                            ),
+                          );
+                        },
+                        child: const Text("Details", style: TextStyle(color: Colors.green)),
                       ),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PaymentScreen(
-                          orderId: productId ?? 1,
-                          totalAmount: (quantity > 0 ? quantity : 1) * price,
-                          productName: name,
-                          quantity: quantity > 0 ? quantity : 1,
-                          unit: unit,
-                          deliveryAddress: "$district Agricultural Delivery Point",
+                      const SizedBox(width: 6),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PaymentScreen(
+                                orderId: productId ?? 1,
+                                totalAmount: (quantity > 0 ? quantity : 1) * price,
+                                productName: name,
+                                quantity: quantity > 0 ? quantity : 1,
+                                unit: unit,
+                                deliveryAddress: "$district Agricultural Delivery Point",
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag, size: 16),
+                        label: const Text("Order Now"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.shopping_bag, size: 16),
-                  label: const Text("Order Now"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
