@@ -5,12 +5,14 @@ class VoiceTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
 
   const VoiceTextField({
     super.key,
     required this.controller,
     required this.hintText,
     this.onSubmitted,
+    this.onChanged,
   });
 
   @override
@@ -63,6 +65,7 @@ class _VoiceTextFieldState
     return TextField(
       controller: widget.controller,
       onSubmitted: widget.onSubmitted,
+      onChanged: widget.onChanged,
 
       decoration: InputDecoration(
         hintText: widget.hintText,

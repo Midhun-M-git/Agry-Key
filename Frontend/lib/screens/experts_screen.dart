@@ -205,7 +205,7 @@ class _ExpertsScreenState extends State<ExpertsScreen> {
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.Border.all(color: Colors.green.shade200),
+                      border: Border.all(color: Colors.green.shade200),
                     ),
                     child: Row(
                       children: [

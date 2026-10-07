@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
-import '../utils/localization.dart';
 import 'buyer_profile_screen.dart';
 import 'place_order_screen.dart';
 import 'product_details_screen.dart';
