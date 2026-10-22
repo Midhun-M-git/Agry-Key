@@ -1,4 +1,4 @@
-# Agry-Key 🌾
+# Agry-Key 
 
 Unified Food Economy Intelligence Platform.
 
@@ -6,7 +6,7 @@ Unified Food Economy Intelligence Platform.
 [![Live Backend API](https://img.shields.io/badge/Render-Live%20API-green?logo=render)](https://agry-key.onrender.com/docs)
 [![Download Latest APK](https://img.shields.io/badge/Android%20App-Download%20APK-brightgreen?logo=android)](https://github.com/Midhun-M-git/Agry-Key/releases/latest)
 
-> 📲 **Instant Mobile Download**: [Click here to download the latest `agrikey-latest.apk`](https://github.com/Midhun-M-git/Agry-Key/releases/latest/download/agrikey-latest.apk) directly on your Android phone!
+>  **Instant Mobile Download**: [Click here to download the latest `agrikey-latest.apk`](https://github.com/Midhun-M-git/Agry-Key/releases/latest/download/agrikey-latest.apk) directly on your Android phone!
 
 > [!NOTE]
 > This `README.md` is a shared workspace for all engineering teams (Backend, Frontend, Database/Data Integration, and Field Survey Teams). Please maintain your respective section documentation cleanly.
@@ -109,12 +109,12 @@ Agry-Key uses a **zero-code-change plugin system** for region-specific datasets:
 
 ```
 app/core/regions/
-└── <state>/
-    ├── <state>.py              ← State-level provider contract
-    └── <district>/
-        ├── district.py         ← Mandi, economic & KVK source declarations
-        ├── slang.json          ← Local farming dialect vocabulary
-        └── soil_survey.json    ← Fill-in-the-blanks ground soil test template
+ <state>/
+     <state>.py              ← State-level provider contract
+     <district>/
+         district.py         ← Mandi, economic & KVK source declarations
+         slang.json          ← Local farming dialect vocabulary
+         soil_survey.json    ← Fill-in-the-blanks ground soil test template
 ```
 
 For detailed guidelines on contributing regional slang or soil survey datasets, see the **[Regional Developer Contribution Guide](file:///d:/Agry-key/backend/app/core/regions/CONTRIBUTING.md)**.
