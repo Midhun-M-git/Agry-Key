@@ -6,6 +6,27 @@ Unified Food Economy Intelligence Platform.
 [![Live Backend API](https://img.shields.io/badge/Render-Live%20API-green?logo=render)](https://agry-key.onrender.com/docs)
 [![Download Latest APK](https://img.shields.io/badge/Android%20App-Download%20APK-brightgreen?logo=android)](https://github.com/Midhun-M-git/Agry-Key/releases/latest)
 
+---
+
+## System Architecture
+
+```mermaid
+graph TD
+    Client[Flutter Mobile Application] -->|JWT Authenticated REST API| Gateway[FastAPI Central Gateway]
+    Gateway --> DB[(PostgreSQL Database)]
+    Gateway --> DL[Deep Learning Inference Microservice]
+    DL --> Model[Crop Disease and Health Classification Models]
+    Gateway --> Docs[FastAPI OpenAPI Interactive Documentation]
+    
+    subgraph DevOps & Automation
+        CI[GitHub Actions CI/CD] --> Build[Automated Android APK Compiler]
+        Build --> Release[Automated GitHub Release Distribution]
+    end
+```
+
+---
+
+
 >  **Instant Mobile Download**: [Click here to download the latest `agrikey-latest.apk`](https://github.com/Midhun-M-git/Agry-Key/releases/latest/download/agrikey-latest.apk) directly on your Android phone!
 
 > [!NOTE]
