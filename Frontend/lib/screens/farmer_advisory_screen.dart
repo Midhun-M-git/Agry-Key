@@ -56,8 +56,8 @@ class _FarmerAdvisoryScreenState extends ConsumerState<FarmerAdvisoryScreen> {
     });
 
     try {
-      final state = AppState.userState.isNotEmpty ? AppState.userState : 'Kerala';
-      final district = AppState.userDistrict.isNotEmpty ? AppState.userDistrict : 'Kochi';
+      final state = AppState.userState;
+      final district = AppState.userDistrict;
 
       final answer = await AIService.askQuestion(
         question: query,

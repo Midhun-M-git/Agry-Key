@@ -22,6 +22,22 @@ class PaymentService {
     throw Exception(error['detail'] ?? 'Failed to initiate payment.');
   }
 
+  /// Authoritatively confirms order on backend using Cash on Delivery
+  Future<Map<String, dynamic>> confirmCodPayment(int orderId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/payment/confirm-cod');
+    final response = await ApiService.requestWithAuth(
+      method: 'POST',
+      uri: uri,
+      body: {'order_id': orderId},
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final error = jsonDecode(response.body);
+    throw Exception(error['detail'] ?? 'Failed to confirm Cash on Delivery.');
+  }
+
   /// Verifies payment cryptographic signature and marks order CONFIRMED
   Future<Map<String, dynamic>> verifyPayment({
     required String razorpayOrderId,

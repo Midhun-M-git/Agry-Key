@@ -31,7 +31,19 @@ class _ExpertsScreenState extends State<ExpertsScreen> {
     });
 
     try {
-      final district = AppState.district.isNotEmpty ? AppState.district : 'Palakkad';
+      if (AppState.district.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = L10n.get(
+            "Please select your district to view local agricultural officers.",
+            "പ്രാദേശിക കൃഷി ഓഫീസർമാരെ കാണാൻ ദയവായി നിങ്ങളുടെ ജില്ല തിരഞ്ഞെടുക്കുക.",
+            "स्थानीय कृषि अधिकारियों को देखने के लिए कृपया अपना जिला चुनें।",
+            "உள்ளூர் வேளாண்மை அதிகாரிகளைப் பார்க்க உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்.",
+          );
+        });
+        return;
+      }
+      final district = AppState.district;
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/services/experts?district=${Uri.encodeComponent(district)}');
 
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -50,30 +62,13 @@ class _ExpertsScreenState extends State<ExpertsScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = "Could not fetch agricultural contacts. Showing verified emergency helplines.";
-        _experts = [
-          {
-            "title": "National Kisan Call Centre",
-            "name": "Ministry of Agriculture & Farmers Welfare",
-            "location": "All India (Toll-Free 24x7)",
-            "phone": "1800-180-1551",
-            "category": "HELPLINE",
-          },
-          {
-            "title": "State Agriculture Department Helpline",
-            "name": "Government Agriculture Extension",
-            "location": "Kerala Agriculture Directorate",
-            "phone": "1800-425-1661",
-            "category": "GOVERNMENT",
-          },
-          {
-            "title": "Animal Husbandry & Veterinary Emergency",
-            "name": "Emergency Veterinary Doctor Service",
-            "location": "Toll-Free Helpline",
-            "phone": "1962",
-            "category": "VETERINARY",
-          },
-        ];
+        _errorMessage = L10n.get(
+          "Could not fetch agricultural contacts. Please check your connection.",
+          "വിവരങ്ങൾ ലഭ്യമായില്ല. ദയവായി ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക.",
+          "कृषि संपर्क लोड नहीं हो सके। कृपया अपना कनेक्शन जांचें।",
+          "வேளாண்மை தொடர்புகளைப் பெற முடியவில்லை. இணைப்பைச் சரிபார்க்கவும்.",
+        );
+        _experts = [];
       });
     }
   }

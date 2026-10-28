@@ -37,9 +37,10 @@ def test_dl_predict_with_valid_token(dl_client):
     data = res.json()
     assert data["commodity"] == "Paddy"
     assert data["district"] == "Palakkad"
-    assert data["predicted_trend_30_days"] == "UP"
-    assert data["confidence_score"] > 0.7
-    assert data["horizon_days"] == 30
+    assert data["status"] == "unavailable"
+    assert data["reason"] == "Insufficient historical data for accurate forecasting"
+    assert data["predicted_trend_30_days"] is None
+    assert data["confidence_score"] is None
 
 
 def test_dl_predict_unauthorized(dl_client):
@@ -60,4 +61,37 @@ def test_dl_predict_general_fallback_commodity(dl_client):
     assert res.status_code == 200
     data = res.json()
     assert data["commodity"] == "Dragonfruit"
-    assert data["predicted_trend_30_days"] == "STABLE"
+    assert data["status"] == "unavailable"
+    assert data["reason"] == "Insufficient historical data for accurate forecasting"
+    assert data["predicted_trend_30_days"] is None
+
+
+def test_dl_custom_token_rejects_alternate_defaults(dl_client, monkeypatch):
+    """Validates that configuring a custom token rejects hardcoded defaults or alternate allowlists."""
+    import dl_microservice.app as dl_app
+
+    monkeypatch.setattr(dl_app, "EXPECTED_TOKEN", "custom-production-token-999")
+
+    # Hardcoded/old token should now be rejected
+    res_old = dl_client.post(
+        "/api/predict",
+        json={"district": "Palakkad", "commodity": "Paddy"},
+        headers={"Authorization": "Bearer secure-service-token-agry-key-2026"},
+    )
+    assert res_old.status_code == 401
+
+    # Default secret should be rejected
+    res_default = dl_client.post(
+        "/api/predict",
+        json={"district": "Palakkad", "commodity": "Paddy"},
+        headers={"Authorization": "Bearer secret-service-token-123"},
+    )
+    assert res_default.status_code == 401
+
+    # Custom token succeeds
+    res_custom = dl_client.post(
+        "/api/predict",
+        json={"district": "Palakkad", "commodity": "Paddy"},
+        headers={"Authorization": "Bearer custom-production-token-999"},
+    )
+    assert res_custom.status_code == 200

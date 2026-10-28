@@ -3,6 +3,8 @@ import '../utils/localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
 import '../services/weather_service.dart';
+import '../models/weather.dart';
+import 'location_setup_screen.dart';
 import 'all_services_screen.dart';
 import 'market_screen.dart';
 import 'crop_advisory_screen.dart';
@@ -20,6 +22,7 @@ import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
 import '../services/update_service.dart';
 import '../services/tts_service.dart';
+import '../services/token_service.dart';
 import '../services/voice_navigation_service.dart';
 import '../widgets/voice_companion_bar.dart';
 
@@ -31,51 +34,93 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  String _temperature = WeatherService.temperature;
-  String _humidity = WeatherService.humidity;
-  String _locationName = AppState.district.isNotEmpty ? "${AppState.district}, ${AppState.state}" : "Live Weather";
-  String _weatherCondition = "Clear";
+  WeatherData? _weatherData;
+  bool _isWeatherLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchLiveWeather();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLocationAndLoad();
       if (mounted) {
         UpdateService.checkForUpdate(context);
       }
     });
   }
 
-  void _speakDashboardGreeting() {
+  Future<void> _checkLocationAndLoad() async {
+    final isConfirmed = await TokenService.isLocationConfirmed();
+    final session = await TokenService.loadSession();
+
+    if (!isConfirmed || (session.district.isEmpty && AppState.district.isEmpty)) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const LocationSetupScreen(),
+        ),
+      ).then((_) async {
+        final confirmedAfter = await TokenService.isLocationConfirmed();
+        if (confirmedAfter) {
+          _fetchLiveWeather();
+        }
+      });
+      return;
+    }
+    _fetchLiveWeather();
+  }
+
+  void _speakDashboardGreeting(WeatherData weather) {
     final lang = AppState.selectedLanguage;
-    final loc = _locationName != "Live Weather" ? _locationName : "your area";
-    String greeting = "Welcome to AgriKey. Current temperature in $loc is $_temperature. Tap Crop Advisory to hear the best crops for your farm.";
+    final loc = "${weather.district}, ${weather.state}";
+    final temp = "${weather.temperature.toStringAsFixed(1)}°C";
+    String greeting = "Welcome to AgriKey. Current temperature in $loc is $temp. Tap Crop Advisory to hear the best crops for your farm.";
     if (lang == 'Malayalam') {
-      greeting = "നമസ്കാരം! $loc ൽ ഇന്നത്തെ കാലാവസ്ഥ $_temperature ആണ്. നിങ്ങളുടെ മണ്ണിന് അനുയോജ്യമായ വിള നിർദ്ദേശങ്ങൾ പരിശോധിക്കൂ.";
+      greeting = "നമസ്കാരം! $loc ൽ ഇന്നത്തെ കാലാവസ്ഥ $temp ആണ്. നിങ്ങളുടെ മണ്ണിന് അനുയോജ്യമായ വിള നിർദ്ദേശങ്ങൾ പരിശോധിക്കൂ.";
     } else if (lang == 'Hindi') {
-      greeting = "नमस्ते! $loc में आज का तापमान $_temperature है। अपनी भूमि के लिए सर्वोत्तम फसल सलाह देखने के लिए टैप करें।";
+      greeting = "नमस्ते! $loc में आज का तापमान $temp है। अपनी भूमि के लिए सर्वोत्तम फसल सलाह देखने के लिए टैप करें।";
     } else if (lang == 'Tamil') {
-      greeting = "வணக்கம்! $loc இல் இன்றைய வெப்பநிலை $_temperature ஆகும். உங்கள் பண்ணைக்கான சிறந்த பயிர் ஆலோசனையை பாருங்கள்.";
+      greeting = "வணக்கம்! $loc இல் இன்றைய வெப்பநிலை $temp ஆகும். உங்கள் பண்ணைக்கான சிறந்த பயிர் ஆலோசனையை பாருங்கள்.";
     }
     TTSService.speak(greeting);
   }
 
   Future<void> _fetchLiveWeather() async {
+    if (AppState.district.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _weatherData = null;
+          _isWeatherLoading = false;
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _isWeatherLoading = true;
+      });
+    }
     try {
       final lat = AppState.latitude != 0.0 ? AppState.latitude : null;
       final lng = AppState.longitude != 0.0 ? AppState.longitude : null;
       final data = await WeatherService.fetchWeather(lat: lat, lng: lng);
       if (mounted) {
         setState(() {
-          _temperature = "${data.temperature.toStringAsFixed(1)}°C";
-          _humidity = "${data.humidity}%";
-          _locationName = "${data.district}, ${data.state}";
-          _weatherCondition = data.condition;
+          _weatherData = data;
+          _isWeatherLoading = false;
         });
-        _speakDashboardGreeting();
+        if (data != null) {
+          _speakDashboardGreeting(data);
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _weatherData = null;
+          _isWeatherLoading = false;
+        });
+      }
+    }
   }
 
   String _getGreeting() {
@@ -256,106 +301,188 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(20),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const WeatherScreen(),
-                    ),
-                  ).then((_) => _fetchLiveWeather());
+                  if (AppState.district.isEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LocationSetupScreen(),
+                      ),
+                    ).then((_) {
+                      if (AppState.district.isNotEmpty) {
+                        _fetchLiveWeather();
+                      }
+                    });
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const WeatherScreen(),
+                      ),
+                    ).then((_) => _fetchLiveWeather());
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                L10n.get(
-                                  "Today's Weather",
-                                  "ഇന്നത്തെ കാലാവസ്ഥ",
-                                  "आज का मौसम",
-                                  "இன்றைய வானிலை",
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                  child: AppState.district.isEmpty
+                      ? Row(
+                          children: [
+                            const Icon(Icons.location_off_outlined, color: Colors.amber, size: 40),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    L10n.get(
+                                      "Select District Location",
+                                      "ജില്ല തിരഞ്ഞെടുക്കുക",
+                                      "जिला चुनें",
+                                      "மாவட்டத்தைத் தேர்ந்தெடுக்கவும்",
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    L10n.get(
+                                      "Tap to select your district for weather and advisory.",
+                                      "കാലാവസ്ഥയും നിർദ്ദേശങ്ങളും ലഭിക്കാൻ ജില്ല തിരഞ്ഞെടുക്കുക.",
+                                      "मौसम और सलाह के लिए अपना जिला चुनें।",
+                                      "வானிலை மற்றும் ஆலோசனை பெற உங்கள் மாவட்டத்தை தேர்வு செய்யவும்.",
+                                    ),
+                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.open_in_new,
-                                size: 14,
-                                color: Colors.grey,
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        )
+                      : _isWeatherLoading
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
                               ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on, size: 14, color: Colors.green),
-                              const SizedBox(width: 4),
-                              Text(
-                                _locationName,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade800,
+                            )
+                          : _weatherData == null
+                              ? Row(
+                                  children: [
+                                    const Icon(Icons.cloud_off, color: Colors.grey, size: 40),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            L10n.get(
+                                              "Weather Unavailable",
+                                              "കാലാവസ്ഥ ലഭ്യമല്ല",
+                                              "मौसम अनुपलब्ध",
+                                              "வானிலை கிடைக்கவில்லை",
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            L10n.get(
+                                              "Live data could not be retrieved. Tap to retry.",
+                                              "വിവരങ്ങൾ ലഭ്യമായില്ല. വീണ്ടും ശ്രമിക്കാൻ അമർത്തുക.",
+                                              "डेटा प्राप्त नहीं हो सका। पुनः प्रयास करें।",
+                                              "தரவைப் பெற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+                                            ),
+                                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.refresh, color: Colors.grey),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              L10n.get(
+                                                "Today's Weather",
+                                                "ഇന്നത്തെ കാലാവസ്ഥ",
+                                                "आज का मौसम",
+                                                "இன்றைய வானிலை",
+                                              ),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.open_in_new, size: 14, color: Colors.grey),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.location_on, size: 14, color: Colors.green),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              "${_weatherData!.district}, ${_weatherData!.state}",
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.green.shade800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          "${_weatherData!.temperature.toStringAsFixed(1)}°C",
+                                          style: const TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${_weatherData!.condition} · ${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: ${_weatherData!.humidity}%",
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        const Icon(
+                                          Icons.wb_sunny,
+                                          size: 56,
+                                          color: Colors.orange,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          L10n.get("Tap for details", "കൂടുതൽ വിവരങ്ങൾ", "विवरण देखें", "விவரங்களை பார்க்க"),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Text(
-                            _temperature,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-
-                          Text(
-                            "$_weatherCondition · ${L10n.get("Humidity", "ആർദ്രത", "आर्द्रता", "ஈரப்பதம்")}: $_humidity",
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Column(
-                        children: [
-                          const Icon(
-                            Icons.wb_sunny,
-                            size: 56,
-                            color: Colors.orange,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            L10n.get("Tap for details", "കൂടുതൽ വിവരങ്ങൾ", "विवरण देखें", "விவரங்களை பார்க்க"),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),

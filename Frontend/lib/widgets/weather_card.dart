@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/weather.dart';
 
 class WeatherCard extends StatelessWidget {
-  final WeatherData weather;
+  final WeatherData? weather;
   final VoidCallback? onRefresh;
 
   const WeatherCard({
@@ -13,6 +13,49 @@ class WeatherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final w = weather;
+    if (w == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade900,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_rounded, color: Colors.white54, size: 36),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Weather Unavailable',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Live meteorological observations currently unavailable.',
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            if (onRefresh != null)
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white70),
+                onPressed: onRefresh,
+              ),
+          ],
+        ),
+      );
+    }
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -42,7 +85,7 @@ class WeatherCard extends StatelessWidget {
                   const Icon(Icons.location_on, color: Colors.white70, size: 18),
                   const SizedBox(width: 4),
                   Text(
-                    '${weather.district}, ${weather.state}',
+                    '${w.district}, ${w.state}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -66,7 +109,7 @@ class WeatherCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${weather.temperature.toStringAsFixed(1)}°C',
+                    '${w.temperature.toStringAsFixed(1)}°C',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 44,
@@ -74,7 +117,7 @@ class WeatherCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    weather.condition,
+                    w.condition,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -99,13 +142,13 @@ class WeatherCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMetric(Icons.water_drop_outlined, 'Humidity', '${weather.humidity}%'),
-                _buildMetric(Icons.air, 'Wind', '${weather.windSpeedKmH.toStringAsFixed(1)} km/h'),
-                _buildMetric(Icons.umbrella_outlined, 'Rainfall', '${weather.rainfallMm.toStringAsFixed(1)} mm'),
+                _buildMetric(Icons.water_drop_outlined, 'Humidity', '${w.humidity}%'),
+                _buildMetric(Icons.air, 'Wind', '${w.windSpeedKmH.toStringAsFixed(1)} km/h'),
+                _buildMetric(Icons.umbrella_outlined, 'Rainfall', '${w.rainfallMm.toStringAsFixed(1)} mm'),
               ],
             ),
           ),
-          if (weather.agriculturalAdvisory != null && weather.agriculturalAdvisory!.isNotEmpty) ...[
+          if (w.agriculturalAdvisory != null && w.agriculturalAdvisory!.isNotEmpty) ...[
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(10),
@@ -119,7 +162,7 @@ class WeatherCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      weather.agriculturalAdvisory!,
+                      w.agriculturalAdvisory!,
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

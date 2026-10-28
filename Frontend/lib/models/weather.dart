@@ -66,12 +66,12 @@ class WeatherData {
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     final rawForecast = json['forecast'] as List<dynamic>? ?? [];
     return WeatherData(
-      district: json['district'] as String? ?? 'Palakkad',
-      state: json['state'] as String? ?? 'Kerala',
-      temperature: (json['temperature'] as num?)?.toDouble() ?? 28.0,
+      district: json['district'] as String? ?? '',
+      state: json['state'] as String? ?? '',
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.0,
       condition: json['condition'] as String? ?? 'Clear',
-      humidity: (json['humidity'] as num?)?.toInt() ?? 70,
-      windSpeedKmH: (json['wind_speed_kmh'] as num?)?.toDouble() ?? 12.0,
+      humidity: (json['humidity'] as num?)?.toInt() ?? 0,
+      windSpeedKmH: (json['wind_speed_kmh'] as num?)?.toDouble() ?? 0.0,
       rainfallMm: (json['rainfall_mm'] as num?)?.toDouble() ?? 0.0,
       forecast: rawForecast
           .map((f) => ForecastDay.fromJson(f as Map<String, dynamic>))

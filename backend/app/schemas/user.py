@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.user import UserRole
 
@@ -13,7 +13,6 @@ class OTPResponse(BaseModel):
     status: str = "success"
     message: str = "OTP dispatched"
     expires_in_seconds: int = 300
-    otp_code: Optional[str] = None
 
 
 class UserRegisterRequest(BaseModel):
@@ -22,6 +21,16 @@ class UserRegisterRequest(BaseModel):
     full_name: Optional[str] = None
     role: UserRole = UserRole.FARMER
     preferred_language: str = "ta"
+
+    @field_validator("role")
+    @classmethod
+    def validate_public_role(cls, v: UserRole) -> UserRole:
+        if v not in (UserRole.FARMER, UserRole.BUYER):
+            raise ValueError(
+                "Registration is only permitted for FARMER or BUYER roles. "
+                "Administrator accounts must be provisioned through controlled administrative procedures."
+            )
+        return v
 
 
 class UserLoginRequest(BaseModel):

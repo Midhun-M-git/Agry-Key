@@ -87,55 +87,22 @@ class DLForecastingClient:
         return self._compute_seasonal_forecast(district, commodity)
 
     def _fallback_forecast(self, commodity: str, district: str = "") -> Dict[str, Any]:
-        """Graceful degradation when inference engine times out."""
+        """Fail closed when inference engine is unavailable."""
         return {
+            "status": "unavailable",
+            "reason": "Insufficient historical data for accurate forecasting",
             "commodity": commodity,
             "district": district,
-            "predicted_trend_30_days": "STABLE",
-            "confidence_score": 0.50,
-            "message": "Fallback heuristics applied due to inference engine timeout.",
             "horizon_days": 30,
         }
 
     def _compute_seasonal_forecast(self, district: str, commodity: str) -> Dict[str, Any]:
-        """Calculates dynamic agricultural price trend for commodities based on seasonal momentum."""
-        comm_lower = commodity.lower().strip()
-        
-        # Seasonality profiles for major Indian crops
-        PROFILES = {
-            "paddy": {"trend": "UP", "change": 4.2, "confidence": 0.88, "base": 2820.0},
-            "rice": {"trend": "UP", "change": 3.8, "confidence": 0.90, "base": 3200.0},
-            "coconut": {"trend": "UP", "change": 2.1, "confidence": 0.85, "base": 32.0},
-            "banana": {"trend": "UP", "change": 6.5, "confidence": 0.86, "base": 4200.0},
-            "milk": {"trend": "STABLE", "change": 1.2, "confidence": 0.94, "base": 48.0},
-            "pepper": {"trend": "UP", "change": 5.4, "confidence": 0.82, "base": 620.0},
-            "tomato": {"trend": "DOWN", "change": -4.5, "confidence": 0.78, "base": 2400.0},
-            "onion": {"trend": "UP", "change": 7.2, "confidence": 0.84, "base": 2800.0},
-            "cardamom": {"trend": "UP", "change": 5.0, "confidence": 0.80, "base": 1850.0},
-            "ginger": {"trend": "UP", "change": 6.0, "confidence": 0.81, "base": 6800.0},
-            "rubber": {"trend": "UP", "change": 3.2, "confidence": 0.89, "base": 19200.0},
-        }
-
-        matched = next((v for k, v in PROFILES.items() if k in comm_lower), None)
-        if matched:
-            return {
-                "commodity": commodity,
-                "district": district,
-                "predicted_trend_30_days": matched["trend"],
-                "confidence_score": matched["confidence"],
-                "projected_change_percent": matched["change"],
-                "base_mandi_price": matched["base"],
-                "model_version": "v1.2.0-ewma-dl",
-                "horizon_days": 30,
-            }
-
+        """Returns unavailable rather than generating synthetic seasonal forecasts."""
         return {
+            "status": "unavailable",
+            "reason": "Insufficient historical data for accurate forecasting",
             "commodity": commodity,
             "district": district,
-            "predicted_trend_30_days": "STABLE",
-            "confidence_score": 0.75,
-            "projected_change_percent": 1.5,
-            "model_version": "v1.2.0-ewma-dl",
             "horizon_days": 30,
         }
 

@@ -170,29 +170,30 @@ class LLMClient:
 
         strategy = (
             f"### Integrated Agricultural Advisory for {district}\n\n"
-            f"**1. Profit Maximization & Harvest Timing**\n"
-            f"• Market forecasts indicate an upward trend for primary commodities in {district} APMC mandis. "
-            f"Plan staggered harvesting and leverage warehouse receipts or direct collective marketing through FPOs "
-            f"to capture 12–18% higher farm-gate realization over distress middleman auctions.\n\n"
-            f"**2. Cost Optimization & Circular Farm Economics**\n"
+            f"*(Baseline agronomic guidance — automated LLM generation unavailable)*\n\n"
+            f"**1. Harvest Timing & Collective Marketing**\n"
+            f"• Explore staggered harvesting and collective marketing through local Farmer Producer Organizations (FPOs) "
+            f"or e-NAM mandis where available to avoid distress sales during peak harvest gluts.\n\n"
+            f"**2. Cost Management & Soil Nutrition**\n"
         )
 
         if has_synergy:
             strategy += (
-                f"• Capitalize on internal circular farm synergies: utilize livestock manure as enriched organic compost "
-                f"and bio-slurry for crop nutrition. This reduces synthetic urea and DAP expenditure by 30–40% while preserving soil microbial health.\n"
+                f"• Capitalize on internal circular farm resources: properly compost available livestock manure "
+                f"to supplement crop nutrition, following recommended package of practices to reduce chemical fertilizer "
+                f"dependency while maintaining soil organic matter.\n"
             )
         else:
             strategy += (
-                f"• Optimize input expenses: adhere strictly to soil-test-based fertilizer schedules. Split urea application into "
-                f"2–3 vegetative phases and incorporate farmyard manure (FYM) to cut chemical fertilizer costs by up to 25%.\n"
+                f"• Follow soil-test-based fertilizer schedules: split nitrogen/urea application across vegetative "
+                f"growth phases and incorporate well-decomposed farmyard manure (FYM) to improve nutrient uptake.\n"
             )
 
         strategy += (
             f"\n**3. Climate & Environmental Resilience ({temp})**\n"
-            f"• Implement micro-irrigation (drip or sprinkler) during afternoon peak evapotranspiration windows. "
-            f"Apply mulching with organic crop residues to maintain root-zone soil moisture and protect against heat stress. "
-            f"Clear field boundary drainage trenches ahead of unseasonal precipitation."
+            f"• Utilize efficient irrigation methods (drip or sprinkler) during morning or evening hours to minimize evapotranspiration losses. "
+            f"Apply organic crop residue mulching to conserve root-zone soil moisture and protect against heat stress. "
+            f"Ensure field boundary drainage trenches are clear ahead of unseasonal rains."
         )
 
         return strategy

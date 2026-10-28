@@ -1,17 +1,26 @@
+databases:
+  - name: agry-key-db
+    databaseName: agrykey
+    user: agrykey_user
+    plan: free
+    region: singapore
+
 services:
   - type: web
     name: agry-key-api
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     plan: free
     region: singapore
-    healthCheckPath: /api/v1/health
+    healthCheckPath: /api/v1/health/readiness
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: ENVIRONMENT
+        value: "production"
       - key: PROJECT_NAME
         value: "Agry-Key Backend"
       - key: API_V1_STR
@@ -23,15 +32,19 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "1440"
       - key: CORS_ORIGINS
-        value: "*"
+        value: "https://agry-key.web.app"
       - key: DATABASE_URL
-        value: "sqlite:///./agry_key.db" # Set to PostgreSQL connection string in production (e.g. postgresql://...)
+        fromDatabase:
+          name: agry-key-db
+          property: connectionString
       - key: SMS_PROVIDER
-        value: "mock" # Set to "twilio" or "msg91" with SMS_API_KEY / TWILIO credentials for real SMS delivery
+        value: "twilio"
       - key: SMS_API_KEY
-        value: "mock"
+        sync: false
       - key: DL_FORECAST_SERVICE_URL
         value: "https://agry-key-dl-space.hf.space/api/predict"
+      - key: DL_FORECAST_SERVICE_TOKEN
+        sync: false
       - key: LLM_PROVIDER
         value: "huggingface"
       - key: HF_INFERENCE_ENDPOINT_URL
@@ -39,4 +52,4 @@ services:
       - key: HF_MODEL_ID
         value: "Qwen/Qwen2.5-72B-Instruct"
       - key: HUGGINGFACE_API_KEY
-        sync: false # Set your personal hf_... token securely in Render dashboard
+        sync: false

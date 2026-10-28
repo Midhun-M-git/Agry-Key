@@ -30,14 +30,19 @@ class ForecastRequest(BaseModel):
     commodity: str = Field(..., json_schema_extra={"example": "Paddy"})
 
 
+from typing import Optional
+
+
 class ForecastResponse(BaseModel):
+    status: str = "unavailable"
+    reason: Optional[str] = "Insufficient historical data for accurate forecasting"
     commodity: str
     district: str
-    predicted_trend_30_days: str
-    confidence_score: float
-    projected_change_percent: float
-    model_version: str
-    horizon_days: int = 30
+    predicted_trend_30_days: Optional[str] = None
+    confidence_score: Optional[float] = None
+    projected_change_percent: Optional[float] = None
+    model_version: Optional[str] = "v1.3.0-fail-closed"
+    horizon_days: Optional[int] = 30
 
 
 @app.get("/")
@@ -65,8 +70,7 @@ def predict_commodity_trend(
         token = ""
         if authorization and authorization.startswith("Bearer "):
             token = authorization[7:].strip()
-        allowed_tokens = {EXPECTED_TOKEN, "secret-service-token-123", "secure-service-token-agry-key-2026"}
-        if token not in allowed_tokens:
+        if not token or token != EXPECTED_TOKEN:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or missing service authorization token",

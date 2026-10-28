@@ -2,7 +2,8 @@
 
 import time
 from collections import defaultdict
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
@@ -13,21 +14,35 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        self.requests = defaultdict(list)
+        self.requests: dict[str, list[float]] = defaultdict(list)
+        self._last_cleanup = time.time()
 
     async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host if request.client else "127.0.0.1"
         now = time.time()
 
+        # Periodic dictionary cleanup every 5 minutes to prevent memory leak
+        if now - self._last_cleanup > 300:
+            stale_cutoff = now - self.window_seconds
+            keys_to_delete = [
+                ip for ip, timestamps in self.requests.items()
+                if not timestamps or timestamps[-1] < stale_cutoff
+            ]
+            for ip in keys_to_delete:
+                self.requests.pop(ip, None)
+            self._last_cleanup = now
+
         # Evict timestamps outside the active rolling window
-        self.requests[client_ip] = [
+        active_timestamps = [
             t for t in self.requests[client_ip] if now - t < self.window_seconds
         ]
+        self.requests[client_ip] = active_timestamps
 
-        if len(self.requests[client_ip]) >= self.max_requests:
-            raise HTTPException(
+        if len(active_timestamps) >= self.max_requests:
+            return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Rate limit exceeded",
+                content={"detail": "Too many requests. Please wait a moment before trying again."},
+                headers={"Retry-After": str(self.window_seconds)},
             )
 
         self.requests[client_ip].append(now)

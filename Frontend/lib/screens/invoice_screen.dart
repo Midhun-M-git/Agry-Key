@@ -41,22 +41,9 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
         _isLoading = false;
       });
     } catch (_) {
-      // Fallback display if backend order is newly created or offline
       if (!mounted) return;
       setState(() {
-        _orderData = {
-          "id": _orderId,
-          "product_name": "Premium High-Yield Produce",
-          "quantity": 20.0,
-          "unit": "kg",
-          "price_per_unit": 420.0,
-          "total_amount": 8400.0,
-          "buyer_name": "Registered Buyer",
-          "farmer_name": "Verified Farm Producer",
-          "delivery_address": "Palakkad Agricultural Center, Kerala",
-          "status": "CONFIRMED",
-          "created_at": DateTime.now().toIso8601String(),
-        };
+        _orderData = null;
         _isLoading = false;
       });
     }
@@ -117,9 +104,38 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Card(
+          : _orderData == null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          L10n.get(
+                            "No data available at this time.",
+                            "നിലവിൽ വിവരങ്ങൾ ലഭ്യമല്ല.",
+                            "इस समय कोई डेटा उपलब्ध नहीं है।",
+                            "இந்த நேரத்தில் தரவு எதுவும் கிடைக்கவில்லை.",
+                          ),
+                          style: const TextStyle(fontSize: 16, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _loadOrderDetails,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text("Retry"),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Card(
                 elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(

@@ -68,25 +68,27 @@ class LocationService {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         if (data['status'] == 'success') {
-          final lat = (data['lat'] as num?)?.toDouble() ?? 9.9406;
-          final lon = (data['lon'] as num?)?.toDouble() ?? 76.2653;
-          final city = data['city']?.toString() ?? 'Kochi';
-          final region = data['regionName']?.toString() ?? 'Kerala';
-          return {
-            'lat': lat,
-            'lon': lon,
-            'district': city,
-            'state': region,
-          };
+          final lat = (data['lat'] as num?)?.toDouble();
+          final lon = (data['lon'] as num?)?.toDouble();
+          final city = data['city']?.toString();
+          final region = data['regionName']?.toString();
+          if (lat != null && lon != null && city != null && region != null) {
+            return {
+              'lat': lat,
+              'lon': lon,
+              'district': city,
+              'state': region,
+            };
+          }
         }
       }
     } catch (_) {}
     return null;
   }
 
-  /// Master resolver: GPS -> Network IP -> Cached/Default.
-  /// Automatically updates AppState so weather, crop advisory, and market use the real location.
-  static Future<LocationResult> resolveRealLocation() async {
+  /// Master resolver: GPS -> Network IP -> Cached Profile.
+  /// Strictly fails closed: Never fabricates default locations.
+  static Future<LocationResult?> resolveRealLocation() async {
     // 1. Try Hardware GPS
     try {
       final pos = await getCurrentLocation();
@@ -104,17 +106,23 @@ class LocationService {
           }
         } catch (_) {}
 
-        if (dist.isEmpty) dist = AppState.district.isNotEmpty ? AppState.district : 'Kochi';
-        if (st.isEmpty) st = AppState.state.isNotEmpty ? AppState.state : 'Kerala';
+        if (dist.isEmpty && AppState.district.isNotEmpty) {
+          dist = AppState.district;
+        }
+        if (st.isEmpty && AppState.state.isNotEmpty) {
+          st = AppState.state;
+        }
 
-        _syncAppState(pos.latitude, pos.longitude, dist, st);
-        return LocationResult(
-          latitude: pos.latitude,
-          longitude: pos.longitude,
-          district: dist,
-          state: st,
-          source: 'GPS',
-        );
+        if (dist.isNotEmpty && st.isNotEmpty) {
+          _syncAppState(pos.latitude, pos.longitude, dist, st);
+          return LocationResult(
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+            district: dist,
+            state: st,
+            source: 'GPS',
+          );
+        }
       }
     } catch (e) {
       debugPrint('[LocationService] GPS resolution error: $e');
@@ -142,20 +150,19 @@ class LocationService {
       debugPrint('[LocationService] IP resolution error: $e');
     }
 
-    // 3. Fallback to AppState or real regional defaults
-    final lat = AppState.latitude != 0.0 ? AppState.latitude : 9.9406;
-    final lon = AppState.longitude != 0.0 ? AppState.longitude : 76.2653;
-    final dist = AppState.district.isNotEmpty ? AppState.district : 'Kochi';
-    final st = AppState.state.isNotEmpty ? AppState.state : 'Kerala';
+    // 3. Fallback to valid cached AppState profile if explicitly set
+    if (AppState.district.isNotEmpty && AppState.state.isNotEmpty && AppState.latitude != 0.0) {
+      return LocationResult(
+        latitude: AppState.latitude,
+        longitude: AppState.longitude,
+        district: AppState.district,
+        state: AppState.state,
+        source: 'OFFLINE_CACHE',
+      );
+    }
 
-    _syncAppState(lat, lon, dist, st);
-    return LocationResult(
-      latitude: lat,
-      longitude: lon,
-      district: dist,
-      state: st,
-      source: 'OFFLINE_CACHE',
-    );
+    // Fail closed: No valid location could be resolved without user input
+    return null;
   }
 
   static void _syncAppState(double lat, double lon, String dist, String st) {

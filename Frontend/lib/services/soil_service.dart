@@ -91,16 +91,29 @@ class SoilHealthData {
 
 class SoilService {
   static Future<SoilHealthData> getSoilHealth({
-    String district = 'Palakkad',
-    String soilType = 'RED_LOAMY',
+    required String district,
+    required String soilType,
     int? farmerProfileId,
   }) async {
     List<SoilRecommendationItem> recommendations = [];
     List<SoilReportItem> userReports = [];
     List<String> suitableCrops = [];
     String? surveyAuthority;
-    double avgPh = 6.5;
-    double avgOc = 0.65;
+    double avgPh = 0.0;
+    double avgOc = 0.0;
+
+    if (district.trim().isEmpty) {
+      return SoilHealthData(
+        district: '',
+        soilType: soilType,
+        averagePh: 0.0,
+        averageOc: 0.0,
+        recommendations: [],
+        userReports: [],
+        suitableCrops: [],
+        surveyAuthority: null,
+      );
+    }
 
     // 1. Fetch district soil recommendations and survey
     try {
@@ -121,8 +134,8 @@ class SoilService {
           final taluks = survey['panchayaths_and_taluks'] as List<dynamic>? ?? [];
           if (taluks.isNotEmpty) {
             final firstTaluk = taluks.first as Map<String, dynamic>;
-            avgPh = (firstTaluk['ph_level'] as num?)?.toDouble() ?? 6.5;
-            avgOc = (firstTaluk['organic_carbon_percent'] as num?)?.toDouble() ?? 0.65;
+            avgPh = (firstTaluk['ph_level'] as num?)?.toDouble() ?? 0.0;
+            avgOc = (firstTaluk['organic_carbon_percent'] as num?)?.toDouble() ?? 0.0;
             final crops = firstTaluk['suitable_crops'] as List<dynamic>? ?? [];
             suitableCrops = crops.map((c) => c.toString()).toList();
           }
@@ -148,26 +161,6 @@ class SoilService {
           }
         }
       } catch (_) {}
-    }
-
-    // Default fallback recommendations if offline or empty
-    if (recommendations.isEmpty) {
-      recommendations = [
-        SoilRecommendationItem(
-          inputName: "Organic Compost / Farmyard Manure",
-          purpose: "Increase soil organic matter and water-holding capacity.",
-          applicationGuidance: "Apply 5-10 tonnes/hectare during field preparation before sowing.",
-        ),
-        SoilRecommendationItem(
-          inputName: "Soil-test-based Balanced NPK",
-          purpose: "Supply essential nitrogen, phosphorus, and potash tailored to crop stage.",
-          applicationGuidance: "Apply nitrogen in 2-3 split doses; incorporate phosphorus as basal dose.",
-        ),
-      ];
-    }
-
-    if (suitableCrops.isEmpty) {
-      suitableCrops = ["Paddy", "Banana", "Vegetables", "Pulses", "Coconut"];
     }
 
     return SoilHealthData(

@@ -27,9 +27,10 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  static const bool kEnableOnlinePayment = false;
   final PaymentService _paymentService = const PaymentService();
 
-  String selectedPayment = "RAZORPAY_UPI";
+  String selectedPayment = "COD";
   bool _isProcessing = false;
   String? _errorMessage;
   Map<String, dynamic>? _paymentSuccessData;
@@ -61,8 +62,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       if (selectedPayment == "COD") {
-        // Cash on Delivery — legitimate offline confirmation
-        await Future.delayed(const Duration(seconds: 1));
+        // Cash on Delivery — authoritative backend confirmation
+        final codResult = await _paymentService.confirmCodPayment(_effectiveOrderId);
         if (!mounted) return;
         setState(() {
           _isProcessing = false;
@@ -70,6 +71,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             "status": "CONFIRMED",
             "method": "Cash on Delivery",
             "order_id": _effectiveOrderId,
+            "payment_id": codResult["id"] ?? codResult["payment_id"],
           };
         });
         return;
@@ -279,31 +281,33 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               const SizedBox(height: 10),
 
-              _paymentOptionTile(
-                value: "RAZORPAY_UPI",
-                title: "Razorpay UPI (Google Pay, PhonePe, Paytm)",
-                subtitle: "Zero processing fee for direct farmer settlement",
-                icon: Icons.qr_code,
-              ),
+              if (kEnableOnlinePayment) ...[
+                _paymentOptionTile(
+                  value: "RAZORPAY_UPI",
+                  title: "Razorpay UPI (Google Pay, PhonePe, Paytm)",
+                  subtitle: "Zero processing fee for direct farmer settlement",
+                  icon: Icons.qr_code,
+                ),
 
-              _paymentOptionTile(
-                value: "RAZORPAY_CARD",
-                title: "Debit / Credit Card (Visa, RuPay, MasterCard)",
-                subtitle: "Secured with 256-bit SSL encryption",
-                icon: Icons.credit_card,
-              ),
+                _paymentOptionTile(
+                  value: "RAZORPAY_CARD",
+                  title: "Debit / Credit Card (Visa, RuPay, MasterCard)",
+                  subtitle: "Secured with 256-bit SSL encryption",
+                  icon: Icons.credit_card,
+                ),
 
-              _paymentOptionTile(
-                value: "RAZORPAY_NB",
-                title: "Net Banking (SBI, Canara, Kerala Bank, etc.)",
-                subtitle: "Direct bank-to-bank instant verification",
-                icon: Icons.account_balance,
-              ),
+                _paymentOptionTile(
+                  value: "RAZORPAY_NB",
+                  title: "Net Banking (SBI, Canara, Kerala Bank, etc.)",
+                  subtitle: "Direct bank-to-bank instant verification",
+                  icon: Icons.account_balance,
+                ),
+              ],
 
               _paymentOptionTile(
                 value: "COD",
-                title: "Cash On Delivery / Offline Settlement",
-                subtitle: "Pay farmer directly at time of produce delivery",
+                title: "Cash On Delivery / Farmgate Settlement",
+                subtitle: "Pay farmer directly upon verified receipt of produce",
                 icon: Icons.local_shipping,
               ),
 
@@ -350,8 +354,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       : const Icon(Icons.lock),
                   label: Text(
                     _isProcessing
-                        ? "Processing Transaction..."
-                        : "Pay INR ${_effectiveTotal.toStringAsFixed(2)}",
+                        ? "Confirming Order..."
+                        : selectedPayment == "COD"
+                            ? "Confirm Cash On Delivery (INR ${_effectiveTotal.toStringAsFixed(2)})"
+                            : "Pay INR ${_effectiveTotal.toStringAsFixed(2)}",
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(

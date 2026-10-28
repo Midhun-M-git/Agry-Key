@@ -1,9 +1,10 @@
 """Razorpay payment transaction records and status tracking."""
 
 from datetime import datetime, timezone
+from decimal import Decimal
 import enum
 from typing import Optional
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -26,8 +27,9 @@ class Payment(Base):
     razorpay_order_id: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     razorpay_payment_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True, index=True, nullable=True)
     razorpay_signature: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="INR", nullable=False)
+    source_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     status: Mapped[PaymentStatus] = mapped_column(
         Enum(PaymentStatus), default=PaymentStatus.PENDING, index=True, nullable=False
     )

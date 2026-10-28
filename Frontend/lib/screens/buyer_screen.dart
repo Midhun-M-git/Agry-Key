@@ -126,7 +126,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
     final name = item['name'] ?? item['crop_type'] ?? 'Produce';
     final seller = item['farmer_name'] ?? 'Verified Producer';
     final qty = "${item['quantity'] ?? item['quantity_available'] ?? 0} ${item['unit'] ?? 'kg'}";
-    final location = item['district'] ?? 'Kerala';
+    final location = item['district'] ?? 'Location not specified';
     final price = "₹${item['price_per_unit'] ?? 0}/${item['unit'] ?? 'kg'}";
     final sector = item['sector'] ?? 'CROP';
 
@@ -232,7 +232,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
                             productName: name,
                             price: (item['price_per_unit'] as num?)?.toDouble() ?? 0.0,
                             unit: item['unit'] ?? 'kg',
-                            farmerId: (item['farmer_id'] as int?) ?? 1,
+                            farmerId: (item['farmer_id'] as int?) ?? 0,
                           ),
                         ),
                       );
@@ -326,7 +326,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
             Row(
               children: [
                 statCard(Icons.shopping_bag, "${_products.length}", "Available Lots"),
-                statCard(Icons.verified, "100%", "Verified Farmers"),
+                statCard(Icons.handshake_outlined, "Direct", "Direct Sourcing"),
               ],
             ),
             const SizedBox(height: 12),

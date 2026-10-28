@@ -20,7 +20,7 @@ services:
       - SMS_PROVIDER=mock
       - DL_FORECAST_SERVICE_URL=http://dl_microservice:7860/api/predict
     volumes:
-      - backend_data:/app
+      - backend_data:/app/data
     depends_on:
       - dl_microservice
 

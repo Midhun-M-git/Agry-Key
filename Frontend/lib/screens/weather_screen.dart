@@ -77,6 +77,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         setState(() {
           _weatherData = data;
           _isLoading = false;
+          if (data == null) {
+            _errorMessage = L10n.get(
+              "Weather data unavailable for this location.",
+              "ഈ സ്ഥലത്തെ കാലാവസ്ഥാ വിവരങ്ങൾ ലഭ്യമല്ല.",
+              "इस स्थान के लिए मौसम डेटा उपलब्ध नहीं है।",
+              "இந்த இடத்திற்கான வானிலை தரவு கிடைக்கவில்லை.",
+            );
+          }
         });
       }
     } catch (e) {

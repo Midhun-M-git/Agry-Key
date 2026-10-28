@@ -93,82 +93,6 @@ class CommunityService {
     return headers;
   }
 
-  static List<CommunityPost> _getSeedPosts() {
-    return [
-      CommunityPost(
-        id: 1,
-        authorId: 101,
-        authorName: "Ramesh Patel",
-        district: "Palakkad",
-        content: "Rice crop showing yellow leaves and brown spots in Alathur block. Any organic solution to control blast disease without chemical spray?",
-        likeCount: 12,
-        commentCount: 2,
-        likedByCurrentUser: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-        comments: [
-          CommunityComment(
-            id: 1,
-            postId: 1,
-            authorId: 102,
-            authorName: "Dr. K. Swaminathan (Agri Officer)",
-            content: "Spray Pseudomonas fluorescens at 10g per liter of water during early morning. Ensure proper water drainage in the field.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-          ),
-          CommunityComment(
-            id: 2,
-            postId: 1,
-            authorId: 103,
-            authorName: "Anil Farmer",
-            content: "Avoid top dressing of urea for the next two weeks. Organic cow urine spray (1:10 dilution) also strengthens leaf resistance.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-          ),
-        ],
-      ),
-      CommunityPost(
-        id: 2,
-        authorId: 104,
-        authorName: "Suresh Gowda",
-        district: "Wayanad",
-        content: "Tomato wholesale price reached ₹38/kg in local APMC Mandi today! Strong demand for hybrid varieties coming from Kozhikode and Bangalore markets.",
-        likeCount: 24,
-        commentCount: 1,
-        likedByCurrentUser: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        comments: [
-          CommunityComment(
-            id: 3,
-            postId: 2,
-            authorId: 105,
-            authorName: "Vijay Kumar",
-            content: "Great news! Last month prices were only ₹18/kg. Good returns for harvest season.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-          ),
-        ],
-      ),
-      CommunityPost(
-        id: 3,
-        authorId: 106,
-        authorName: "Manoj Nambiar",
-        district: "Thrissur",
-        content: "What is the best organic fertilizer schedule for Nendran banana plantation before monsoon arrival? Anyone tried fertigation with cow dung slurry?",
-        likeCount: 8,
-        commentCount: 1,
-        likedByCurrentUser: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 10)),
-        comments: [
-          CommunityComment(
-            id: 4,
-            postId: 3,
-            authorId: 107,
-            authorName: "Balan Chettiar",
-            content: "Apply 10 kg cow dung manure per pit along with 500g neem cake and wood ash. It gives robust pseudostem growth.",
-            createdAt: DateTime.now().subtract(const Duration(hours: 7)),
-          ),
-        ],
-      ),
-    ];
-  }
-
   static Future<List<CommunityPost>> getPosts({int page = 1, String? district}) async {
     List<CommunityPost> remotePosts = [];
     try {
@@ -188,22 +112,13 @@ class CommunityService {
       }
     } catch (_) {}
 
-    // Combine local created posts with remote posts or seed posts
+    // Combine local created posts with remote posts
     final allPosts = <CommunityPost>[];
     allPosts.addAll(_localPosts);
 
-    if (remotePosts.isNotEmpty) {
-      for (final rp in remotePosts) {
-        if (!allPosts.any((p) => p.id == rp.id)) {
-          allPosts.add(rp);
-        }
-      }
-    } else {
-      // Fallback seed posts so user is never left with an empty or broken screen
-      for (final sp in _getSeedPosts()) {
-        if (!allPosts.any((p) => p.id == sp.id)) {
-          allPosts.add(sp);
-        }
+    for (final rp in remotePosts) {
+      if (!allPosts.any((p) => p.id == rp.id)) {
+        allPosts.add(rp);
       }
     }
 
@@ -226,8 +141,7 @@ class CommunityService {
       }
     } catch (_) {}
 
-    // Check seed posts
-    return _getSeedPosts().where((p) => p.id == postId).firstOrNull;
+    return null;
   }
 
   static Future<CommunityPost?> createPost({

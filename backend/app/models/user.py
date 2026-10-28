@@ -27,6 +27,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.FARMER, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     preferred_language: Mapped[str] = mapped_column(String(10), default="ta")
+    source_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

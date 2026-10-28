@@ -5,6 +5,7 @@ import '../models/scheme.dart';
 
 class SchemesService {
   /// Fetches active government schemes with optional state, category, or sector filter.
+  /// Strictly fails closed: Never returns fabricated scheme cards.
   static Future<List<GovernmentScheme>> fetchSchemes({
     String? state,
     String? category,
@@ -28,8 +29,7 @@ class SchemesService {
       }
     } catch (_) {}
 
-    // Fallback bundled schemes
-    return _getFallbackSchemes();
+    return [];
   }
 
   /// Fetches detailed scheme data including full eligibility criteria and application steps.
@@ -44,82 +44,6 @@ class SchemesService {
       }
     } catch (_) {}
 
-    final all = _getFallbackSchemes();
-    return all.firstWhere((s) => s.id == schemeId, orElse: () => all.first);
-  }
-
-  static List<GovernmentScheme> _getFallbackSchemes() {
-    return [
-      GovernmentScheme(
-        id: 1,
-        code: 'PM-KISAN',
-        name: 'Pradhan Mantri Kisan Samman Nidhi',
-        level: 'CENTRAL',
-        category: 'INCOME_SUPPORT',
-        sector: 'ALL',
-        description: 'Direct financial assistance of ₹6,000 per year in three equal instalments to landholding farmers.',
-        benefits: [
-          '₹6,000 per year directly to bank account',
-          'DBT transfer ensures zero middlemen commission',
-        ],
-        eligibility: [
-          'Eligible landholding farmer families',
-          'Valid Aadhaar and active bank account seeded with Aadhaar',
-        ],
-        applicationProcess: [
-          'Register on PM-KISAN portal or via local Krishi Bhavan',
-          'Complete mandatory e-KYC verification',
-        ],
-        documents: ['Aadhaar Card', 'Land Ownership Records (Pattadar Passbook)', 'Bank Passbook'],
-        officialUrl: 'https://pmkisan.gov.in/',
-      ),
-      GovernmentScheme(
-        id: 2,
-        code: 'PMFBY',
-        name: 'Pradhan Mantri Fasal Bima Yojana',
-        level: 'CENTRAL',
-        category: 'CROP_INSURANCE',
-        sector: 'CROP',
-        description: 'Comprehensive financial support against non-preventable natural risks from pre-sowing to post-harvest.',
-        benefits: [
-          'Subsidized premium: 2% for Kharif, 1.5% for Rabi crops',
-          'Full insured sum payout on catastrophic crop damage',
-        ],
-        eligibility: [
-          'Farmers growing notified crops in notified areas',
-          'Sharecroppers and tenant farmers are also eligible',
-        ],
-        applicationProcess: [
-          'Enroll before the seasonal cut-off date through bank or CSC',
-          'Report crop loss within 72 hours of damage on NCIP portal',
-        ],
-        documents: ['Aadhaar', 'Land Record / Tenancy Agreement', 'Sowing Certificate'],
-        officialUrl: 'https://pmfby.gov.in/',
-      ),
-      GovernmentScheme(
-        id: 3,
-        code: 'KLS-SUBSIDY',
-        name: 'Kerala Subhiksha Keralam Integrated Farming Support',
-        level: 'STATE',
-        state: 'Kerala',
-        category: 'SUBSIDY',
-        sector: 'ALL',
-        description: 'State government incentive for multi-sector integrated farming combining paddy, dairy, poultry, and aquaculture.',
-        benefits: [
-          'Up to 50% capital subsidy on livestock shed and pond excavation',
-          'Zero-interest crop loans for certified eco-friendly cultivation',
-        ],
-        eligibility: [
-          'Farmers with land in Kerala practicing at least two agriculture sectors',
-          'Registration with local Krishi Bhavan',
-        ],
-        applicationProcess: [
-          'Submit integrated farm plan at local Krishi Bhavan',
-          'Physical inspection by Agricultural Officer',
-        ],
-        documents: ['Aadhaar', 'Tax Paid Land Receipt', 'Krishi Bhavan Registration Number'],
-        officialUrl: 'https://keralaagriculture.gov.in/',
-      ),
-    ];
+    return null;
   }
 }

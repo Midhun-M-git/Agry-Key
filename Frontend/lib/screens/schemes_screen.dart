@@ -35,7 +35,7 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
 
     try {
       final list = await SchemesService.fetchSchemes(
-        state: AppState.userState.isNotEmpty ? AppState.userState : 'Kerala',
+        state: AppState.userState.isNotEmpty ? AppState.userState : null,
         sector: _selectedSector,
       );
       if (mounted) {
@@ -243,7 +243,15 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                               children: [
                                 Icon(Icons.account_balance_outlined, size: 64, color: Colors.grey.shade400),
                                 const SizedBox(height: 12),
-                                Text('No schemes found', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+                                Text(
+                                  L10n.get(
+                                    "No data available at this time.",
+                                    "നിലവിൽ വിവരങ്ങൾ ലഭ്യമല്ല.",
+                                    "इस समय कोई डेटा उपलब्ध नहीं है।",
+                                    "இந்த நேரத்தில் தரவு எதுவும் கிடைக்கவில்லை.",
+                                  ),
+                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                ),
                               ],
                             ),
                           )

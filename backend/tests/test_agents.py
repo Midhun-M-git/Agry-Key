@@ -20,15 +20,15 @@ def test_data_checker_structure():
         assert result["environment"]["climate"]["climate_condition"] == "Favorable"
 
 def test_dl_client_fallback_mechanism():
-    """Regression/Sanity: Ensures DL Client doesn't crash on timeout and returns STABLE fallback."""
+    """Regression/Sanity: Ensures DL Client doesn't crash on timeout and fails closed with unavailable status."""
     # Force a timeout exception using requests.exceptions.Timeout
     import requests
     with patch('requests.post', side_effect=requests.exceptions.Timeout("Connection Timeout")):
         result = dl_forecasting_client.get_price_forecast("Palakkad", "Paddy")
         
         assert result["commodity"] == "Paddy"
-        assert result["predicted_trend_30_days"] == "STABLE"
-        assert "Fallback" in result["message"]
+        assert result["status"] == "unavailable"
+        assert "unavailable" in result.get("reason", "").lower() or "insufficient" in result.get("reason", "").lower()
 
 def test_advisory_synergy_logic():
     """Unit Test: Verifies the business logic for calculating synergies."""

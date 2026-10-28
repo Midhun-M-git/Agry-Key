@@ -182,9 +182,19 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             else if (errorMessage != null)
               _ErrorState(message: errorMessage!, onRetry: _loadPrices)
             else if (prices.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: Text('No market prices found.')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Center(
+                  child: Text(
+                    L10n.get(
+                      "No data available at this time.",
+                      "നിലവിൽ വിവരങ്ങൾ ലഭ്യമല്ല.",
+                      "इस समय कोई डेटा उपलब्ध नहीं है।",
+                      "இந்த நேரத்தில் தரவு எதுவும் கிடைக்கவில்லை.",
+                    ),
+                    style: const TextStyle(color: Colors.grey, fontSize: 15),
+                  ),
+                ),
               )
             else
               ...prices.map(_marketCard),

@@ -14,7 +14,8 @@ Sources:
 """
 
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Float, Integer, String
+from decimal import Decimal
+from sqlalchemy import DateTime, Float, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -122,11 +123,12 @@ class MarketPriceTrend(Base):
     state: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     district: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     mandi_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    modal_price: Mapped[float] = mapped_column(Float, nullable=False)
-    min_price: Mapped[float] = mapped_column(Float, nullable=False)
-    max_price: Mapped[float] = mapped_column(Float, nullable=False)
+    modal_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    min_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    max_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     price_unit: Mapped[str] = mapped_column(String(20), default="quintal")
     official_source: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

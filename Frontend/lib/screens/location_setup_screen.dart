@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
 import '../core/app_state.dart';
+import '../services/token_service.dart';
 import '../widgets/voice_text_field.dart';
 import 'dashboard_screen.dart';
 import 'buyer_dashboard_screen.dart';
@@ -357,7 +358,12 @@ Future<void> getCurrentLocation() async {
     userLocation: locationController.text.trim(),
   );
 
-  if (ref.read(userProvider).userOccupation == "Buyer") {
+  await TokenService.saveLocationConfirmed(true);
+  await TokenService.saveUserDetails(
+    userLocation: locationController.text.trim(),
+  );
+
+  if (!mounted) return;
 
     Navigator.pushReplacement(
       context,

@@ -14,8 +14,19 @@ def get_weather(
 ):
     """Return current weather, a seven-day forecast, and agricultural alerts."""
     weather = data_fetcher_service.fetch_climate_baseline(lat, lng)
+    if weather.get("status") == "unavailable" or weather.get("current") is None:
+        return {
+            "latitude": lat,
+            "longitude": lng,
+            "status": "unavailable",
+            "message": "Weather data currently unavailable for this location.",
+            "current": None,
+            "forecast": [],
+            "alerts": [],
+        }
     return {
         "latitude": lat,
         "longitude": lng,
+        "status": "available",
         **weather,
     }

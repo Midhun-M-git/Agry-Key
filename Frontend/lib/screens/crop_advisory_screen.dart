@@ -17,6 +17,7 @@ class CropAdvisoryScreen extends ConsumerStatefulWidget {
 }
 
 class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
+  static const bool kEnableDLForecast = false;
   bool _isLoading = true;
   String? _errorMessage;
   Map<String, dynamic>? _recommendations;
@@ -26,6 +27,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
   String _plotName = 'AgriStack Verified Plot #1';
   String _activeSpeakingCropId = '';
   bool _hasSpokenInitialSummary = false;
+  List<Map<String, dynamic>> _customCandidates = [];
 
   final List<Map<String, String>> _soilOptions = [
     {'value': 'RED_LOAMY', 'label': 'Red Loamy', 'label_ml': 'ചെമ്മണ്ണ്', 'label_hi': 'लाल दोमट', 'label_ta': 'செம்மண்'},
@@ -70,7 +72,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
     }
   }
 
-  Future<void> _fetchRecommendations() async {
+  Future<void> _fetchRecommendations({List<Map<String, dynamic>>? candidates}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -82,10 +84,45 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
         await LocationService.resolveRealLocation();
       }
 
-      final state = AppState.userState.isNotEmpty ? AppState.userState : 'Kerala';
-      final district = AppState.userDistrict.isNotEmpty ? AppState.userDistrict : 'Kochi';
-      final lat = AppState.userLatitude != 0.0 ? AppState.userLatitude : 9.9406;
-      final lng = AppState.userLongitude != 0.0 ? AppState.userLongitude : 76.2653;
+      if (AppState.userDistrict.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = L10n.get(
+            "Please select your district to get tailored crop advisory.",
+            "കൃത്യമായ വിള നിർദ്ദേശങ്ങൾ ലഭിക്കുന്നതിന് ദയവായി നിങ്ങളുടെ ജില്ല തിരഞ്ഞെടുക്കുക.",
+            "सटीक फसल सलाह प्राप्त करने के लिए कृपया अपना जिला चुनें।",
+            "துல்லியமான பயிர் ஆலோசனையைப் பெற உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்.",
+          );
+        });
+        return;
+      }
+
+      final state = AppState.userState;
+      final district = AppState.userDistrict;
+      final lat = AppState.userLatitude;
+      final lng = AppState.userLongitude;
+
+      final res = await AIService.getCropRecommendations(
+        state: state,
+        district: district,
+        acreage: _selectedAcreage,
+        soilType: _selectedSoilType,
+        waterSource: _selectedWaterSource,
+        latitude: lat,
+        longitude: lng,
+        cropCandidates: candidates ?? _customCandidates,
+      );��കുക.",
+            "सटीक फसल सलाह प्राप्त करने के लिए कृपया अपना जिला चुनें।",
+            "துல்லியமான பயிர் ஆலோசனையைப் பெற உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்.",
+          );
+        });
+        return;
+      }
+
+      final state = AppState.userState;
+      final district = AppState.userDistrict;
+      final lat = AppState.userLatitude;
+      final lng = AppState.userLongitude;
 
       final res = await AIService.getCropRecommendations(
         state: state,
@@ -195,9 +232,8 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
   }
 
   Widget _buildAgriStackContextCard() {
-    final profile = _recommendations?['farmer_profile'] as Map<String, dynamic>?;
-    final district = profile?['district'] ?? (AppState.userDistrict.isNotEmpty ? AppState.userDistrict : 'Kochi');
-    final state = profile?['state'] ?? (AppState.userState.isNotEmpty ? AppState.userState : 'Kerala');
+    final district = profile?['district'] ?? AppState.userDistrict;
+    final state = profile?['state'] ?? AppState.userState;
 
     return Container(
       padding: const EdgeInsets.all(16),

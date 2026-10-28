@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.blockchain import BlockchainLedgerBlock
+from app.models.blockchain import BlockchainLedgerBlock, VerifiedProduceStock
 from app.models.user import FarmerProfile, User, UserRole
 from app.routers.auth import get_current_user
 from app.schemas.blockchain import (
@@ -63,12 +63,25 @@ def register_produce(
         .filter(FarmerProfile.user_id == current_user.id)
         .first()
     )
-    if not profile and req.farmer_profile_id:
+    if not profile:
+        if current_user.role == UserRole.ADMIN and req.farmer_profile_id:
+            profile = (
+                db.query(FarmerProfile)
+                .filter(FarmerProfile.id == req.farmer_profile_id)
+                .first()
+            )
+    elif req.farmer_profile_id and req.farmer_profile_id != profile.id:
+        if current_user.role != UserRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only register produce under your own farmer profile.",
+            )
         profile = (
             db.query(FarmerProfile)
             .filter(FarmerProfile.id == req.farmer_profile_id)
             .first()
         )
+
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -118,7 +131,27 @@ def record_sale(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Two-tier sold product verification (PLATFORM_VERIFIED vs SELF_REPORTED)."""
+    """Two-tier sold product verification with strict batch ownership validation."""
+    clean_batch_id = req.produce_batch_id.strip()
+    stock = (
+        db.query(VerifiedProduceStock)
+        .filter(VerifiedProduceStock.produce_batch_id == clean_batch_id)
+        .first()
+    )
+    if stock:
+        profile = db.query(FarmerProfile).filter(FarmerProfile.user_id == current_user.id).first()
+        if current_user.role != UserRole.ADMIN and (not profile or stock.farmer_profile_id != profile.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only record sales for produce batches belonging to your own farmer profile.",
+            )
+    else:
+        if current_user.role not in (UserRole.FARMER, UserRole.ADMIN):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only farmers or administrators can record produce sales.",
+            )
+
     result = BlockchainService.record_sale(
         db=db,
         produce_batch_id=req.produce_batch_id,

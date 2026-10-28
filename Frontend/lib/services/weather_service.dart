@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../core/app_state.dart';
@@ -7,56 +7,33 @@ import '../models/weather.dart';
 import 'location_service.dart';
 
 class WeatherService {
-  // Legacy string properties kept for backwards-compatibility
-  static String temperature = "28°C";
-  static String humidity = "72%";
-  static String windSpeed = "10 km/h";
-  static String rainChance = "20%";
-
   static WeatherData? _lastCachedWeather;
 
   static WeatherData? get cachedWeather => _lastCachedWeather;
 
-  /// Fetches real-time weather from Open-Meteo for exact GPS coordinates.
-  static Future<WeatherData> fetchWeather({double? lat, double? lng}) async {
+  /// Fetches real-time weather from backend or Open-Meteo.
+  /// Strictly fails closed: Returns null if weather cannot be fetched. Never fabricates values.
+  static Future<WeatherData?> fetchWeather({double? lat, double? lng}) async {
     double? latitude = lat ?? (AppState.latitude != 0.0 ? AppState.latitude : null);
     double? longitude = lng ?? (AppState.longitude != 0.0 ? AppState.longitude : null);
 
     if (latitude == null || longitude == null) {
       try {
         final loc = await LocationService.resolveRealLocation();
-        latitude = loc.latitude;
-        longitude = loc.longitude;
-      } catch (_) {}
-    }
-
-    latitude ??= 9.9406;
-    longitude ??= 76.2653;
-
-    String effectiveDistrict = AppState.district;
-    String effectiveState = AppState.state;
-
-    // Resolve real district and state via GPS if not yet set in profile
-    if (effectiveDistrict.isEmpty) {
-      try {
-        final placemarks = await placemarkFromCoordinates(latitude, longitude);
-        if (placemarks.isNotEmpty) {
-          final place = placemarks.first;
-          final d = place.subAdministrativeArea?.isNotEmpty == true
-              ? place.subAdministrativeArea!
-              : (place.locality?.isNotEmpty == true ? place.locality! : "");
-          if (d.isNotEmpty) effectiveDistrict = d;
-          if (place.administrativeArea?.isNotEmpty == true) effectiveState = place.administrativeArea!;
-          AppState.district = effectiveDistrict;
-          AppState.state = effectiveState;
-          AppState.userDistrict = effectiveDistrict;
-          AppState.userState = effectiveState;
+        if (loc != null) {
+          latitude = loc.latitude;
+          longitude = loc.longitude;
         }
       } catch (_) {}
     }
 
-    if (effectiveDistrict.isEmpty) effectiveDistrict = 'Your Farm';
-    if (effectiveState.isEmpty) effectiveState = 'Kerala';
+    if (latitude == null || longitude == null || (latitude == 0.0 && longitude == 0.0)) {
+      debugPrint('[WeatherService] No GPS coordinates available. Weather cannot be determined.');
+      return null;
+    }
+
+    final effectiveDistrict = AppState.district;
+    final effectiveState = AppState.state;
 
     // 1. Try Backend Proxy
     try {
@@ -67,61 +44,59 @@ class WeatherService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final isLive = data['is_live'] as bool? ?? true;
-        final current = data['current'] as Map<String, dynamic>? ?? {};
-        final rawForecast = data['forecast'] as List<dynamic>? ?? [];
-        final alerts = data['alerts'] as List<dynamic>? ?? [];
+        final status = data['status'] as String? ?? '';
+        final isLive = data['is_live'] as bool? ?? false;
+        final current = data['current'] as Map<String, dynamic>?;
 
-        final tempVal = (current['temperature_c'] as num?)?.toDouble() ?? 28.0;
-        final humidVal = (current['humidity_percent'] as num?)?.toInt() ?? 70;
-        final windVal = (current['wind_speed_kmh'] as num?)?.toDouble() ?? 10.0;
-        final rainVal = (current['precipitation_mm'] as num?)?.toDouble() ?? 0.0;
+        if (status != 'unavailable' && current != null && isLive) {
+          final tempVal = (current['temperature_c'] as num?)?.toDouble();
+          final humidVal = (current['humidity_percent'] as num?)?.toInt();
+          final windVal = (current['wind_speed_kmh'] as num?)?.toDouble() ?? 0.0;
+          final rainVal = (current['precipitation_mm'] as num?)?.toDouble() ?? 0.0;
+          final rawForecast = data['forecast'] as List<dynamic>? ?? [];
+          final alerts = data['alerts'] as List<dynamic>? ?? [];
 
-        // If backend explicitly provided live verified data and not static fallback, use it
-        if (isLive && !(tempVal == 28.5 && humidVal == 72)) {
-          // Update legacy static fields
-          temperature = "${tempVal.toStringAsFixed(1)}°C";
-          humidity = "$humidVal%";
-          windSpeed = "${windVal.toStringAsFixed(1)} km/h";
-          rainChance = "${rainVal > 0 ? (rainVal * 20).clamp(10, 95).toInt() : 15}%";
+          if (tempVal != null && humidVal != null) {
+            final forecastList = rawForecast.map((f) {
+              final item = f as Map<String, dynamic>;
+              return ForecastDay(
+                date: item['date'] as String? ?? '',
+                minTemp: (item['temperature_min_c'] as num?)?.toDouble() ?? 0.0,
+                maxTemp: (item['temperature_max_c'] as num?)?.toDouble() ?? 0.0,
+                condition: _mapWeatherCode(item['weather_code'] as int? ?? 0),
+                rainfallProbability: (item['precipitation_probability_percent'] as num?)?.toDouble() ?? 0.0,
+              );
+            }).toList();
 
-          final forecastList = rawForecast.map((f) {
-            final item = f as Map<String, dynamic>;
-            return ForecastDay(
-              date: item['date'] as String? ?? '',
-              minTemp: (item['temperature_min_c'] as num?)?.toDouble() ?? 24.0,
-              maxTemp: (item['temperature_max_c'] as num?)?.toDouble() ?? 32.0,
-              condition: _mapWeatherCode(item['weather_code'] as int? ?? 0),
-              rainfallProbability: (item['precipitation_probability_percent'] as num?)?.toDouble() ?? 0.0,
+            String? alertMsg;
+            if (alerts.isNotEmpty) {
+              final firstAlert = alerts.first as Map<String, dynamic>;
+              alertMsg = "${firstAlert['title'] ?? 'Alert'}: ${firstAlert['description'] ?? ''}";
+            }
+
+            final weatherData = WeatherData(
+              district: effectiveDistrict.isNotEmpty ? effectiveDistrict : 'Local Farm',
+              state: effectiveState.isNotEmpty ? effectiveState : '',
+              temperature: tempVal,
+              condition: _mapWeatherCode(current['weather_code'] as int? ?? 0),
+              humidity: humidVal,
+              windSpeedKmH: windVal,
+              rainfallMm: rainVal,
+              forecast: forecastList,
+              agriculturalAdvisory: alertMsg ?? "Live weather active.",
+              updatedAt: DateTime.now(),
             );
-          }).toList();
 
-          String? alertMsg;
-          if (alerts.isNotEmpty) {
-            final firstAlert = alerts.first as Map<String, dynamic>;
-            alertMsg = "${firstAlert['title'] ?? 'Alert'}: ${firstAlert['description'] ?? ''}";
+            _lastCachedWeather = weatherData;
+            return weatherData;
           }
-
-          final weatherData = WeatherData(
-            district: effectiveDistrict,
-            state: effectiveState,
-            temperature: tempVal,
-            condition: _mapWeatherCode(current['weather_code'] as int? ?? 0),
-            humidity: humidVal,
-            windSpeedKmH: windVal,
-            rainfallMm: rainVal,
-            forecast: forecastList,
-            agriculturalAdvisory: alertMsg ?? "Live weather active. Favorable conditions for farming operations.",
-            updatedAt: DateTime.now(),
-          );
-
-          _lastCachedWeather = weatherData;
-          return weatherData;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[WeatherService] Backend weather error: $e');
+    }
 
-    // 2. Direct Open-Meteo Live API Fallback (ensures 100% real live data even if backend is asleep)
+    // 2. Direct Open-Meteo Live API Fallback
     try {
       final directUri = Uri.parse(
         'https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude'
@@ -132,78 +107,58 @@ class WeatherService {
       final directResp = await http.get(directUri).timeout(const Duration(seconds: 5));
       if (directResp.statusCode == 200) {
         final data = jsonDecode(directResp.body) as Map<String, dynamic>;
-        final current = data['current'] as Map<String, dynamic>? ?? {};
+        final current = data['current'] as Map<String, dynamic>?;
         final daily = data['daily'] as Map<String, dynamic>? ?? {};
 
-        final tempVal = (current['temperature_2m'] as num?)?.toDouble() ?? 28.0;
-        final humidVal = (current['relative_humidity_2m'] as num?)?.toInt() ?? 70;
-        final windVal = (current['wind_speed_10m'] as num?)?.toDouble() ?? 10.0;
-        final rainVal = (current['precipitation'] as num?)?.toDouble() ?? 0.0;
-        final wCode = (current['weather_code'] as num?)?.toInt() ?? 0;
+        if (current != null) {
+          final tempVal = (current['temperature_2m'] as num?)?.toDouble();
+          final humidVal = (current['relative_humidity_2m'] as num?)?.toInt();
+          final windVal = (current['wind_speed_10m'] as num?)?.toDouble() ?? 0.0;
+          final rainVal = (current['precipitation'] as num?)?.toDouble() ?? 0.0;
+          final wCode = (current['weather_code'] as num?)?.toInt() ?? 0;
 
-        temperature = "${tempVal.toStringAsFixed(1)}°C";
-        humidity = "$humidVal%";
-        windSpeed = "${windVal.toStringAsFixed(1)} km/h";
-        rainChance = "${rainVal > 0 ? (rainVal * 20).clamp(10, 95).toInt() : 15}%";
+          if (tempVal != null && humidVal != null) {
+            final times = (daily['time'] as List<dynamic>? ?? []);
+            final maxTemps = (daily['temperature_2m_max'] as List<dynamic>? ?? []);
+            final minTemps = (daily['temperature_2m_min'] as List<dynamic>? ?? []);
+            final dailyCodes = (daily['weather_code'] as List<dynamic>? ?? []);
+            final dailyProbs = (daily['precipitation_probability_max'] as List<dynamic>? ?? []);
 
-        final times = (daily['time'] as List<dynamic>? ?? []);
-        final maxTemps = (daily['temperature_2m_max'] as List<dynamic>? ?? []);
-        final minTemps = (daily['temperature_2m_min'] as List<dynamic>? ?? []);
-        final dailyCodes = (daily['weather_code'] as List<dynamic>? ?? []);
-        final dailyProbs = (daily['precipitation_probability_max'] as List<dynamic>? ?? []);
+            final forecastList = <ForecastDay>[];
+            for (int i = 0; i < times.length; i++) {
+              forecastList.add(ForecastDay(
+                date: times[i].toString(),
+                minTemp: (minTemps.length > i ? minTemps[i] as num? : null)?.toDouble() ?? 0.0,
+                maxTemp: (maxTemps.length > i ? maxTemps[i] as num? : null)?.toDouble() ?? 0.0,
+                condition: _mapWeatherCode((dailyCodes.length > i ? dailyCodes[i] as num? : null)?.toInt() ?? 0),
+                rainfallProbability: (dailyProbs.length > i ? dailyProbs[i] as num? : null)?.toDouble() ?? 0.0,
+              ));
+            }
 
-        final forecastList = <ForecastDay>[];
-        for (int i = 0; i < times.length; i++) {
-          forecastList.add(ForecastDay(
-            date: times[i].toString(),
-            minTemp: (minTemps.length > i ? minTemps[i] as num? : null)?.toDouble() ?? 23.0,
-            maxTemp: (maxTemps.length > i ? maxTemps[i] as num? : null)?.toDouble() ?? 32.0,
-            condition: _mapWeatherCode((dailyCodes.length > i ? dailyCodes[i] as num? : null)?.toInt() ?? 0),
-            rainfallProbability: (dailyProbs.length > i ? dailyProbs[i] as num? : null)?.toDouble() ?? 15.0,
-          ));
+            final weatherData = WeatherData(
+              district: effectiveDistrict.isNotEmpty ? effectiveDistrict : 'Local Farm',
+              state: effectiveState.isNotEmpty ? effectiveState : '',
+              temperature: tempVal,
+              condition: _mapWeatherCode(wCode),
+              humidity: humidVal,
+              windSpeedKmH: windVal,
+              rainfallMm: rainVal,
+              forecast: forecastList,
+              agriculturalAdvisory: "Live Open-Meteo satellite observations.",
+              updatedAt: DateTime.now(),
+            );
+
+            _lastCachedWeather = weatherData;
+            return weatherData;
+          }
         }
-
-        final weatherData = WeatherData(
-          district: effectiveDistrict,
-          state: effectiveState,
-          temperature: tempVal,
-          condition: _mapWeatherCode(wCode),
-          humidity: humidVal,
-          windSpeedKmH: windVal,
-          rainfallMm: rainVal,
-          forecast: forecastList,
-          agriculturalAdvisory: "Live Open-Meteo satellite feed. Favorable conditions for farming operations.",
-          updatedAt: DateTime.now(),
-        );
-
-        _lastCachedWeather = weatherData;
-        return weatherData;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[WeatherService] Open-Meteo direct error: $e');
+    }
 
-    // 3. Fallback if offline
-    return _lastCachedWeather ?? _getFallbackWeather(district: effectiveDistrict, state: effectiveState);
-  }
-
-  static WeatherData _getFallbackWeather({String district = '', String state = ''}) {
-    // This data is only shown when the device is completely offline.
-    // Values are generic — not location-specific.
-    return WeatherData(
-      district: district.isNotEmpty ? district : 'Your Location',
-      state: state.isNotEmpty ? state : 'India',
-      temperature: 28.5,
-      condition: 'Offline – No Live Data',
-      humidity: 70,
-      windSpeedKmH: 10.0,
-      rainfallMm: 0.0,
-      forecast: [
-        ForecastDay(date: 'Tomorrow', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
-        ForecastDay(date: 'Day 2', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
-        ForecastDay(date: 'Day 3', minTemp: 24.0, maxTemp: 32.0, condition: 'Unavailable', rainfallProbability: 0),
-      ],
-      agriculturalAdvisory: 'No live weather data available. Please connect to the internet for real-time forecasts.',
-      updatedAt: DateTime.now(),
-    );
+    // Strict Fail-Closed: Return null when weather data is unavailable.
+    return null;
   }
 
   static String _mapWeatherCode(int code) {

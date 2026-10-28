@@ -1,9 +1,10 @@
 """Marketplace product listings created by farmers."""
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -23,9 +24,10 @@ class Product(Base):
     district: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     quantity: Mapped[float] = mapped_column(Float, nullable=False)
     unit: Mapped[str] = mapped_column(String(20), nullable=False, default="kg")
-    price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
+    price_per_unit: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     image_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    source_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

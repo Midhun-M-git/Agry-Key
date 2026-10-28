@@ -65,62 +65,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       } else {
         throw Exception("Failed to load products: ${response.statusCode}");
       }
-    } catch (_) {
-      if (!mounted) return;
-      // Live fallback items if local server is starting
-      setState(() {
-        _products = [
-          {
-            "id": 1,
-            "name": "Highland Black Pepper",
-            "crop_type": "Black Pepper",
-            "sector": "CROPS",
-            "quality_grade": "A",
-            "district": "Palakkad",
-            "quantity": 100.0,
-            "unit": "kg",
-            "price_per_unit": 650.0,
-            "farmer_name": "Kerala Spices Producer",
-          },
-          {
-            "id": 2,
-            "name": "Organic Fresh A2 Milk",
-            "crop_type": "Cow Milk",
-            "sector": "DAIRY",
-            "quality_grade": "A",
-            "district": "Palakkad",
-            "quantity": 50.0,
-            "unit": "Litre",
-            "price_per_unit": 60.0,
-            "farmer_name": "Alathur Dairy Cooperative",
-          },
-          {
-            "id": 3,
-            "name": "Fresh Farm Carp Fish",
-            "crop_type": "Freshwater Carp",
-            "sector": "AQUACULTURE",
-            "quality_grade": "A",
-            "district": "Palakkad",
-            "quantity": 80.0,
-            "unit": "kg",
-            "price_per_unit": 220.0,
-            "farmer_name": "Chittur Aquaculture Unit",
-          },
-          {
-            "id": 4,
-            "name": "Free-Range Country Eggs",
-            "crop_type": "Country Hen Eggs",
-            "sector": "POULTRY",
-            "quality_grade": "A",
-            "district": "Coimbatore",
-            "quantity": 30.0,
-            "unit": "Dozen",
-            "price_per_unit": 90.0,
-            "farmer_name": "Pollachi Poultry Farm",
-          },
-        ];
-        _isLoading = false;
-      });
+    } catch (e) {
+      debugPrint('[MarketplaceScreen] Failed to load products: $e');
+      if (mounted) {
+        setState(() {
+          _products = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -201,8 +153,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 : RefreshIndicator(
                     onRefresh: _fetchProducts,
                     child: _products.isEmpty
-                        ? const Center(
-                            child: Text("No active listings found in this sector."),
+                        ? Center(
+                            child: Text(
+                              L10n.get(
+                                "No data available at this time.",
+                                "നിലവിൽ വിവരങ്ങൾ ലഭ്യമല്ല.",
+                                "इस समय कोई डेटा उपलब्ध नहीं है।",
+                                "இந்த நேரத்தில் தரவு எதுவும் கிடைக்கவில்லை.",
+                              ),
+                              style: const TextStyle(color: Colors.grey, fontSize: 15),
+                            ),
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(12),

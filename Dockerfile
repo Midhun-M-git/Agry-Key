@@ -21,6 +21,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy backend application source
 COPY backend/ ./
 
+# Create non-root user and persistent data dir
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/data && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 # Expose default port
 EXPOSE 8000
 

@@ -31,7 +31,19 @@ class _EquipmentScreenState extends State<EquipmentScreen> {
     });
 
     try {
-      final district = AppState.district.isNotEmpty ? AppState.district : 'Palakkad';
+      if (AppState.district.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = L10n.get(
+            "Please select your district to view farm machinery rental services.",
+            "യന്ത്ര വാടക സേവനങ്ങൾ കാണാൻ ദയവായി നിങ്ങളുടെ ജില്ല തിരഞ്ഞെടുക്കുക.",
+            "कृषि मशीनरी देखने के लिए कृपया अपना जिला चुनें।",
+            "பண்ணை இயந்திரங்களைக் காண உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்.",
+          );
+        });
+        return;
+      }
+      final district = AppState.district;
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/services/equipment?district=${Uri.encodeComponent(district)}');
 
       final response = await http.get(uri).timeout(const Duration(seconds: 10));

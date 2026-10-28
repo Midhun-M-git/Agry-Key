@@ -30,7 +30,7 @@ from app.schemas.user import (
     UserProfileResponse,
     UserRegisterRequest,
 )
-from app.services.otp_provider import get_otp_provider
+from app.services.otp_provider import DevelopmentOTPProvider, get_otp_provider
 from app.utils.phone import (
     generate_otp_code,
     hash_otp,
@@ -123,6 +123,12 @@ def get_optional_user(
 @router.post("/register", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED)
 def register_user(req: UserRegisterRequest, db: Session = Depends(get_db)):
     """Registers a new user and initializes their default farmer profile."""
+    if req.role == UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator accounts cannot be created via public registration.",
+        )
+
     existing = db.query(User).filter(User.phone_number == req.phone_number).first()
     if existing:
         raise HTTPException(
@@ -273,13 +279,23 @@ async def request_otp(
 
     # Dispatch via the configured OTP provider (Development or SMS)
     provider = get_otp_provider()
-    await provider.send_otp(normalized_phone, otp_code)
+    if getattr(settings, "ENVIRONMENT", "development").lower() == "production" and isinstance(provider, DevelopmentOTPProvider):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Production SMS provider configuration is missing or invalid.",
+        )
+
+    delivered = await provider.send_otp(normalized_phone, otp_code)
+    if not delivered:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to send verification SMS to your mobile number. Please try again.",
+        )
 
     return OTPResponse(
         status="success",
         message="Verification code sent to your mobile number.",
         expires_in_seconds=_OTP_EXPIRY_MINUTES * 60,
-        otp_code=otp_code,
     )
 
 

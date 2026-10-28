@@ -1,6 +1,7 @@
 """Order placement, fulfillment, cancellation, and tracking routes."""
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.marketplace import Product
 from app.models.order import Order, OrderStatus
+from app.models.payment import Payment, PaymentStatus
 from app.models.user import User, UserRole
 from app.routers.auth import get_current_user
 from app.schemas.order import OrderCreate, OrderResponse, OrderStatusUpdate, TrackingEvent
@@ -34,8 +36,13 @@ def _require_role(current_user: User, role: UserRole) -> None:
 
 def _get_order_for_user(order_id: int, current_user: User, db: Session) -> Order:
     order = db.query(Order).filter(Order.id == order_id).first()
-    if not order or current_user.id not in (order.buyer_id, order.farmer_id):
+    if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    if current_user.role != UserRole.ADMIN and current_user.id not in (order.buyer_id, order.farmer_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this order.",
+        )
     return order
 
 
@@ -76,8 +83,8 @@ def _to_response(order: Order, db: Session) -> OrderResponse:
         product_name=order.product_name,
         quantity=order.quantity,
         unit=order.unit,
-        price_per_unit=order.price_per_unit,
-        total_amount=order.total_amount,
+        price_per_unit=float(order.price_per_unit),
+        total_amount=float(order.total_amount),
         delivery_address=order.delivery_address,
         notes=order.notes,
         status=order.status,
@@ -106,10 +113,34 @@ def create_order(
     )
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    if req.quantity > product.quantity:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient product quantity")
 
-    product.quantity -= req.quantity
+    now = datetime.now(timezone.utc)
+    if product.expires_at:
+        p_exp = product.expires_at if product.expires_at.tzinfo else product.expires_at.replace(tzinfo=timezone.utc)
+        if p_exp < now:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This produce listing has expired and can no longer be ordered.",
+            )
+
+    # Atomic decrement with concurrency guard
+    rows = (
+        db.query(Product)
+        .filter(
+            Product.id == req.product_id,
+            Product.is_active.is_(True),
+            Product.quantity >= req.quantity,
+        )
+        .update({Product.quantity: Product.quantity - req.quantity}, synchronize_session="fetch")
+    )
+    if rows == 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Insufficient available product quantity or listing is no longer active.",
+        )
+
+    calculated_total = round(Decimal(str(req.quantity)) * Decimal(str(product.price_per_unit)), 2)
+
     order = Order(
         buyer_id=current_user.id,
         farmer_id=product.farmer_id,
@@ -118,7 +149,7 @@ def create_order(
         quantity=req.quantity,
         unit=product.unit,
         price_per_unit=product.price_per_unit,
-        total_amount=round(req.quantity * product.price_per_unit, 2),
+        total_amount=calculated_total,
         delivery_address=req.delivery_address,
         notes=req.notes,
     )
@@ -161,6 +192,13 @@ def update_order_status(
     """Advance an order through the farmer-controlled fulfillment lifecycle."""
     _require_role(current_user, UserRole.FARMER)
     order = _get_order_for_user(order_id, current_user, db)
+    # Require that the user is the actual seller of this product
+    if current_user.role != UserRole.ADMIN and order.farmer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the seller of this product can update order fulfillment status.",
+        )
+
     if order.status == OrderStatus.CANCELLED or req.status == OrderStatus.CANCELLED:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cancelled orders cannot change status")
     if req.status not in _STATUS_SEQUENCE or _STATUS_SEQUENCE.index(req.status) != _STATUS_SEQUENCE.index(order.status) + 1:
@@ -174,6 +212,19 @@ def update_order_status(
         order.shipped_at = now
     elif req.status == OrderStatus.DELIVERED:
         order.delivered_at = now
+        # When order is delivered, cash is collected for COD payments
+        cod_payment = (
+            db.query(Payment)
+            .filter(
+                Payment.order_id == order.id,
+                Payment.status == PaymentStatus.PENDING,
+                Payment.razorpay_payment_id == "pay_cod_pending_collection",
+            )
+            .first()
+        )
+        if cod_payment:
+            cod_payment.status = PaymentStatus.SUCCESS
+            cod_payment.updated_at = now
     db.commit()
     db.refresh(order)
     return _to_response(order, db)
@@ -188,12 +239,21 @@ def cancel_order(
     """Cancel a pending buyer order and return its quantity to the listing."""
     _require_role(current_user, UserRole.BUYER)
     order = _get_order_for_user(order_id, current_user, db)
+    # Require that the user is the actual buyer who placed this order
+    if current_user.role != UserRole.ADMIN and order.buyer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the buyer who placed this order can cancel it.",
+        )
+
     if order.status != OrderStatus.PENDING:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Only pending orders can be cancelled")
 
-    product = db.query(Product).filter(Product.id == order.product_id).first()
-    if product:
-        product.quantity += order.quantity
+    # Atomic replenishment back into listing stock
+    db.query(Product).filter(Product.id == order.product_id).update(
+        {Product.quantity: Product.quantity + order.quantity},
+        synchronize_session="fetch",
+    )
     order.status = OrderStatus.CANCELLED
     order.cancelled_at = datetime.now(timezone.utc)
     db.commit()

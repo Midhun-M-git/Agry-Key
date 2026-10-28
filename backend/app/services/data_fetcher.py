@@ -3,7 +3,22 @@ try:
 except ImportError:
     httpx = None
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+
+
+def to_unit_aware_quintal_price(modal_price: float, price_unit: str) -> Optional[float]:
+    """
+    Converts commodity prices to per-quintal standard only when unit is mass-based.
+    Returns None when unit is piece, count, or volume (litre), avoiding corrupted conversions.
+    """
+    u = (price_unit or "").strip().lower()
+    if u in ("quintal", "qtl", "100kg"):
+        return round(float(modal_price), 2)
+    if u in ("kg", "kilogram"):
+        return round(float(modal_price) * 100.0, 2)
+    if u in ("tonne", "ton", "metric ton"):
+        return round(float(modal_price) / 10.0, 2)
+    return None
 
 class DataFetcherService:
     """Service to fetch real-time and historical data from official APIs."""
@@ -100,37 +115,18 @@ class DataFetcherService:
                 "is_live": True,
             }
 
-        # Dynamic regional estimate when completely disconnected from satellite feeds
-        print("[DataFetcher] Using dynamically interpolated coordinates baseline.")
-        today = datetime.now(timezone.utc).date()
-        lat_factor = max(0.0, min(1.0, (latitude - 8.0) / 25.0))
-        base_temp = round(31.0 - (lat_factor * 3.0), 1)
-        fallback_forecast = [
-            {
-                "date": (today + timedelta(days=i)).isoformat(),
-                "temperature_max_c": round(base_temp + 2.0 - (i * 0.3), 1),
-                "temperature_min_c": round(base_temp - 6.0, 1),
-                "precipitation_mm": 1.5 if i % 2 == 0 else 0.0,
-                "precipitation_probability_percent": 25,
-                "wind_speed_max_kmh": 12.0,
-                "weather_code": 1,
-            }
-            for i in range(7)
-        ]
+        # Strict Fail-Closed: Never fabricate synthetic temperature/precipitation when external satellite/API feed fails
+        print("[DataFetcher] Live weather observation feed unavailable. Returning unavailable status.")
         return {
-            "avg_max_temperature_c": round(base_temp + 1.5, 1),
-            "total_precipitation_mm": 10.5,
-            "climate_condition": "Favorable",
-            "current": {
-                "temperature_c": base_temp,
-                "humidity_percent": 68,
-                "wind_speed_kmh": 12.0,
-                "precipitation_mm": 0.0,
-                "weather_code": 1,
-            },
-            "forecast": fallback_forecast,
-            "alerts": [],
+            "status": "unavailable",
+            "message": "Live weather observations currently unavailable.",
             "is_live": False,
+            "current": None,
+            "forecast": [],
+            "alerts": [],
+            "avg_max_temperature_c": None,
+            "total_precipitation_mm": None,
+            "climate_condition": "Unknown",
         }
 
     @staticmethod
@@ -185,7 +181,7 @@ class DataFetcherService:
                 for r in records:
                     results.append({
                         "commodity": r.commodity_name,
-                        "price_per_quintal": r.modal_price if r.price_unit == "quintal" else r.modal_price * 100,
+                        "price_per_quintal": to_unit_aware_quintal_price(r.modal_price, r.price_unit),
                         "modal_price": r.modal_price,
                         "price_unit": r.price_unit,
                         "mandi": r.mandi_name,
@@ -204,7 +200,7 @@ class DataFetcherService:
         return [
             {
                 "commodity": r["commodity_name"],
-                "price_per_quintal": r["modal_price"] if r["price_unit"] == "quintal" else r["modal_price"] * 100,
+                "price_per_quintal": to_unit_aware_quintal_price(r["modal_price"], r["price_unit"]),
                 "modal_price": r["modal_price"],
                 "price_unit": r["price_unit"],
                 "mandi": r["mandi_name"],

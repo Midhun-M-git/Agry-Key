@@ -34,3 +34,7 @@ test_report/
 # Scratch scripts
 track_download.py
 
+# Android Keystores and signing credentials
+*.jks
+*.keystore
+key.properties

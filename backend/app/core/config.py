@@ -1,13 +1,15 @@
 """App environment configuration settings powered by Pydantic Settings."""
 
 from typing import List, Union
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Global configuration settings for Agry-Key backend."""
     
+    ENVIRONMENT: str = Field(default="development")
+    ALLOW_MOCK_PAYMENT: bool = Field(default=False)
     PROJECT_NAME: str = "Agry-Key Backend"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = Field(
@@ -19,6 +21,39 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./agry_key.db"
     CORS_ORIGINS: Union[str, List[str]] = "*"
+
+    @model_validator(mode="after")
+    def validate_production_guards(self) -> "Settings":
+        if str(self.ENVIRONMENT).lower() == "production":
+            if self.ALLOW_MOCK_PAYMENT:
+                raise ValueError("ALLOW_MOCK_PAYMENT cannot be True in production.")
+            if self.OTP_PROVIDER.lower() in ("development", "dev", "mock"):
+                raise ValueError(
+                    "OTP_PROVIDER cannot be 'development', 'dev', or 'mock' in production. "
+                    "A verified carrier SMS integration (Twilio / Fast2SMS) must be configured."
+                )
+            if self.OTP_PROVIDER.lower() == "twilio":
+                if not (self.TWILIO_VERIFY_SERVICE_SID or (self.TWILIO_ACCOUNT_SID and self.TWILIO_AUTH_TOKEN)):
+                    raise ValueError(
+                        "In production, Twilio credentials (TWILIO_VERIFY_SERVICE_SID or "
+                        "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN) must be provided."
+                    )
+        return self
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key(cls, v: str, info) -> str:
+        known_defaults = {
+            "c8b0e7d5f32a4e9b8f1d6c7b5a3e2f1d9a8c7b6e5d4c3b2a1f0e9d8c7b6a5f4e",
+            "replace-with-a-random-secret-at-least-32-characters-long",
+        }
+        env = info.data.get("ENVIRONMENT", "development")
+        if str(env).lower() == "production" and v in known_defaults:
+            raise ValueError(
+                "In production, SECRET_KEY must be a cryptographically secure value "
+                "provided via the SECRET_KEY environment variable, not the default repository placeholder."
+            )
+        return v
 
     WEATHER_API_KEY: str = Field(default="sample_weather_key")
     GEMINI_API_KEY: str = Field(default="sample_gemini_key")

@@ -336,6 +336,7 @@ def seed_database():
                     unit="kg",
                     price_per_unit=55.0,
                     description="Naturally grown traditional red Matta rice harvested from Alathur fields.",
+                    source_id="demo_seed",
                     is_active=True,
                     expires_at=exp,
                 )
@@ -350,6 +351,7 @@ def seed_database():
                     unit="piece",
                     price_per_unit=7.0,
                     description="Free-range country chicken eggs gathered daily morning.",
+                    source_id="demo_seed",
                     is_active=True,
                     expires_at=exp,
                 )
@@ -364,6 +366,7 @@ def seed_database():
                     unit="liter",
                     price_per_unit=52.0,
                     description="Pure unadulterated crossbred Jersey cow milk from Alathur dairy herd.",
+                    source_id="demo_seed",
                     is_active=True,
                     expires_at=exp,
                 )
@@ -378,6 +381,7 @@ def seed_database():
                     unit="kg",
                     price_per_unit=42.0,
                     description="GI-tagged organically nurtured Nendran bananas for wholesale & retail.",
+                    source_id="demo_seed",
                     is_active=True,
                     expires_at=exp,
                 )
@@ -392,6 +396,7 @@ def seed_database():
                     unit="kg",
                     price_per_unit=38.0,
                     description="Sun-ripened sweet Vazhakulam GI pineapples directly from farm orchards.",
+                    source_id="demo_seed",
                     is_active=True,
                     expires_at=exp,
                 )

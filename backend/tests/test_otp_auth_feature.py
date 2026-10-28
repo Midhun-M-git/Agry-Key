@@ -181,3 +181,52 @@ def test_otp_attempt_limits(monkeypatch):
     locked_resp = client.post("/api/auth/verify-otp", json={"phone_number": test_phone, "otp": "333444"})
     assert locked_resp.status_code == 400
     assert "too many" in locked_resp.json()["detail"].lower()
+
+
+def test_public_registration_cannot_register_admin():
+    """Validates that public registration strictly prohibits registering as ADMIN."""
+    payload = {
+        "phone_number": "+919444444444",
+        "password": "StrongPassword123",
+        "full_name": "Intruding Admin Attempt",
+        "role": "ADMIN",
+    }
+    resp = client.post("/api/v1/auth/register", json=payload)
+    # Blocked by schema validator (422) or router authorization check (403)
+    assert resp.status_code in (403, 422)
+
+
+def test_otp_response_never_exposes_code():
+    """Validates that the OTP code is completely stripped from API response schemas."""
+    resp = client.post("/api/v1/auth/request-otp", json={"phone_number": "9812345678"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "otp_code" not in data
+    assert "otp" not in data
+
+
+def test_failed_sms_delivery_returns_502(monkeypatch):
+    """Validates that failed external SMS delivery reports 502 Bad Gateway rather than fake success."""
+    class FailingProvider:
+        async def send_otp(self, phone: str, otp: str) -> bool:
+            return False
+
+    monkeypatch.setattr("app.routers.auth.get_otp_provider", lambda: FailingProvider())
+    resp = client.post("/api/v1/auth/request-otp", json={"phone_number": "9876543219"})
+    assert resp.status_code == 502
+    assert "Failed to send verification SMS" in resp.json()["detail"]
+
+
+def test_dev_otp_provider_rejected_in_production(monkeypatch):
+    """Validates that development mock OTP provider is rejected with 500 when running in production."""
+    from app.services.otp_provider import DevelopmentOTPProvider
+
+    prev_env = settings.ENVIRONMENT
+    settings.ENVIRONMENT = "production"
+    try:
+        monkeypatch.setattr("app.routers.auth.get_otp_provider", lambda: DevelopmentOTPProvider())
+        resp = client.post("/api/v1/auth/request-otp", json={"phone_number": "9876543218"})
+        assert resp.status_code == 500
+        assert "Production SMS provider configuration is missing or invalid" in resp.json()["detail"]
+    finally:
+        settings.ENVIRONMENT = prev_env

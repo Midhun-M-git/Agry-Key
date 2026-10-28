@@ -29,20 +29,23 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFile = file("agrikey-release.jks")
-            if (keystoreFile.exists()) {
-                storeFile = keystoreFile
-                storePassword = "agrikey2026"
-                keyAlias = "agrikey"
-                keyPassword = "agrikey2026"
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: project.findProperty("KEYSTORE_PATH") as String?
+            val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as String?
+            val keyAliasStr = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as String?
+            val keyPasswordStr = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as String?
+
+            if (!keystorePath.isNullOrEmpty() && file(keystorePath).exists()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword ?: ""
+                keyAlias = keyAliasStr ?: ""
+                keyPassword = keyPasswordStr ?: ""
                 enableV1Signing = true
                 enableV2Signing = true
             } else {
-                val debugConfig = signingConfigs.getByName("debug")
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
+                val isReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+                if (isReleaseTask) {
+                    throw GradleException("Release build requires a valid KEYSTORE_PATH environment variable. Keystore secrets must not be checked into source control or fall back to debug signing.")
+                }
             }
         }
     }

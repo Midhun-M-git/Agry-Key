@@ -1,10 +1,11 @@
 """Buyer orders and their fulfillment status."""
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum as SqlEnum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum as SqlEnum, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -30,10 +31,11 @@ class Order(Base):
     product_name: Mapped[str] = mapped_column(String(100), nullable=False)
     quantity: Mapped[float] = mapped_column(Float, nullable=False)
     unit: Mapped[str] = mapped_column(String(20), nullable=False)
-    price_per_unit: Mapped[float] = mapped_column(Float, nullable=False)
-    total_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    price_per_unit: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     delivery_address: Mapped[str] = mapped_column(String(500), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    source_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     status: Mapped[OrderStatus] = mapped_column(
         SqlEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, index=True
     )

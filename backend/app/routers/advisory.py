@@ -11,13 +11,14 @@ router = APIRouter()
 
 
 class CropOptimizationRequest(BaseModel):
-    state: str = "Kerala"
-    district: str = "Palakkad"
+    state: Optional[str] = None
+    district: Optional[str] = None
     acreage: float = 1.0
     soil_type: str = "RED_LOAMY"
     water_source: str = "BOREWELL"
-    latitude: float = 10.7867
-    longitude: float = 76.6547
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    crop_candidates: Optional[list[Dict[str, Any]]] = None
 
 
 @router.post("/crop-recommendations")
@@ -26,16 +27,18 @@ async def get_crop_recommendations(request: CropOptimizationRequest):
     Computes multi-factor crop recommendations based on soil chemistry,
     weather forecast, input costs, logistics, and harvest-window price forecasts.
     Returns ranked alternative options for maximum profit, low risk, and quick cashflow.
+    Requires crop_candidates with financial metrics; otherwise returns unavailable.
     """
     try:
         recommendations = financial_crop_optimizer.optimize(
-            state=request.state,
-            district=request.district,
+            state=request.state or "",
+            district=request.district or "",
             acreage=request.acreage,
             soil_type=request.soil_type,
             water_source=request.water_source,
-            latitude=request.latitude,
-            longitude=request.longitude
+            latitude=request.latitude or 0.0,
+            longitude=request.longitude or 0.0,
+            crop_candidates=request.crop_candidates,
         )
         return recommendations
     except Exception as e:

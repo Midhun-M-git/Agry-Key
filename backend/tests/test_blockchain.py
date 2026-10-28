@@ -166,3 +166,74 @@ def test_blockchain_ledger_blocks_retrieval():
     if len(blocks) > 0:
         assert "block_hash" in blocks[0]
         assert "previous_hash" in blocks[0]
+
+
+def test_produce_registration_and_sale_ownership_enforcement():
+    """Validates that a farmer cannot register produce or record a sale against another farmer's profile/batch."""
+    db = SessionLocal()
+    farmer_a = db.query(User).filter(User.phone_number == "+919988776655").first()
+    farmer_b = db.query(User).filter(User.phone_number == "+919988776600").first()
+    if not farmer_b:
+        farmer_b = User(
+            phone_number="+919988776600",
+            full_name="Second Kerala Farmer",
+            role=UserRole.FARMER,
+        )
+        db.add(farmer_b)
+        db.commit()
+        db.refresh(farmer_b)
+        profile_b = FarmerProfile(user_id=farmer_b.id, state="Kerala", district="Wayanad")
+        db.add(profile_b)
+        db.commit()
+
+    farmer_a_id = farmer_a.id
+    farmer_a_profile_id = farmer_a.profile.id
+    farmer_b_id = farmer_b.id
+    db.close()
+
+    def _get_farmer_a():
+        s = SessionLocal()
+        return s.query(User).filter(User.id == farmer_a_id).first()
+
+    def _get_farmer_b():
+        s = SessionLocal()
+        return s.query(User).filter(User.id == farmer_b_id).first()
+
+    # 1. Farmer A registers produce batch
+    app.dependency_overrides[get_current_user] = _get_farmer_a
+    resp = client.post(
+        "/api/v1/blockchain/register-produce",
+        json={"produce_type": "Wayanad Robusta Coffee", "quantity": 300.0, "quantity_unit": "kg"},
+    )
+    assert resp.status_code == 201
+    batch_id = resp.json()["produce_batch_id"]
+    app.dependency_overrides.clear()
+
+    # 2. Farmer B attempts to record a sale on Farmer A's batch -> 403 Forbidden
+    app.dependency_overrides[get_current_user] = _get_farmer_b
+    unauth_sale = client.post(
+        "/api/v1/blockchain/record-sale",
+        json={
+            "produce_batch_id": batch_id,
+            "quantity_sold": 50.0,
+            "sale_price_total": 2500.0,
+            "verification_tier": "PLATFORM_VERIFIED",
+        },
+    )
+    assert unauth_sale.status_code == 403
+    assert "belonging to your own farmer profile" in unauth_sale.json()["detail"].lower()
+
+    # 3. Farmer B attempts to register produce using Farmer A's profile id -> 403 Forbidden
+    unauth_reg = client.post(
+        "/api/v1/blockchain/register-produce",
+        json={
+            "farmer_profile_id": farmer_a_profile_id,
+            "produce_type": "Sneaky Wayanad Coffee",
+            "quantity": 100.0,
+            "quantity_unit": "kg",
+        },
+    )
+    assert unauth_reg.status_code == 403
+    assert "under your own farmer profile" in unauth_reg.json()["detail"].lower()
+
+    app.dependency_overrides.clear()

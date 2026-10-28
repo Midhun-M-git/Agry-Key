@@ -95,18 +95,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     if (result["success"] == true) {
-      final otpCode = result["otp_code"] as String?;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            otpCode != null && otpCode.isNotEmpty
-                ? "Verification Code: $otpCode"
-                : L10n.get(
-                    "OTP sent to your mobile number",
-                    "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
-                    "आपके मोबाइल पर OTP भेजा गया",
-                    "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
-                  ),
+            L10n.get(
+              "OTP sent to your mobile number",
+              "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
+              "आपके मोबाइल पर OTP भेजा गया",
+              "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
+            ),
           ),
           backgroundColor: Colors.green.shade700,
           duration: const Duration(seconds: 4),
@@ -116,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpScreen(autoFilledCode: otpCode),
+          builder: (context) => const OtpScreen(),
         ),
       );
     } else {

@@ -19,6 +19,7 @@ class StoredSession {
   final double longitude;
   final String state;
   final String district;
+  final bool locationConfirmedByUser;
   final Map<String, dynamic> farmPayload;
 
   const StoredSession({
@@ -37,6 +38,7 @@ class StoredSession {
     this.longitude = 0.0,
     this.state = '',
     this.district = '',
+    this.locationConfirmedByUser = false,
     this.farmPayload = const {},
   });
 
@@ -60,7 +62,18 @@ class TokenService {
   static const _longitudeKey = 'longitude';
   static const _stateKey = 'state';
   static const _districtKey = 'district';
+  static const _locationConfirmedKey = 'location_confirmed_by_user';
   static const _farmPayloadKey = 'farm_payload';
+
+  static Future<void> saveLocationConfirmed(bool confirmed) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_locationConfirmedKey, confirmed);
+  }
+
+  static Future<bool> isLocationConfirmed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_locationConfirmedKey) ?? false;
+  }
 
   static Future<void> saveTokens({
     required String accessToken,
@@ -130,14 +143,21 @@ class TokenService {
     return prefs.getString(_refreshTokenKey);
   }
 
+  static Future<String?>? _ongoingRefresh;
+
   static Future<StoredSession> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     var accessToken = prefs.getString(_accessTokenKey);
     final refreshToken = prefs.getString(_refreshTokenKey);
     if (accessToken != null && !isTokenValid(accessToken)) {
-      await prefs.remove(_accessTokenKey);
-      await prefs.remove(_refreshTokenKey);
-      accessToken = null;
+      if (refreshToken != null && isTokenValid(refreshToken)) {
+        final refreshed = await refreshTokens();
+        accessToken = refreshed;
+      } else {
+        await prefs.remove(_accessTokenKey);
+        await prefs.remove(_refreshTokenKey);
+        accessToken = null;
+      }
     }
     final payloadText = prefs.getString(_farmPayloadKey);
     Map<String, dynamic> farmPayload = {};
@@ -164,6 +184,7 @@ class TokenService {
       longitude: prefs.getDouble(_longitudeKey) ?? 0.0,
       state: prefs.getString(_stateKey) ?? '',
       district: prefs.getString(_districtKey) ?? '',
+      locationConfirmedByUser: prefs.getBool(_locationConfirmedKey) ?? false,
       farmPayload: farmPayload,
     );
   }
@@ -184,6 +205,18 @@ class TokenService {
   }
 
   static Future<String?> refreshTokens() async {
+    if (_ongoingRefresh != null) {
+      return _ongoingRefresh;
+    }
+    _ongoingRefresh = _performRefresh();
+    try {
+      return await _ongoingRefresh;
+    } finally {
+      _ongoingRefresh = null;
+    }
+  }
+
+  static Future<String?> _performRefresh() async {
     final refreshToken = await getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
       await logout();
@@ -192,8 +225,9 @@ class TokenService {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/refresh?token=$refreshToken'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
       );
 
       if (response.statusCode == 200) {

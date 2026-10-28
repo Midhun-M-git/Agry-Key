@@ -15,3 +15,5 @@ class GeoLanguageDetectResponse(BaseModel):
     dialect_pack_id: str
     audio_greeting_url: str
     ui_translations: Dict[str, str]
+    is_detected: bool = True
+    is_fallback: bool = False

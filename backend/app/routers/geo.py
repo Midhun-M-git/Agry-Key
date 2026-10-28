@@ -1,6 +1,6 @@
 """Zero-Touch Geolocation Language and Dialect Detection API router."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from geopy.geocoders import Nominatim
 
 from app.core.regions import district_registry
@@ -8,7 +8,6 @@ from app.schemas.geo import GeoLanguageDetectRequest, GeoLanguageDetectResponse
 
 router = APIRouter(prefix="/geo", tags=["Zero-Touch Geolocation & Language"])
 
-_DEFAULT_LOCATION = {"state": "Kerala", "district": "Palakkad"}
 _LANGUAGE_NAMES = {
     "ml": "Malayalam",
     "ta": "Tamil",
@@ -43,15 +42,14 @@ _STATE_DEFAULT_LANGUAGES = {
 _geolocator = Nominatim(user_agent="agry-key-backend")
 
 
-def _reverse_geocode(latitude: float, longitude: float) -> tuple[str, str]:
-    """Resolve coordinates to state and district using geopy Nominatim with robust fallback."""
-    # Fast path for known test boundaries or missing coords
+def _reverse_geocode(latitude: float, longitude: float) -> tuple[str, str, bool]:
+    """Resolve coordinates to state and district using geopy Nominatim without default fallbacks."""
     if not latitude or not longitude:
-        return _DEFAULT_LOCATION["state"], _DEFAULT_LOCATION["district"]
+        return "", "", False
 
     # Basic bounding box approximation for India
     if not (6.0 <= latitude <= 38.0 and 68.0 <= longitude <= 98.0):
-        return _DEFAULT_LOCATION["state"], _DEFAULT_LOCATION["district"]
+        return "", "", False
 
     try:
         location = _geolocator.reverse((latitude, longitude), exactly_one=True, timeout=3)
@@ -66,25 +64,24 @@ def _reverse_geocode(latitude: float, longitude: float) -> tuple[str, str]:
                 or address.get("city")
             )
             if state and district:
-                return state, district
+                return state, district, True
             if state:
-                return state, district or "Unknown"
+                return state, district or "", bool(district)
     except Exception:
         pass
 
-    # Heuristic coordinate check for Kerala/Tamil Nadu border zones
-    if 10.0 <= latitude <= 11.2 and 76.0 <= longitude <= 77.0:
-        return "Kerala", "Palakkad"
-    elif 10.7 <= latitude <= 11.5 and 76.8 <= longitude <= 77.5:
-        return "Tamil Nadu", "Coimbatore"
-
-    return _DEFAULT_LOCATION["state"], _DEFAULT_LOCATION["district"]
+    return "", "", False
 
 
 @router.post("/detect-language", response_model=GeoLanguageDetectResponse)
 def detect_language_from_gps(req: GeoLanguageDetectRequest):
     """Maps GPS latitude and longitude to state, district, regional language, and dialect pack."""
-    state, district = _reverse_geocode(req.latitude, req.longitude)
+    state, district, is_detected = _reverse_geocode(req.latitude, req.longitude)
+    if not is_detected or not state or not district:
+        raise HTTPException(
+            status_code=404,
+            detail="Location could not be determined from coordinates. Manual district selection required."
+        )
 
     provider = district_registry.get_provider_for_location(state, district)
     if provider is None:
@@ -102,7 +99,7 @@ def detect_language_from_gps(req: GeoLanguageDetectRequest):
         if st_clean in _STATE_DEFAULT_LANGUAGES:
             lang_code, dialect_pack = _STATE_DEFAULT_LANGUAGES[st_clean]
         else:
-            lang_code, dialect_pack = "ml", "palakkad_malayalam"
+            lang_code, dialect_pack = "en", "english_standard"
 
     lang_name = _LANGUAGE_NAMES.get(lang_code, lang_code.capitalize())
     slang_pack = district_registry.get_slang_pack(district)
@@ -117,4 +114,6 @@ def detect_language_from_gps(req: GeoLanguageDetectRequest):
         dialect_pack_id=dialect_pack,
         audio_greeting_url=f"/api/v1/voice/greeting?lang={lang_code}&dialect={dialect_pack}",
         ui_translations={},
+        is_detected=True,
+        is_fallback=False,
     )
