@@ -334,57 +334,52 @@ Future<void> getCurrentLocation() async {
                         child:
                             ElevatedButton.icon(
 
-                          onPressed: () {
+                          onPressed: () async {
+                            if (locationController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    L10n.get(
+                                      "Please enter location",
+                                      "ദയവായി സ്ഥലം നൽകുക",
+                                      "कृपया स्थान दर्ज करें",
+                                      "இருப்பிடத்தை உள்ளிடவும்",
+                                    ),
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
 
-  if (locationController.text.trim().isEmpty) {
+                            ref.read(locationProvider.notifier).update(
+                              userLocation: locationController.text.trim(),
+                            );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          L10n.get(
-            "Please enter location",
-            "ദയവായി സ്ഥലം നൽകുക",
-            "कृपया स्थान दर्ज करें",
-            "இருப்பிடத்தை உள்ளிடவும்",
-          ),
-        ),
-      ),
-    );
+                            await TokenService.saveLocationConfirmed(true);
+                            await TokenService.saveUserDetails(
+                              userLocation: locationController.text.trim(),
+                            );
 
-    return;
-  }
+                            if (!mounted) return;
 
-  ref.read(locationProvider.notifier).update(
-    userLocation: locationController.text.trim(),
-  );
-
-  await TokenService.saveLocationConfirmed(true);
-  await TokenService.saveUserDetails(
-    userLocation: locationController.text.trim(),
-  );
-
-  if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const BuyerDashboardScreen(),
-      ),
-    );
-
-  } else {
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const DashboardScreen(),
-      ),
-    );
-
-  }
-},
+                            if (ref.read(userProvider).userOccupation == "Buyer") {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const BuyerDashboardScreen(),
+                                ),
+                              );
+                            } else {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const DashboardScreen(),
+                                ),
+                              );
+                            }
+                          },
 
                           icon: const Icon(
                             Icons.check,

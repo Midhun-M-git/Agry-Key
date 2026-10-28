@@ -111,27 +111,6 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
         latitude: lat,
         longitude: lng,
         cropCandidates: candidates ?? _customCandidates,
-      );��കുക.",
-            "सटीक फसल सलाह प्राप्त करने के लिए कृपया अपना जिला चुनें।",
-            "துல்லியமான பயிர் ஆலோசனையைப் பெற உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்.",
-          );
-        });
-        return;
-      }
-
-      final state = AppState.userState;
-      final district = AppState.userDistrict;
-      final lat = AppState.userLatitude;
-      final lng = AppState.userLongitude;
-
-      final res = await AIService.getCropRecommendations(
-        state: state,
-        district: district,
-        acreage: _selectedAcreage,
-        soilType: _selectedSoilType,
-        waterSource: _selectedWaterSource,
-        latitude: lat,
-        longitude: lng,
       );
 
       if (mounted) {
@@ -232,6 +211,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
   }
 
   Widget _buildAgriStackContextCard() {
+    final profile = _recommendations?['farmer_profile'] as Map<String, dynamic>?;
     final district = profile?['district'] ?? AppState.userDistrict;
     final state = profile?['state'] ?? AppState.userState;
 
