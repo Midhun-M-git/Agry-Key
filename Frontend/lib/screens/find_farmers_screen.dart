@@ -101,7 +101,7 @@ class _FindFarmersScreenState extends State<FindFarmersScreen> {
                         children: [
                           const Icon(Icons.verified, size: 14, color: Colors.blue),
                           const SizedBox(width: 4),
-                          Text("AgriStack Verified", style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
+                          Text("Registered Producer", style: TextStyle(color: Colors.green.shade700, fontSize: 12)),
                         ],
                       ),
                     ],

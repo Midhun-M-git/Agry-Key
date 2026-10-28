@@ -36,6 +36,15 @@ class TTSService {
     }
   }
 
+  /// Sets the active TTS language by language code (e.g. 'ml', 'en').
+  static Future<void> setLanguage(String languageCode) async {
+    await _init();
+    try {
+      final bcp47 = languageCode == 'ml' ? 'ml-IN' : 'en-IN';
+      await _tts.setLanguage(bcp47);
+    } catch (_) {}
+  }
+
   /// Speaks the given text in the requested or currently selected regional language.
   /// If muted by the user, this silently returns.
   static Future<void> speak(String text, {String? language}) async {
@@ -69,7 +78,7 @@ class TTSService {
       if (lang == 'Malayalam') {
         greeting = "ശബ്ദം ഓണാക്കി. ഞാൻ സഹായിക്കാം.";
       } else if (lang == 'Hindi') {
-        greeting = "आवाज़ चालू है। मैं सहायता के लिए तैयार हूँ।";
+        greeting = "ആവാസ് ചാലു ഹൈ. ഞാൻ സഹായത്തിന് തയ്യാറാണ്.";
       } else if (lang == 'Tamil') {
         greeting = "ஒலி இயக்கப்பட்டது. நான் உங்களுக்கு உதவ தயார்.";
       }

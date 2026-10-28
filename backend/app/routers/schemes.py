@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.scheme import Scheme
 from app.schemas.scheme import SchemeResponse
@@ -40,14 +41,16 @@ def list_schemes(
 ):
     """List active schemes, optionally filtered by state, category, and sector."""
     query = db.query(Scheme).filter(Scheme.is_active.is_(True))
-    if state:
+    if getattr(settings, "is_deployed", False):
+        query = query.filter(Scheme.verification_status == "verified")
+    if state and isinstance(state, str):
         state_filter = state.strip()
         query = query.filter(
             (Scheme.state.is_(None)) | (Scheme.state.ilike(state_filter))
         )
-    if category:
+    if category and isinstance(category, str):
         query = query.filter(Scheme.category.ilike(category.strip()))
-    if sector:
+    if sector and isinstance(sector, str):
         query = query.filter(Scheme.sector.ilike(sector.strip()))
     return query.order_by(Scheme.level, Scheme.name).all()
 
@@ -60,7 +63,7 @@ def get_scheme(scheme_id: int, db: Session = Depends(get_db)):
         .filter(Scheme.id == scheme_id, Scheme.is_active.is_(True))
         .first()
     )
-    if not scheme:
+    if not scheme or (getattr(settings, "is_deployed", False) and scheme.verification_status != "verified"):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Government scheme not found",

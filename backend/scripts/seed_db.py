@@ -40,6 +40,11 @@ def calculate_sha256(content: str) -> str:
 
 
 def seed_database():
+    import sys
+    from app.core.config import settings
+    if getattr(settings, "is_deployed", False):
+        print(f"CRITICAL ERROR: Cannot run seed_db.py in deployed environment '{settings.ENVIRONMENT}'. Aborting.", file=sys.stderr)
+        sys.exit(1)
     print("Creating all tables if they do not exist...")
     Base.metadata.create_all(bind=engine)
 
@@ -71,6 +76,7 @@ def seed_database():
                 full_name="Ravi Kumar",
                 role=UserRole.FARMER,
                 preferred_language="ml",
+                source_id="demo_seed",
                 is_active=True,
             )
             db.add(farmer1)
@@ -152,6 +158,7 @@ def seed_database():
                 full_name="Organic Green Mart",
                 role=UserRole.BUYER,
                 preferred_language="ml",
+                source_id="demo_seed",
                 is_active=True,
             )
             db.add(buyer1)
@@ -276,6 +283,7 @@ def seed_database():
                     max_price=p_max,
                     price_unit=u,
                     official_source="Agmarknet / State Marketing Board",
+                    source_id="demo_seed",
                 ))
 
         # 6. District Soil Survey

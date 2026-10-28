@@ -73,6 +73,11 @@ class UpdateService {
 
   /// Fetches update metadata using both zero-rate-limit GitHub redirect and backend/API proxy.
   static Future<UpdateInfo?> checkUpdate() async {
+    // In Google Play Store builds, direct APK download/self-updating is disabled
+    if (ApiConfig.isPlayStore) {
+      return null;
+    }
+
     final currentVersion = ApiConfig.appVersion;
 
     String? redirectLatestTag;
@@ -156,6 +161,9 @@ class UpdateService {
     BuildContext context, {
     bool manual = false,
   }) async {
+    // Play Store policy: In-app self-updater is disabled
+    if (ApiConfig.isPlayStore) return;
+
     // Auto check: skip if already prompted this session
     if (!manual && _hasPromptedThisSession) return;
 

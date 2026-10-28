@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/scheme.dart';
 
 class SchemeCard extends StatelessWidget {
@@ -13,6 +14,15 @@ class SchemeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final langCode = l10n.locale.languageCode;
+    final displayName = scheme.localizedName(langCode);
+    final displayDescription = scheme.localizedDescription(langCode);
+    final isTranslated = scheme.isTranslated(langCode);
+    final maxItemWidth = MediaQuery.of(context).size.width > 64
+        ? MediaQuery.of(context).size.width - 64
+        : 250.0;
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -25,21 +35,28 @@ class SchemeCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      scheme.code,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxItemWidth),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        scheme.code,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -50,7 +67,7 @@ class SchemeCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      scheme.level,
+                      scheme.level == 'CENTRAL' ? l10n.schemesCentral : l10n.schemesState,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -62,15 +79,30 @@ class SchemeCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                scheme.name,
+                displayName,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (l10n.isMalayalam && !isTranslated) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.amber.shade300, width: 0.5),
+                  ),
+                  child: Text(
+                    'ഇംഗ്ലീഷ് പതിപ്പ് (പരിഭാഷ അവലോകനത്തിലാണ്)',
+                    style: TextStyle(fontSize: 10, color: Colors.amber.shade900),
+                  ),
+                ),
+              ],
               const SizedBox(height: 6),
               Text(
-                scheme.description,
+                displayDescription,
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey.shade700,
@@ -96,25 +128,39 @@ class SchemeCard extends StatelessWidget {
                 ),
               ],
               const Divider(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  Text(
-                    'Category: ${scheme.category}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxItemWidth),
+                    child: Text(
+                      scheme.category,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  Row(
-                    children: [
-                      Text(
-                        'Details',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxItemWidth),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            l10n.actionViewDetails,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      Icon(Icons.chevron_right, size: 18, color: Colors.green.shade700),
-                    ],
+                        Icon(Icons.chevron_right, size: 18, color: Colors.green.shade700),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -112,7 +112,9 @@ def test_llm_retries_then_returns_fallback():
          patch("app.agents.llm_client.time.sleep") as sleep:
         result = client.generate_response("prompt")
 
-    assert result == llm_client_module.LLMClient.FALLBACK_RESPONSE
+    assert result == llm_client_module.LLMClient.UNAVAILABLE_RESPONSE
+    assert "unavailable" in result.lower()
+    assert "maintain current farming operations" not in result.lower()
     assert client.model.generate_content.call_count == 2
     assert sleep.call_count == 1
 

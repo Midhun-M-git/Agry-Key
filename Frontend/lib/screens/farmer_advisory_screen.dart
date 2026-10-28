@@ -131,7 +131,7 @@ class _FarmerAdvisoryScreenState extends ConsumerState<FarmerAdvisoryScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Crop Profit Maximizer',
+            tooltip: 'Crop Income Planner',
             icon: const Icon(Icons.psychology, color: Colors.white),
             onPressed: () {
               Navigator.push(
@@ -245,7 +245,7 @@ class _FarmerAdvisoryScreenState extends ConsumerState<FarmerAdvisoryScreen> {
                         children: [
                           Text(
                             L10n.get(
-                              "AgriStack Crop Recommendation",
+                              "Crop Advisory Recommendation",
                               "അഗ്രിസ്റ്റാക്ക് വിള ലാഭ ഉപദേശം",
                               "एग्रीस्टैक फसल लाभ सिफारिश",
                               "அக்ரிஸ்டாக் பயிர் லாப பரிந்துரை",

@@ -15,6 +15,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
@@ -25,6 +28,18 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        missingDimensionStrategy("distribution", "github")
+    }
+
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+        }
+        create("play") {
+            dimension = "distribution"
+        }
     }
 
     signingConfigs {
@@ -32,19 +47,16 @@ android {
             val keystoreFile = file("agrikey-release.jks")
             if (keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = "agrikey2026"
-                keyAlias = "agrikey"
-                keyPassword = "agrikey2026"
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "agrikey2026"
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "agrikey"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "agrikey2026"
                 enableV1Signing = true
                 enableV2Signing = true
             } else {
-                val debugConfig = signingConfigs.getByName("debug")
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
-                enableV1Signing = true
-                enableV2Signing = true
+                val isReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+                if (isReleaseTask) {
+                    throw GradleException("Release build failed: Release keystore 'agrikey-release.jks' was not found. Debug signing fallback is prohibited for release builds.")
+                }
             }
         }
     }

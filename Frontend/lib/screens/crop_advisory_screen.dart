@@ -24,7 +24,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
   double _selectedAcreage = 1.0;
   String _selectedSoilType = 'RED_LOAMY';
   String _selectedWaterSource = 'BOREWELL';
-  String _plotName = 'AgriStack Verified Plot #1';
+  String _plotName = 'Farmer Registered Plot #1';
   String _activeSpeakingCropId = '';
   bool _hasSpokenInitialSummary = false;
   List<Map<String, dynamic>> _customCandidates = [];
@@ -48,17 +48,17 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAgriStackDetails();
+    _loadPlotDetails();
     _fetchRecommendations();
   }
 
-  void _loadAgriStackDetails() {
-    // Read farmer's digital AgriStack parcel specifications
+  void _loadPlotDetails() {
+    // Read farmer's digital parcel specifications
     if (AppState.farmPayload.containsKey('plots')) {
       final plots = AppState.farmPayload['plots'] as List?;
       if (plots != null && plots.isNotEmpty) {
         final firstPlot = plots[0] as Map<String, dynamic>;
-        _plotName = firstPlot['plot_name']?.toString() ?? 'AgriStack Verified Plot #1';
+        _plotName = firstPlot['plot_name']?.toString() ?? 'Farmer Registered Plot #1';
         _selectedAcreage = double.tryParse(firstPlot['acreage']?.toString() ?? '1.0') ?? 1.0;
         final rawSoil = firstPlot['soil_type']?.toString().toUpperCase().replaceAll(' ', '_') ?? 'RED_LOAMY';
         if (_soilOptions.any((s) => s['value'] == rawSoil)) {
@@ -156,13 +156,13 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
 
     String speech = "";
     if (lang == 'Malayalam') {
-      speech = "നമസ്കാരം! നിങ്ങളുടെ അഗ്രിസ്റ്റാക്ക് കൃഷിഭൂമി വിവരങ്ങളും വിപണി വില പ്രവചനങ്ങളും വിശകലനം ചെയ്തതിൽ, ഏറ്റവും ഉയർന്ന ലാഭം നൽകുന്ന വിള $name ആണ്. $days ദിവസത്തിനുള്ളിൽ ഏകദേശം $netProfit രൂപ അറ്റാദായം പ്രതീക്ഷിക്കാം.";
+      speech = "നമസ്കാരം! നിങ്ങളുടെ രജിസ്റ്റർ ചെയ്ത കൃഷിഭൂമി വിവരങ്ങളും വിപണി വിലകളും വിശകലനം ചെയ്തതിൽ, ഏറ്റവും ഉയർന്ന വരുമാനം നൽകുന്ന വിള $name ആണ്. $days ദിവസത്തിനുള്ളിൽ ഏകദേശം $netProfit രൂപ അറ്റാദായം പ്രതീക്ഷിക്കാം.";
     } else if (lang == 'Hindi') {
-      speech = "नमस्ते! आपके एग्रीस्टैक खेत विवरण और मंडी भाव पूर्वानुमान के आधार पर, सबसे अधिक लाभ देने वाली फसल $name है। $days दिनों में लगभग $netProfit रुपये शुद्ध लाभ का अनुमान है।";
+      speech = "नमस्ते! आपके पंजीकृत खेत और मंडी भाव के आधार पर, सबसे अनुशंसित फसल $name है, जिससे $days दिनों में लगभग $netProfit रुपये का अनुमानित शुद्ध लाभ मिल सकता है।";
     } else if (lang == 'Tamil') {
-      speech = "வணக்கம்! உங்கள் அக்ரிஸ்டாக் நிலம் மற்றும் எதிர்கால சந்தை விலை கணிப்புகளின்படி, அதிக லாபம் தரும் பயிர் $name. $days நாட்களில் சுமார் $netProfit ரூபாய் நிகர லாபம் கிடைக்கும்.";
+      speech = "வணக்கம்! உங்கள் பண்ணை மற்றும் சந்தை விலைகளின் அடிப்படையில், மிகவும் பரிந்துரைக்கப்பட்ட பயிர் $name ஆகும், இது $days நாட்களில் சுமார் $netProfit ரூபாய் நிகர வருமானம் தரும்.";
     } else {
-      speech = "Hello! Based on your AgriStack parcel details and future mandi price forecasts, your top recommended crop is $name, projected to earn an estimated net profit of $netProfit rupees in $days days.";
+      speech = "Hello! Based on your registered plot details and mandi prices, your top recommended crop is $name, projected to earn an estimated net return of $netProfit rupees in $days days.";
     }
 
     _hasSpokenInitialSummary = true;
@@ -210,7 +210,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
     super.dispose();
   }
 
-  Widget _buildAgriStackContextCard() {
+  Widget _buildPlotContextCard() {
     final profile = _recommendations?['farmer_profile'] as Map<String, dynamic>?;
     final district = profile?['district'] ?? AppState.userDistrict;
     final state = profile?['state'] ?? AppState.userState;
@@ -232,7 +232,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AgriStack Header & Live Sync Badge
+          // Plot Header & Live Sync Badge
           Row(
             children: [
               Container(
@@ -252,7 +252,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
                       children: [
                         Text(
                           L10n.get(
-                            "AgriStack Digital Land Parcel",
+                            "Farmer Land Parcel",
                             "അഗ്രിസ്റ്റാക്ക് കൃഷിഭൂമി വിവരങ്ങൾ",
                             "एग्रीस्टैक डिजिटल भूमि विवरण",
                             "அக்ரிஸ்டாக் நில விவரங்கள்",
@@ -309,7 +309,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                L10n.get("Cultivation Area (AgriStack Acreage):", "കൃഷിഭൂമി വിസ്തീർണം:", "कृषि भूमि क्षेत्र:", "சாகுபடி நிலப்பரப்பு:"),
+                L10n.get("Cultivation Area (Farmer Entered):", "കൃഷിഭൂമി വിസ്തീർണം:", "कृषि भूमि क्षेत्र:", "சாகுபடி நிலப்பரப்பு:"),
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
               Container(
@@ -769,8 +769,8 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
         backgroundColor: const Color(0xFF1B5E20),
         title: Text(
           L10n.get(
-            "AI Crop Profit Maximizer",
-            "AI വിള ലാഭ ഉപദേശം",
+            "Crop Income Planner",
+            "വിള വരുമാന പ്ലാനർ",
             "AI फसल लाभ सलाहकार",
             "AI பயிர் லாப ஆலோசகர்",
           ),
@@ -789,7 +789,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
       ),
       body: _isLoading
           ? const LoadingWidget(
-              message: 'Synthesizing AgriStack soil chemistry, climate forecast, mandi logistics & future price predictions...',
+              message: 'Calculating crop income estimates from acreage, soil type, and mandi prices...',
             )
           : _errorMessage != null && strategies == null
               ? AppErrorWidget(
@@ -807,7 +807,7 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildAgriStackContextCard(),
+                        _buildPlotContextCard(),
                         const SizedBox(height: 20),
                         Text(
                           L10n.get(
@@ -825,10 +825,10 @@ class _CropAdvisoryScreenState extends ConsumerState<CropAdvisoryScreen> {
                         const SizedBox(height: 4),
                         Text(
                           L10n.get(
-                            "Synthesized from your verified plot parameters and AI future price forecasts.",
-                            "നിങ്ങളുടെ അഗ്രിസ്റ്റാക്ക് പ്ലോട്ടും ഭാവി വിപണി വിലകളും അടിസ്ഥാനമാക്കി നിർദ്ദേശിച്ചത്.",
-                            "आपके एग्रीस्टैक खेत और भविष्य के मंडी भाव के आधार पर तैयार।",
-                            "உங்கள் அக்ரிஸ்டாக் நிலம் மற்றும் எதிர்கால சந்தை விலை கணிப்புகளிலிருந்து பெறப்பட்டது.",
+                            "Calculated from farmer-entered acreage, soil type, and market prices.",
+                            "രേഖപ്പെടുത്തിയ പ്ലോട്ടും വിപണി വിലകളും അടിസ്ഥാനമാക്കി കണക്കാക്കിയത്.",
+                            "खेत और मंडी भाव के आधार पर तैयार।",
+                            "நிலம் மற்றும் சந்தை விலை கணிப்புகளிலிருந்து பெறப்பட்டது.",
                           ),
                           style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                         ),

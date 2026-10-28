@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
+import '../l10n/app_localizations.dart';
 import '../models/weather.dart';
 import '../services/weather_service.dart';
-import '../utils/localization.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/voice_text_field.dart';
@@ -78,12 +78,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           _weatherData = data;
           _isLoading = false;
           if (data == null) {
-            _errorMessage = L10n.get(
-              "Weather data unavailable for this location.",
-              "ഈ സ്ഥലത്തെ കാലാവസ്ഥാ വിവരങ്ങൾ ലഭ്യമല്ല.",
-              "इस स्थान के लिए मौसम डेटा उपलब्ध नहीं है।",
-              "இந்த இடத்திற்கான வானிலை தரவு கிடைக்கவில்லை.",
-            );
+            _errorMessage = context.l10n.weatherUnavailable;
           }
         });
       }
@@ -137,25 +132,26 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   @override
   Widget build(BuildContext context) {
     AppState.watchAll(ref);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          L10n.get("Weather", "കാലാവസ്ഥ", "मौसम", "வானிலை"),
+          l10n.weatherTitle,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadWeather,
-            tooltip: 'Refresh Weather',
+            tooltip: l10n.actionRefresh,
           ),
         ],
       ),
       body: _isLoading
-          ? const LoadingWidget(message: 'Fetching live meteorological data...')
+          ? LoadingWidget(message: l10n.isMalayalam ? 'കാലാവസ്ഥാ വിവരങ്ങൾ ശേഖരിക്കുന്നു...' : 'Fetching live meteorological data...')
           : _errorMessage != null && _weatherData == null
               ? AppErrorWidget(
                   message: _errorMessage!,
@@ -168,6 +164,30 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
+                        // Open-Meteo Model Disclaimer Banner
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.green.shade200),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.cloud_outlined, color: Colors.green, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  l10n.weatherModelDisclaimer,
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF1B5E20)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                         Card(
                           color: Colors.green.shade50,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -175,23 +195,21 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                             leading: const Icon(Icons.location_on, color: Colors.green),
                             title: Text(
                               AppState.userLocation.isEmpty
-                                  ? '${_weatherData?.district ?? (AppState.district.isNotEmpty ? AppState.district : "Your Location")}, ${_weatherData?.state ?? (AppState.state.isNotEmpty ? AppState.state : "Kerala")}'
+                                  ? '${_weatherData?.district ?? (AppState.district.isNotEmpty ? AppState.district : "Palakkad")}, ${_weatherData?.state ?? (AppState.state.isNotEmpty ? AppState.state : "Kerala")}'
                                   : AppState.userLocation,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: const Text('Live GPS Synchronized', style: TextStyle(fontSize: 12)),
+                            subtitle: Text(
+                              l10n.isMalayalam ? 'പ്രാദേശിക ജിയോ-കോർഡിനേറ്റുകൾ' : 'Regional Geo-Coordinates',
+                              style: const TextStyle(fontSize: 12),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 15),
                         VoiceTextField(
                           controller: locationSearchController,
                           onSubmitted: _onLocationSubmitted,
-                          hintText: L10n.get(
-                            "Search Location",
-                            "സ്ഥലം തിരയുക",
-                            "स्थान खोजें",
-                            "இருப்பிடத்தை தேடுங்கள்",
-                          ),
+                          hintText: l10n.actionSearch,
                         ),
                         const SizedBox(height: 20),
                         Container(
@@ -217,7 +235,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                               const Icon(Icons.wb_sunny, color: Colors.white, size: 60),
                               const SizedBox(height: 10),
                               Text(
-                                '${_weatherData?.temperature.toStringAsFixed(1) ?? "28.0"}°C',
+                                _weatherData != null ? '${_weatherData!.temperature.toStringAsFixed(1)}°C' : '--°C',
                                 style: const TextStyle(
                                   fontSize: 38,
                                   color: Colors.white,
@@ -225,7 +243,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                                 ),
                               ),
                               Text(
-                                _weatherData?.condition ?? 'Clear Sky',
+                                _weatherData?.condition ?? (l10n.isMalayalam ? 'ലഭ്യമല്ല' : 'Unavailable'),
                                 style: const TextStyle(color: Colors.white70, fontSize: 18),
                               ),
                             ],
@@ -234,23 +252,23 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                         const SizedBox(height: 20),
                         _buildWeatherMetricCard(
                           Icons.thermostat,
-                          L10n.get("Temperature", "താപനില", "तापमान", "வெப்பநிலை"),
-                          '${_weatherData?.temperature.toStringAsFixed(1) ?? "28.0"}°C',
+                          l10n.weatherTemp,
+                          _weatherData != null ? '${_weatherData!.temperature.toStringAsFixed(1)}°C' : '--°C',
                         ),
                         _buildWeatherMetricCard(
                           Icons.water_drop,
-                          L10n.get("Humidity", "ഈർപ്പം", "नमी", "ஈரப்பதம்"),
-                          '${_weatherData?.humidity ?? 72}%',
+                          l10n.weatherHumidity,
+                          _weatherData != null ? '${_weatherData!.humidity}%' : '--%',
                         ),
                         _buildWeatherMetricCard(
                           Icons.air,
-                          L10n.get("Wind Speed", "കാറ്റിന്റെ വേഗത", "हवा की गति", "காற்றின் வேகம்"),
-                          '${_weatherData?.windSpeedKmH.toStringAsFixed(1) ?? "12.0"} km/h',
+                          l10n.weatherWind,
+                          _weatherData != null ? '${_weatherData!.windSpeedKmH.toStringAsFixed(1)} km/h' : '-- km/h',
                         ),
                         _buildWeatherMetricCard(
                           Icons.umbrella_outlined,
-                          L10n.get("Rainfall", "മഴ സാധ്യത", "बारिश की संभावना", "மழை வாய்ப்பു"),
-                          '${_weatherData?.rainfallMm.toStringAsFixed(1) ?? "0.0"} mm',
+                          l10n.weatherPrecipitation,
+                          _weatherData != null ? '${_weatherData!.rainfallMm.toStringAsFixed(1)} mm' : '-- mm',
                         ),
                         const SizedBox(height: 20),
                         Card(
@@ -259,17 +277,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                           child: ListTile(
                             leading: const Icon(Icons.agriculture, color: Colors.orange),
                             title: Text(
-                              L10n.get("Farming Advisory", "കാർഷിക നിർദ്ദേശം", "कृषि सलाह", "விவசாய ஆலோசனை"),
+                              l10n.isMalayalam ? 'കാർഷിക നിർദ്ദേശം' : 'Farming Advisory',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
                               _weatherData?.agriculturalAdvisory ??
-                                  L10n.get(
-                                    "Good weather for irrigation and crop monitoring.",
-                                    "ജലസേചനത്തിനും വിള നിരീക്ഷണത്തിനും അനുയോജ്യമായ കാലാവസ്ഥ.",
-                                    "सिंचाई और फसल निगरानी के लिए अच्छा मौसम।",
-                                    "நீர்ப்பாசனம் மற்றும் பயிர் கண்காணிப்புக்கு நல்ல வானிலை.",
-                                  ),
+                                  (l10n.isMalayalam
+                                      ? 'കാലാവസ്ഥ പ്രവചനം വിലയിരുത്തി അനുയോജ്യമായ ജലസേചനവും പരിചരണവും നൽകുക.'
+                                      : 'Monitor crop condition and adjust irrigation according to forecast.'),
                             ),
                           ),
                         ),
@@ -277,7 +292,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                         Row(
                           children: [
                             Text(
-                              L10n.get("7-Day Forecast", "7 ദിവസത്തെ പ്രവചനം", "7 दिन का पूर्वानुमान", "7 நாள் முன்னறிவிப்பு"),
+                              l10n.isMalayalam ? '7 ദിവസത്തെ പ്രവചനം' : '7-Day Forecast',
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -290,7 +305,9 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Text(
-                                'Forecast synchronizing with Open-Meteo...',
+                                l10n.isMalayalam
+                                    ? 'ഓപ്പൺ-മെറ്റിയോ കാലാവസ്ഥ പ്രവചനം ലഭ്യമല്ല'
+                                    : 'Forecast data currently unavailable',
                                 style: TextStyle(color: Colors.grey.shade600),
                               ),
                             ),

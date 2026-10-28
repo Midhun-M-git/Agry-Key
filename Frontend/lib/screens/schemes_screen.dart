@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
+import '../l10n/app_localizations.dart';
 import '../models/scheme.dart';
 import '../services/schemes_service.dart';
-import '../utils/localization.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/scheme_card.dart';
@@ -55,6 +55,12 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
   }
 
   void _showSchemeDetails(GovernmentScheme scheme) {
+    final l10n = context.l10n;
+    final langCode = l10n.locale.languageCode;
+    final displayName = scheme.localizedName(langCode);
+    final displayDescription = scheme.localizedDescription(langCode);
+    final isTranslated = scheme.isTranslated(langCode);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -87,22 +93,26 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          scheme.code,
-                          style: TextStyle(
-                            color: Colors.blue.shade900,
-                            fontWeight: FontWeight.bold,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            scheme.code,
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        scheme.level,
+                        scheme.level == 'CENTRAL' ? l10n.schemesCentral : l10n.schemesState,
                         style: TextStyle(
                           color: Colors.green.shade800,
                           fontWeight: FontWeight.w600,
@@ -112,17 +122,44 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    scheme.name,
+                    displayName,
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
+                  if (l10n.isMalayalam && !isTranslated) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFE082)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline, size: 18, color: Color(0xFFF57F17)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              l10n.schemesTranslationUnavailableNote,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF5D4037)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Text(
-                    scheme.description,
+                    displayDescription,
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade800, height: 1.4),
                   ),
                   const Divider(height: 32),
                   if (scheme.benefits.isNotEmpty) ...[
-                    const Text('Benefits', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      l10n.schemesBenefits,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     ...scheme.benefits.map((b) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -137,8 +174,35 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                         )),
                     const SizedBox(height: 16),
                   ],
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFE082)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 18, color: Color(0xFFF57F17)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.isMalayalam
+                                ? 'സർക്കാർ മാർഗ്ഗനിർദ്ദേശങ്ങളെ അടിസ്ഥാനമാക്കിയുള്ളതാണ് ഈ അർഹതാ മാനദണ്ഡങ്ങൾ. അന്തിമ പരിശോധന ഔദ്യോഗിക വകുപ്പുമായി സ്ഥിരീകരിക്കേണ്ടതാണ്.'
+                                : 'Eligibility shown is indicative based on government guidelines. Final approval and verification must be confirmed with the official implementing department.',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF5D4037)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   if (scheme.eligibility.isNotEmpty) ...[
-                    const Text('Eligibility', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      l10n.schemesEligibility,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     ...scheme.eligibility.map((e) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -154,7 +218,10 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                     const SizedBox(height: 16),
                   ],
                   if (scheme.documents.isNotEmpty) ...[
-                    const Text('Required Documents', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      l10n.schemesDocuments,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     ...scheme.documents.map((d) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -169,6 +236,28 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                         )),
                   ],
                   const SizedBox(height: 24),
+                  if (scheme.officialUrl != null && scheme.officialUrl!.isNotEmpty) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.link, color: Colors.green, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${l10n.actionOpenOfficialPortal}: ${scheme.officialUrl}',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
@@ -176,7 +265,10 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Close', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    child: Text(
+                      l10n.actionClose,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
                 ],
               ),
@@ -190,25 +282,21 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
   @override
   Widget build(BuildContext context) {
     AppState.watchAll(ref);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          L10n.get(
-            "Government Schemes",
-            "സർക്കാർ പദ്ധതികൾ",
-            "सरकारी योजनाएँ",
-            "அரசுத் திட்டங்கள்",
-          ),
+          l10n.schemesTitle,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadSchemes,
-            tooltip: 'Refresh Schemes',
+            tooltip: l10n.actionRefresh,
           ),
         ],
       ),
@@ -220,17 +308,17 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                _buildFilterChip('All Sectors', null),
-                _buildFilterChip('Crops', 'CROP'),
-                _buildFilterChip('Dairy & Livestock', 'LIVESTOCK'),
-                _buildFilterChip('Poultry', 'POULTRY'),
-                _buildFilterChip('Fisheries', 'AQUACULTURE'),
+                _buildFilterChip(l10n.isMalayalam ? 'എല്ലാം' : 'All Sectors', null),
+                _buildFilterChip(l10n.isMalayalam ? 'വിളകൾ' : 'Crops', 'CROP'),
+                _buildFilterChip(l10n.isMalayalam ? 'ക്ഷീരം & കന്നുകാലി' : 'Dairy & Livestock', 'LIVESTOCK'),
+                _buildFilterChip(l10n.isMalayalam ? 'കോഴിവളർത്തൽ' : 'Poultry', 'POULTRY'),
+                _buildFilterChip(l10n.isMalayalam ? 'മത്സ്യബന്ധനം' : 'Fisheries', 'AQUACULTURE'),
               ],
             ),
           ),
           Expanded(
             child: _isLoading
-                ? const LoadingWidget(message: 'Fetching state and central schemes...')
+                ? LoadingWidget(message: l10n.isMalayalam ? 'പദ്ധതികൾ ശേഖരിക്കുന്നു...' : 'Fetching state and central schemes...')
                 : _errorMessage != null && _schemes.isEmpty
                     ? AppErrorWidget(
                         message: _errorMessage!,
@@ -238,21 +326,20 @@ class _SchemesScreenState extends ConsumerState<SchemesScreen> {
                       )
                     : _schemes.isEmpty
                         ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.account_balance_outlined, size: 64, color: Colors.grey.shade400),
-                                const SizedBox(height: 12),
-                                Text(
-                                  L10n.get(
-                                    "No data available at this time.",
-                                    "നിലവിൽ വിവരങ്ങൾ ലഭ്യമല്ല.",
-                                    "इस समय कोई डेटा उपलब्ध नहीं है।",
-                                    "இந்த நேரத்தில் தரவு எதுவும் கிடைக்கவில்லை.",
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.account_balance_outlined, size: 64, color: Colors.grey.shade400),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.isMalayalam ? 'നിലവിൽ പദ്ധതി വിവരങ്ങൾ ലഭ്യമല്ല.' : 'No schemes available at this time.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                                   ),
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           )
                         : RefreshIndicator(

@@ -1,5 +1,6 @@
 """App environment configuration settings powered by Pydantic Settings."""
 
+import os
 from typing import List, Union
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -8,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Global configuration settings for Agry-Key backend."""
     
-    ENVIRONMENT: str = Field(default="development")
+    ENVIRONMENT: str = Field(default="production")
     ALLOW_MOCK_PAYMENT: bool = Field(default=False)
     PROJECT_NAME: str = "Agry-Key Backend"
     API_V1_STR: str = "/api/v1"
@@ -22,20 +23,25 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./agry_key.db"
     CORS_ORIGINS: Union[str, List[str]] = "*"
 
+    @property
+    def is_deployed(self) -> bool:
+        """True for any deployed environment (staging, production, etc.); False only for local development/test."""
+        return str(self.ENVIRONMENT).lower() not in ("development", "dev", "test", "testing", "local")
+
     @model_validator(mode="after")
     def validate_production_guards(self) -> "Settings":
-        if str(self.ENVIRONMENT).lower() == "production":
+        if self.is_deployed:
             if self.ALLOW_MOCK_PAYMENT:
-                raise ValueError("ALLOW_MOCK_PAYMENT cannot be True in production.")
+                raise ValueError("ALLOW_MOCK_PAYMENT cannot be True in a deployed environment.")
             if self.OTP_PROVIDER.lower() in ("development", "dev", "mock"):
                 raise ValueError(
-                    "OTP_PROVIDER cannot be 'development', 'dev', or 'mock' in production. "
+                    f"OTP_PROVIDER cannot be '{self.OTP_PROVIDER}' in a deployed environment. "
                     "A verified carrier SMS integration (Twilio / Fast2SMS) must be configured."
                 )
             if self.OTP_PROVIDER.lower() == "twilio":
                 if not (self.TWILIO_VERIFY_SERVICE_SID or (self.TWILIO_ACCOUNT_SID and self.TWILIO_AUTH_TOKEN)):
                     raise ValueError(
-                        "In production, Twilio credentials (TWILIO_VERIFY_SERVICE_SID or "
+                        "In a deployed environment, Twilio credentials (TWILIO_VERIFY_SERVICE_SID or "
                         "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN) must be provided."
                     )
         return self
@@ -47,10 +53,11 @@ class Settings(BaseSettings):
             "c8b0e7d5f32a4e9b8f1d6c7b5a3e2f1d9a8c7b6e5d4c3b2a1f0e9d8c7b6a5f4e",
             "replace-with-a-random-secret-at-least-32-characters-long",
         }
-        env = info.data.get("ENVIRONMENT", "development")
-        if str(env).lower() == "production" and v in known_defaults:
+        env = str(info.data.get("ENVIRONMENT", "development")).lower()
+        is_deployed = env not in ("development", "dev", "test", "testing", "local")
+        if is_deployed and v in known_defaults:
             raise ValueError(
-                "In production, SECRET_KEY must be a cryptographically secure value "
+                "In a deployed environment, SECRET_KEY must be a cryptographically secure value "
                 "provided via the SECRET_KEY environment variable, not the default repository placeholder."
             )
         return v
@@ -106,7 +113,7 @@ class Settings(BaseSettings):
         return v
 
     model_config = SettingsConfigDict(
-        env_file=(".env", "backend/.env", "../backend/.env"),
+        env_file=None if os.environ.get("ENVIRONMENT", "").lower() in ("test", "testing") else (".env", "backend/.env", "../backend/.env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"

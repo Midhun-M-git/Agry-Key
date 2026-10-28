@@ -35,8 +35,8 @@ def check_demo_data() -> bool:
 
 def seed_demo_data():
     """Manual developer CLI command to seed demo data. Strictly disallowed in production."""
-    if str(settings.ENVIRONMENT).lower() == "production":
-        print("ERROR: Cannot seed demo data in a production environment.", file=sys.stderr)
+    if getattr(settings, "is_deployed", False):
+        print(f"ERROR: Cannot seed demo data in deployed environment '{settings.ENVIRONMENT}'.", file=sys.stderr)
         sys.exit(1)
 
     from scripts.seed_db import seed_database

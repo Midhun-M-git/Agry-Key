@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/notification.dart';
 import '../services/alerts_service.dart';
 import '../widgets/error_widget.dart';
@@ -70,19 +71,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5FAF5),
       appBar: AppBar(
-        title: const Text(
-          "Farmer Alerts",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.alertsTitle,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadAlerts,
-            tooltip: 'Refresh Alerts',
+            tooltip: l10n.actionRefresh,
           ),
         ],
       ),
@@ -94,17 +97,17 @@ class _AlertsScreenState extends State<AlertsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                _buildFilterChip('All', null),
-                _buildFilterChip('Weather', 'WEATHER'),
-                _buildFilterChip('Market', 'MARKET'),
-                _buildFilterChip('Schemes', 'SCHEME'),
-                _buildFilterChip('Pest & Disease', 'DISEASE'),
+                _buildFilterChip(l10n.isMalayalam ? 'എല്ലാം' : 'All', null),
+                _buildFilterChip(l10n.isMalayalam ? 'കാലാവസ്ഥ' : 'Weather', 'WEATHER'),
+                _buildFilterChip(l10n.isMalayalam ? 'മാർക്കറ്റ്' : 'Market', 'MARKET'),
+                _buildFilterChip(l10n.isMalayalam ? 'പദ്ധതികൾ' : 'Schemes', 'SCHEME'),
+                _buildFilterChip(l10n.isMalayalam ? 'കീട-രോഗ ബാധ' : 'Pest & Disease', 'DISEASE'),
               ],
             ),
           ),
           Expanded(
             child: _isLoading
-                ? const LoadingWidget(message: 'Loading farmer alerts...')
+                ? LoadingWidget(message: l10n.isMalayalam ? 'അറിയിപ്പുകൾ പരിശോധിക്കുന്നു...' : 'Loading farmer alerts...')
                 : _errorMessage != null && _alerts.isEmpty
                     ? AppErrorWidget(
                         message: _errorMessage!,
@@ -112,16 +115,20 @@ class _AlertsScreenState extends State<AlertsScreen> {
                       )
                     : _alerts.isEmpty
                         ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.notifications_none, size: 64, color: Colors.grey.shade400),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No alerts found',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                                ),
-                              ],
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.notifications_none, size: 64, color: Colors.grey.shade400),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.alertsNoActive,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
                             ),
                           )
                         : RefreshIndicator(
