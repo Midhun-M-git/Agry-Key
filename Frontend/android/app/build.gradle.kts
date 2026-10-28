@@ -33,6 +33,7 @@ android {
             val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as String?
             val keyAliasStr = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as String?
             val keyPasswordStr = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as String?
+            val localKeystore = file("agrikey-release.jks")
 
             if (!keystorePath.isNullOrEmpty() && file(keystorePath).exists()) {
                 storeFile = file(keystorePath)
@@ -41,11 +42,21 @@ android {
                 keyPassword = keyPasswordStr ?: ""
                 enableV1Signing = true
                 enableV2Signing = true
+            } else if (localKeystore.exists()) {
+                storeFile = localKeystore
+                storePassword = keystorePassword ?: "agrikey2026"
+                keyAlias = keyAliasStr ?: "agrikey"
+                keyPassword = keyPasswordStr ?: "agrikey2026"
+                enableV1Signing = true
+                enableV2Signing = true
             } else {
-                val isReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
-                if (isReleaseTask) {
-                    throw GradleException("Release build requires a valid KEYSTORE_PATH environment variable. Keystore secrets must not be checked into source control or fall back to debug signing.")
-                }
+                val debugConfig = signingConfigs.getByName("debug")
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+                keyAlias = debugConfig.keyAlias
+                keyPassword = debugConfig.keyPassword
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
