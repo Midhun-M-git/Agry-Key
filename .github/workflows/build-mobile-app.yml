@@ -2,12 +2,14 @@ name: Build & Release Mobile App (Android APK)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, version-2-trial ]
+    tags:
+      - 'v*'
     paths-ignore:
       - "**.md"
       - ".gitignore"
   pull_request:
-    branches: [ main ]
+    branches: [ main, version-2-trial ]
     paths:
       - "Frontend/**"
       - ".github/workflows/build-mobile-app.yml"
@@ -90,7 +92,7 @@ jobs:
           retention-days: 30
 
       - name: Automatically Publish to GitHub Releases
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/version-2-trial' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
