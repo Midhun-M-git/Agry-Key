@@ -50,20 +50,41 @@ android {
                 enableV1Signing = true
                 enableV2Signing = true
             } else {
-                val debugConfig = signingConfigs.getByName("debug")
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
-                enableV1Signing = true
-                enableV2Signing = true
+                try {
+                    val process = ProcessBuilder(
+                        "keytool", "-genkey", "-v",
+                        "-keystore", localKeystore.absolutePath,
+                        "-alias", "agrikey",
+                        "-keyalg", "RSA",
+                        "-keysize", "2048",
+                        "-validity", "10000",
+                        "-storepass", "agrikey2026",
+                        "-keypass", "agrikey2026",
+                        "-dname", "CN=AgriKey, OU=Mobile, O=AgriKey, L=Kochi, S=Kerala, C=IN"
+                    ).inheritIO().start()
+                    process.waitFor()
+                } catch (e: Exception) {
+                    println("Note: Keytool automated keystore generation skipped: ${e.message}")
+                }
+
+                if (localKeystore.exists()) {
+                    storeFile = localKeystore
+                    storePassword = "agrikey2026"
+                    keyAlias = "agrikey"
+                    keyPassword = "agrikey2026"
+                    enableV1Signing = true
+                    enableV2Signing = true
+                }
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null && releaseConfig.storeFile!!.exists()) {
+                signingConfig = releaseConfig
+            }
         }
     }
 }
