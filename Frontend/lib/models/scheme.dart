@@ -12,6 +12,7 @@ class GovernmentScheme {
   final List<String> applicationProcess;
   final List<String> documents;
   final String? officialUrl;
+  final Map<String, dynamic>? translations;
   final bool isActive;
 
   GovernmentScheme({
@@ -28,8 +29,39 @@ class GovernmentScheme {
     this.applicationProcess = const [],
     this.documents = const [],
     this.officialUrl,
+    this.translations,
     this.isActive = true,
   });
+
+  bool isTranslated(String langCode) {
+    if (langCode == 'en') return true;
+    if (translations != null && translations![langCode] is Map) {
+      final t = translations![langCode] as Map;
+      return (t['name'] != null && t['name'].toString().isNotEmpty) ||
+          (t['description'] != null && t['description'].toString().isNotEmpty);
+    }
+    return false;
+  }
+
+  String localizedName(String langCode) {
+    if (translations != null && translations![langCode] is Map) {
+      final t = translations![langCode] as Map;
+      if (t['name'] != null && t['name'].toString().isNotEmpty) {
+        return t['name'].toString();
+      }
+    }
+    return name;
+  }
+
+  String localizedDescription(String langCode) {
+    if (translations != null && translations![langCode] is Map) {
+      final t = translations![langCode] as Map;
+      if (t['description'] != null && t['description'].toString().isNotEmpty) {
+        return t['description'].toString();
+      }
+    }
+    return description;
+  }
 
   factory GovernmentScheme.fromJson(Map<String, dynamic> json) {
     return GovernmentScheme(
@@ -46,6 +78,9 @@ class GovernmentScheme {
       applicationProcess: (json['application_process'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       documents: (json['documents'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       officialUrl: json['official_url'] as String?,
+      translations: json['translations'] is Map<String, dynamic>
+          ? json['translations'] as Map<String, dynamic>
+          : null,
       isActive: json['is_active'] as bool? ?? true,
     );
   }
@@ -65,6 +100,7 @@ class GovernmentScheme {
       'application_process': applicationProcess,
       'documents': documents,
       if (officialUrl != null) 'official_url': officialUrl,
+      if (translations != null) 'translations': translations,
       'is_active': isActive,
     };
   }

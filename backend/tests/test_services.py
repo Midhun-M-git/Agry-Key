@@ -108,7 +108,7 @@ def test_llm_fallback_advisory_removes_ungrounded_percentage_claims():
     assert "12-18%" not in insights
     assert "30-40%" not in insights
     assert "25%" not in insights
-    assert "Collective Marketing" in insights
+    assert "unavailable" in insights.lower()
 
 
 def test_production_mock_payment_lockdown():
@@ -117,7 +117,7 @@ def test_production_mock_payment_lockdown():
     import pytest
 
     # Should raise ValueError
-    with pytest.raises(ValueError, match="ALLOW_MOCK_PAYMENT cannot be True in production"):
+    with pytest.raises(ValueError, match="ALLOW_MOCK_PAYMENT cannot be True in"):
         Settings(
             ENVIRONMENT="production",
             ALLOW_MOCK_PAYMENT=True,

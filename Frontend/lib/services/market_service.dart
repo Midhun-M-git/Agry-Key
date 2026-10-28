@@ -10,6 +10,9 @@ class MarketPrice {
 	final String unit;
 	final double? changePercent;
 	final String? mandi;
+	final String? source;
+	final String? observationDate;
+	final bool isLive;
 
 	const MarketPrice({
 		required this.crop,
@@ -17,6 +20,9 @@ class MarketPrice {
 		required this.unit,
 		this.changePercent,
 		this.mandi,
+		this.source,
+		this.observationDate,
+		this.isLive = false,
 	});
 
 	bool get isUp => (changePercent ?? 0) >= 0;
@@ -38,6 +44,9 @@ class MarketPrice {
 					? rawChange.toDouble()
 					: double.tryParse('${rawChange ?? ''}'),
 			mandi: json['mandi']?.toString() ?? json['mandi_name']?.toString(),
+			source: json['official_source']?.toString() ?? json['source']?.toString(),
+			observationDate: json['observation_date']?.toString(),
+			isLive: json['is_live'] == true,
 		);
 	}
 }

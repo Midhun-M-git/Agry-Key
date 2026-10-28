@@ -15,20 +15,23 @@ router = APIRouter(prefix="/market", tags=["Market Prices"])
 def _format_price_entry(record: Dict[str, Any]) -> Dict[str, Any]:
     commodity = record.get("commodity_name") or record.get("crop") or "Unknown"
     modal = float(record.get("modal_price") or record.get("price") or 0.0)
-    min_p = float(record.get("min_price") or (modal * 0.92))
-    max_p = float(record.get("max_price") or (modal * 1.08))
+    min_p = float(record["min_price"]) if record.get("min_price") is not None else None
+    max_p = float(record["max_price"]) if record.get("max_price") is not None else None
     unit = record.get("price_unit") or record.get("unit") or "quintal"
-    mandi = record.get("mandi_name") or record.get("mandi") or "Local APMC"
+    mandi = record.get("mandi_name") or record.get("mandi") or ""
     district = record.get("district") or ""
     state = record.get("state") or ""
 
-    # Real auction price momentum: position of modal price within daily auction min/max spread
-    spread = max_p - min_p
-    if spread > 0:
-        ratio = (modal - min_p) / spread
-        trend = round((ratio - 0.5) * 6.0, 1)  # -3.0% to +3.0% daily auction fluctuation
-    else:
-        trend = 0.0
+    trend = record.get("change_percent")
+    if trend is not None:
+        try:
+            trend = float(trend)
+        except (ValueError, TypeError):
+            trend = None
+
+    obs_date = record.get("observation_date") or record.get("trend_date") or record.get("arrival_date")
+    if obs_date is not None and hasattr(obs_date, "isoformat"):
+        obs_date = obs_date.isoformat()
 
     return {
         "crop": commodity,
@@ -46,6 +49,9 @@ def _format_price_entry(record: Dict[str, Any]) -> Dict[str, Any]:
         "state": state,
         "sector": record.get("sector", "CROP"),
         "official_source": record.get("official_source", "Agmarknet APMC Portal / State Marketing Board"),
+        "observation_date": str(obs_date) if obs_date else None,
+        "is_live": bool(record.get("is_live", False)),
+        "data_type": "reference_market_price",
     }
 
 
@@ -61,7 +67,7 @@ def get_mandi_prices(
     First checks database records, falling back to comprehensive verified Agmarknet baseline datasets.
     """
     # 1. Check DB first
-    query = db.query(MarketPriceTrend)
+    query = db.query(MarketPriceTrend).filter((MarketPriceTrend.source_id.is_(None)) | (MarketPriceTrend.source_id != 'demo_seed'))
     if district and district.strip():
         query = query.filter(MarketPriceTrend.district.ilike(f"%{district.strip()}%"))
     if state and state.strip():
@@ -97,16 +103,7 @@ def get_mandi_prices(
             if c_low in item["commodity_name"].lower() or item["commodity_name"].lower() in c_low
         ]
 
-    if not live_items and (district or crop):
-        # Broaden search to all primary datasets if district had no match
-        live_items = list(PRIMARY_MANDI_DATASETS)
-        if crop and crop.strip():
-            c_low = crop.strip().lower()
-            live_items = [
-                item for item in live_items
-                if c_low in item["commodity_name"].lower() or item["commodity_name"].lower() in c_low
-            ]
-
+    # Never substitute unrelated districts if query returned no matches
     return [_format_price_entry(item) for item in live_items]
 
 
@@ -120,7 +117,8 @@ def search_crops(
 
     # Search in DB
     db_items = db.query(MarketPriceTrend).filter(
-        MarketPriceTrend.commodity_name.ilike(f"%{q_clean}%")
+        MarketPriceTrend.commodity_name.ilike(f"%{q_clean}%"),
+        (MarketPriceTrend.source_id.is_(None)) | (MarketPriceTrend.source_id != 'demo_seed'),
     ).all()
 
     if db_items:
@@ -150,30 +148,43 @@ def search_crops(
 @router.get("/history")
 def get_price_history(
     crop: str = Query(..., description="Crop name to fetch historical trends"),
-) -> List[Dict[str, Any]]:
-    """Returns 7-day historical price points for trend visualization."""
+    district: Optional[str] = Query(default=None, description="District filter"),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Returns dated historical observations recorded in the database.
+    If no observations exist for this crop and region, honestly returns status: unavailable.
+    Never invents synthetic multipliers or fake historical price curves.
+    """
     c_clean = crop.strip().lower()
-    # Find matching base price
-    base_price = 2800.0
-    unit = "quintal"
-    for item in PRIMARY_MANDI_DATASETS:
-        if c_clean in item["commodity_name"].lower() or item["commodity_name"].lower() in c_clean:
-            base_price = float(item["modal_price"])
-            unit = item["price_unit"]
-            break
+    query = db.query(MarketPriceTrend).filter(
+        MarketPriceTrend.commodity_name.ilike(f"%{c_clean}%"),
+        (MarketPriceTrend.source_id.is_(None)) | (MarketPriceTrend.source_id != 'demo_seed'),
+    )
+    if district and district.strip():
+        query = query.filter(MarketPriceTrend.district.ilike(f"%{district.strip()}%"))
 
-    now = datetime.now(timezone.utc)
-    history = []
-    # Generate past 7 days realistic price fluctuation
-    multipliers = [0.96, 0.97, 0.99, 0.98, 1.01, 1.00, 1.02]
-    for i, mult in enumerate(multipliers):
-        day = now - timedelta(days=(6 - i))
-        price_val = round(base_price * mult, 2)
-        history.append({
-            "date": day.strftime("%Y-%m-%d"),
-            "price": price_val,
-            "modal_price": price_val,
-            "unit": unit,
-        })
+    records = query.order_by(MarketPriceTrend.fetched_at.asc()).all()
+    if not records:
+        return {
+            "status": "unavailable",
+            "message": f"Historical price observations for '{crop}' are unavailable for this region.",
+            "history": [],
+        }
 
-    return history
+    history = [
+        {
+            "date": r.fetched_at.isoformat() if hasattr(r.fetched_at, "isoformat") else str(r.fetched_at),
+            "price": float(r.modal_price),
+            "modal_price": float(r.modal_price),
+            "unit": r.price_unit,
+            "mandi": r.mandi_name,
+            "source": r.official_source,
+        }
+        for r in records
+    ]
+    return {
+        "status": "available",
+        "crop": crop,
+        "history": history,
+    }

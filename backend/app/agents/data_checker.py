@@ -19,11 +19,11 @@ class DataCheckerAgent:
         # 1. Fetch Climate Baseline
         climate_data = self.fetcher.fetch_climate_baseline(latitude, longitude)
         
-        # 2. Fetch Live Market Prices (Mocked for now)
-        market_prices = self.fetcher.fetch_mock_mandi_prices(district)
+        # 2. Fetch Verified Market Prices
+        market_prices = self.fetcher.fetch_mandi_prices(district)
         
         # 3. Fetch Input Costs (Fuel, Labour, Fertilizer)
-        input_costs = self.fetcher.fetch_mock_input_costs(district)
+        input_costs = self.fetcher.fetch_input_costs(district)
         
         return {
             "district": district,

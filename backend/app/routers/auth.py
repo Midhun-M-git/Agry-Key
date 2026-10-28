@@ -279,10 +279,10 @@ async def request_otp(
 
     # Dispatch via the configured OTP provider (Development or SMS)
     provider = get_otp_provider()
-    if getattr(settings, "ENVIRONMENT", "development").lower() == "production" and isinstance(provider, DevelopmentOTPProvider):
+    if getattr(settings, "is_deployed", False) and isinstance(provider, DevelopmentOTPProvider):
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Production SMS provider configuration is missing or invalid.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Carrier SMS integration is not configured. Real SMS verification is unavailable.",
         )
 
     delivered = await provider.send_otp(normalized_phone, otp_code)

@@ -23,7 +23,6 @@ import 'farmer_orders_screen.dart';
 import '../services/update_service.dart';
 import '../services/tts_service.dart';
 import '../services/token_service.dart';
-import '../services/voice_navigation_service.dart';
 import '../widgets/voice_companion_bar.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -608,7 +607,7 @@ subtitle: Text(
 
             const SizedBox(height: 16),
 
-            // AI Crop Profit Maximizer Hero Card
+            // AI Crop Income Planner Hero Card
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -656,8 +655,8 @@ subtitle: Text(
                             children: [
                               Text(
                                 L10n.get(
-                                  "Crop Profit Maximizer",
-                                  "വിള ലാഭ ഉപദേശം",
+                                  "Crop Income Planner",
+                                  "വിള വരുമാന പ്ലാനർ",
                                   "फसल लाभ सलाहकार",
                                   "பயிர் லாப ஆலோசகர்",
                                 ),

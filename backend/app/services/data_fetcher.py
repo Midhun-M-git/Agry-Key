@@ -72,6 +72,22 @@ class DataFetcherService:
             current_raw = data.get("current", {})
             daily_raw = data.get("daily", {})
 
+            curr_temp = current_raw.get("temperature_2m")
+            curr_hum = current_raw.get("relative_humidity_2m")
+            if curr_temp is None or curr_hum is None:
+                # Fails closed if critical observational fields are missing
+                return {
+                    "status": "unavailable",
+                    "message": "Live meteorological fields are incomplete or invalid.",
+                    "is_live": False,
+                    "current": None,
+                    "forecast": [],
+                    "alerts": [],
+                    "avg_max_temperature_c": None,
+                    "total_precipitation_mm": None,
+                    "climate_condition": "Unknown",
+                }
+
             daily_max = daily_raw.get("temperature_2m_max", [])
             daily_min = daily_raw.get("temperature_2m_min", [])
             daily_precip = daily_raw.get("precipitation_sum", [])
@@ -85,30 +101,35 @@ class DataFetcherService:
                 forecast.append(
                     {
                         "date": daily_time[i],
-                        "temperature_max_c": round(float(daily_max[i]), 1) if i < len(daily_max) else 30.0,
-                        "temperature_min_c": round(float(daily_min[i]), 1) if i < len(daily_min) else 22.0,
-                        "precipitation_mm": round(float(daily_precip[i]), 1) if i < len(daily_precip) else 0.0,
-                        "precipitation_probability_percent": int(daily_prob[i]) if (i < len(daily_prob) and daily_prob[i] is not None) else 15,
-                        "wind_speed_max_kmh": round(float(daily_wind[i]), 1) if i < len(daily_wind) else 10.0,
-                        "weather_code": int(daily_code[i]) if i < len(daily_code) else 1,
+                        "temperature_max_c": round(float(daily_max[i]), 1) if (i < len(daily_max) and daily_max[i] is not None) else None,
+                        "temperature_min_c": round(float(daily_min[i]), 1) if (i < len(daily_min) and daily_min[i] is not None) else None,
+                        "precipitation_mm": round(float(daily_precip[i]), 1) if (i < len(daily_precip) and daily_precip[i] is not None) else 0.0,
+                        "precipitation_probability_percent": int(daily_prob[i]) if (i < len(daily_prob) and daily_prob[i] is not None) else None,
+                        "wind_speed_max_kmh": round(float(daily_wind[i]), 1) if (i < len(daily_wind) and daily_wind[i] is not None) else None,
+                        "weather_code": int(daily_code[i]) if (i < len(daily_code) and daily_code[i] is not None) else None,
                     }
                 )
 
-            avg_max_temp = float(sum(daily_max) / len(daily_max)) if daily_max else 30.0
-            total_rainfall = float(sum(daily_precip)) if daily_precip else 0.0
+            valid_max = [float(x) for x in daily_max if x is not None]
+            valid_precip = [float(x) for x in daily_precip if x is not None]
+            avg_max_temp = float(sum(valid_max) / len(valid_max)) if valid_max else None
+            total_rainfall = float(sum(valid_precip)) if valid_precip else 0.0
 
             current_conditions = {
-                "temperature_c": round(float(current_raw.get("temperature_2m", 28.0)), 1),
-                "humidity_percent": int(current_raw.get("relative_humidity_2m", 70)),
-                "wind_speed_kmh": round(float(current_raw.get("wind_speed_10m", 10.0)), 1),
+                "temperature_c": round(float(curr_temp), 1),
+                "humidity_percent": int(curr_hum),
+                "wind_speed_kmh": round(float(current_raw.get("wind_speed_10m", 0.0)), 1),
                 "precipitation_mm": round(float(current_raw.get("precipitation", 0.0)), 1),
                 "weather_code": int(current_raw.get("weather_code", 1)),
             }
             
             return {
-                "avg_max_temperature_c": round(avg_max_temp, 2),
+                "provider": "Open-Meteo Weather Model",
+                "data_type": "gridded_numerical_model",
+                "timestamp": current_raw.get("time") or datetime.now(timezone.utc).isoformat(),
+                "avg_max_temperature_c": round(avg_max_temp, 2) if avg_max_temp is not None else None,
                 "total_precipitation_mm": round(total_rainfall, 2),
-                "climate_condition": "Favorable" if avg_max_temp < 35 else "Heat Stress Risk",
+                "climate_condition": ("Favorable" if avg_max_temp < 35 else "Heat Stress Risk") if avg_max_temp is not None else "Unknown",
                 "current": current_conditions,
                 "forecast": forecast,
                 "alerts": self._build_weather_alerts(forecast),
@@ -211,9 +232,7 @@ class DataFetcherService:
             for r in live_records
         ]
 
-    def fetch_mock_mandi_prices(self, district: str) -> List[Dict[str, Any]]:
-        """Backwards compatibility alias for fetch_mandi_prices."""
-        return self.fetch_mandi_prices(district)
+
 
     def fetch_input_costs(self, district: str) -> Dict[str, float]:
         """Fetches live input costs (Fuel from PPAC, Fertilizer from mFMS, Labour) from verified database tables."""
@@ -228,7 +247,7 @@ class DataFetcherService:
                 .filter(FuelPriceIndex.district.ilike(district.strip()))
                 .first()
             )
-            diesel = fuel.diesel_rate_per_liter if fuel else 95.12
+            diesel = float(fuel.diesel_rate_per_liter) if fuel else None
 
             # 2. Fertilizer from mFMS
             urea = (
@@ -236,7 +255,7 @@ class DataFetcherService:
                 .filter(FertilizerPriceIndex.fertilizer_type.ilike("%urea%"))
                 .first()
             )
-            urea_mrp = urea.official_mrp_per_bag if urea else 266.50
+            urea_mrp = float(urea.official_mrp_per_bag) if urea else None
 
             # 3. Labour rates
             labour = (
@@ -244,25 +263,25 @@ class DataFetcherService:
                 .filter(LabourRateIndex.district.ilike(district.strip()))
                 .first()
             )
-            labour_rate = labour.rate_per_day_inr if labour else 850.00
+            labour_rate = float(labour.rate_per_day_inr) if labour else None
 
             return {
                 "diesel_price_per_liter": diesel,
                 "urea_bag_price": urea_mrp,
                 "labour_rate_per_day": labour_rate,
+                "status": "available" if (diesel and urea_mrp and labour_rate) else "unavailable",
             }
         except Exception as e:
             print(f"[DataFetcher] Error querying input costs: {e}")
             return {
-                "diesel_price_per_liter": 95.12,
-                "urea_bag_price": 266.50,
-                "labour_rate_per_day": 850.00,
+                "diesel_price_per_liter": None,
+                "urea_bag_price": None,
+                "labour_rate_per_day": None,
+                "status": "unavailable",
             }
         finally:
             db.close()
 
-    def fetch_mock_input_costs(self, district: str) -> Dict[str, float]:
-        """Backwards compatibility alias for fetch_input_costs."""
-        return self.fetch_input_costs(district)
+
 
 data_fetcher_service = DataFetcherService()

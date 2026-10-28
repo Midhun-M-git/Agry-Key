@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_state.dart';
+import '../l10n/app_localizations.dart';
 import '../services/community_service.dart';
-import '../utils/localization.dart';
 import 'create_post_screen.dart';
 import 'post_details_screen.dart';
 
@@ -46,7 +46,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         ),
       ),
     ).then((_) {
-      // Reload on return to catch up on new replies
       _loadPosts();
     });
   }
@@ -72,21 +71,19 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     AppState.watchAll(ref);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: Text(
-          L10n.get(
-            "Farmer Community",
-            "കർഷക സമൂഹം",
-            "किसान समुदाय",
-            "விவசாயிகள் சமூகம்",
-          ),
+          l10n.communityTitle,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: l10n.actionRefresh,
             onPressed: _loadPosts,
           ),
         ],
@@ -99,33 +96,22 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                         Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.forum_outlined, size: 64, color: Colors.grey.shade400),
-                              const SizedBox(height: 16),
-                              Text(
-                                L10n.get(
-                                  "No community posts yet.",
-                                  "പോസ്റ്റുകൾ ലഭ്യമല്ല.",
-                                  "अभी तक कोई पोस्ट नहीं है।",
-                                  "பதிவுகள் எதுவும் இல்லை.",
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.forum_outlined, size: 64, color: Colors.grey.shade400),
+                                const SizedBox(height: 16),
+                                Text(
+                                  l10n.communityNoPosts,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                                 ),
-                                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                L10n.get(
-                                  "Be the first to ask a question!",
-                                  "ആദ്യത്തെ സംശയം ചോദിക്കൂ!",
-                                  "पहले प्रश्न पूछें!",
-                                  "முதலில் கேள்வி கேளுங்கள்!",
-                                ),
-                                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -170,11 +156,14 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              post.authorName,
+                                              post.authorName.isNotEmpty
+                                                  ? post.authorName
+                                                  : l10n.communityAuthorUnknown,
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 15,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                             if (post.district != null && post.district!.isNotEmpty)
                                               Text(
@@ -183,6 +172,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                                   color: Colors.grey.shade600,
                                                   fontSize: 12,
                                                 ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                           ],
                                         ),
@@ -191,7 +181,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                   ),
                                   const SizedBox(height: 10),
 
-                                  // Post Content
+                                  // Post Content (Preserved in original author's language)
                                   Text(
                                     post.content,
                                     style: const TextStyle(
@@ -203,63 +193,73 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                                   ),
                                   const SizedBox(height: 12),
 
-                                  // Action Bar: Likes & Replies
-                                  Row(
+                                  // Action Bar: Likes & Comments (Responsive layout)
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 12,
+                                    runSpacing: 8,
                                     children: [
-                                      InkWell(
-                                        borderRadius: BorderRadius.circular(20),
-                                        onTap: () => _toggleLike(post),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(20),
+                                            onTap: () => _toggleLike(post),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 4,
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    post.likedByCurrentUser
+                                                        ? Icons.favorite
+                                                        : Icons.favorite_border,
+                                                    size: 18,
+                                                    color: post.likedByCurrentUser
+                                                        ? Colors.red
+                                                        : Colors.grey.shade600,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    "${post.likeCount}",
+                                                    style: TextStyle(
+                                                      color: post.likedByCurrentUser
+                                                          ? Colors.red
+                                                          : Colors.grey.shade700,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
-                                          child: Row(
+                                          const SizedBox(width: 8),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                post.likedByCurrentUser
-                                                    ? Icons.favorite
-                                                    : Icons.favorite_border,
-                                                size: 20,
-                                                color: post.likedByCurrentUser
-                                                    ? Colors.red
-                                                    : Colors.grey.shade600,
+                                                Icons.chat_bubble_outline,
+                                                size: 16,
+                                                color: Colors.grey.shade600,
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                "${post.likeCount}",
+                                                "${post.commentCount} ${l10n.communityComments}",
                                                 style: TextStyle(
-                                                  color: post.likedByCurrentUser
-                                                      ? Colors.red
-                                                      : Colors.grey.shade700,
-                                                  fontSize: 13,
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 12,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.chat_bubble_outline,
-                                            size: 18,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "${post.commentCount} ${L10n.get("Replies", "മറുപടികൾ", "जवाब", "பதில்கள்")}",
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                              fontSize: 13,
-                                            ),
-                                          ),
                                         ],
                                       ),
-                                      const Spacer(),
                                       Text(
-                                        L10n.get("Read more", "കൂടുതൽ വായിക്കുക", "और पढ़ें", "மேலும் படிக்க"),
+                                        l10n.actionViewDetails,
                                         style: const TextStyle(
                                           color: Colors.green,
                                           fontSize: 12,
@@ -291,7 +291,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
         },
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text(
-          L10n.get("Ask / Post", "ചോദിക്കുക", "पूछें / पोस्ट", "கேட்கவும்"),
+          l10n.communityAskQuestion,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),

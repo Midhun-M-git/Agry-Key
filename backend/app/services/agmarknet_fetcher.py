@@ -135,7 +135,7 @@ class AgmarknetFetcher:
             except Exception as e:
                 print(f"[AgmarknetFetcher] Live API request failed: {e}. Using verified APMC dataset.")
 
-        # 2. Comprehensive APMC dataset matching
+        # 2. Archival benchmark APMC dataset matching
         results = []
         clean_dist = district.strip().lower() if district else ""
         clean_state = state.strip().lower() if state else ""
@@ -150,22 +150,13 @@ class AgmarknetFetcher:
                 continue
 
             entry = dict(record)
-            entry["official_source"] = "Agmarknet APMC Portal / State Marketing Board"
-            entry["fetched_at"] = now
-            entry["is_fresh"] = True
+            entry["official_source"] = "Agmarknet APMC Portal / State Marketing Board (Benchmark Archive)"
+            entry["observation_date"] = "2026-03-15"
+            entry["is_live"] = False
+            entry["is_fresh"] = False
             results.append(entry)
 
-        # 3. Fallback: If specific district had no match, provide state-level or closest primary crops
-        if not results:
-            for record in PRIMARY_MANDI_DATASETS:
-                if clean_state and clean_state == record["state"].lower():
-                    entry = dict(record)
-                    entry["official_source"] = "Agmarknet APMC Portal / State Marketing Board"
-                    entry["fetched_at"] = now
-                    entry["is_fresh"] = True
-                    results.append(entry)
-
-        return results or list(PRIMARY_MANDI_DATASETS[:10])
+        return results
 
     def is_data_fresh(self, fetched_at: datetime, max_age_hours: int = 24) -> bool:
         """Verifies that the mandi price timestamp is less than max_age_hours old."""

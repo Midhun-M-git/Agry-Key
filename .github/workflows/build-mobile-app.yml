@@ -65,24 +65,104 @@ jobs:
         working-directory: Frontend
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
+      - name: Run Flutter Widget & Unit Tests
+        working-directory: Frontend
+        run: flutter test
+
+      - name: Decode Android Release Keystore
+        working-directory: Frontend/android/app
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "Error: Required secret ANDROID_KEYSTORE_BASE64 is missing."
+            echo "Release build aborted. Debug signing fallback is strictly disabled."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > agrikey-release.jks
+          echo "Successfully decoded release keystore from GitHub secrets."
+
+      - name: Build and Inspect Play Flavor Release Artifact
+        working-directory: Frontend
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "Building explicit Play release variant..."
+          flutter build apk --release --flavor play --android-skip-build-dependency-validation --dart-define=DISTRIBUTION=play
+
+          PLAY_APK="build/app/outputs/flutter-apk/app-play-release.apk"
+          if [ ! -s "$PLAY_APK" ]; then
+            echo "ERROR: Expected Play release APK does not exist or is empty at: $PLAY_APK"
+            exit 1
+          fi
+          echo "Play release APK successfully generated: $(ls -lh "$PLAY_APK")"
+
+          # Locate and verify apkanalyzer from Android SDK
+          if ! command -v apkanalyzer &> /dev/null; then
+            if [ -n "$ANDROID_HOME" ] && [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+              export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+            elif [ -n "$ANDROID_SDK_ROOT" ] && [ -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/apkanalyzer" ]; then
+              export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+            else
+              APK_ANALYZER_BIN=$(find /usr/local/lib/android/sdk -name apkanalyzer 2>/dev/null | head -n 1)
+              if [ -n "$APK_ANALYZER_BIN" ] && [ -x "$APK_ANALYZER_BIN" ]; then
+                export PATH="$(dirname "$APK_ANALYZER_BIN"):$PATH"
+              fi
+            fi
+          fi
+
+          if ! command -v apkanalyzer &> /dev/null; then
+            echo "ERROR: Android SDK apkanalyzer tool is missing from the environment."
+            exit 1
+          fi
+
+          echo "Inspecting Play release artifact using apkanalyzer..."
+          APP_ID=$(apkanalyzer manifest application-id "$PLAY_APK")
+          if [ $? -ne 0 ] || [ -z "$APP_ID" ]; then
+            echo "ERROR: Failed to extract application ID using apkanalyzer."
+            exit 1
+          fi
+          echo "Artifact Application ID: $APP_ID"
+
+          PERMISSIONS=$(apkanalyzer manifest permissions "$PLAY_APK")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: apkanalyzer manifest permissions command failed."
+            exit 1
+          fi
+          echo "Artifact Permissions:"
+          echo "$PERMISSIONS"
+
+          if echo "$PERMISSIONS" | grep -F "android.permission.REQUEST_INSTALL_PACKAGES"; then
+            echo "CRITICAL VIOLATION: android.permission.REQUEST_INSTALL_PACKAGES found in Play release APK!"
+            exit 1
+          fi
+          echo "VERIFIED: android.permission.REQUEST_INSTALL_PACKAGES is strictly absent from Play release APK."
+
       - name: Build Android Release APK
         working-directory: Frontend
         env:
           BACKEND_URL: ${{ inputs.backend_url || vars.BACKEND_URL || 'https://agry-key.onrender.com' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "Building APK pointing to backend: $BACKEND_URL with version v1.0.${{ github.run_number }}"
-          flutter build apk --release --android-skip-build-dependency-validation --build-name="1.0.${{ github.run_number }}" --build-number="${{ github.run_number }}" --dart-define=BACKEND_URL="$BACKEND_URL" --dart-define=APP_VERSION="v1.0.${{ github.run_number }}"
+          echo "Building APK pointing to backend: $BACKEND_URL with version v1.0.${{ github.run_number }} (Flavor: github)"
+          flutter build apk --release --flavor github --android-skip-build-dependency-validation --build-name="1.0.${{ github.run_number }}" --build-number="${{ github.run_number }}" --dart-define=BACKEND_URL="$BACKEND_URL" --dart-define=APP_VERSION="v1.0.${{ github.run_number }}" --dart-define=DISTRIBUTION=github
 
       - name: Verify APK Generated
         run: |
-          ls -lh Frontend/build/app/outputs/flutter-apk/app-release.apk
+          ls -lh Frontend/build/app/outputs/flutter-apk/app-github-release.apk
 
       - name: Prepare Named Release Assets
         run: |
           mkdir -p release-assets
-          cp Frontend/build/app/outputs/flutter-apk/app-release.apk release-assets/agrikey-v1.0.${{ github.run_number }}.apk
-          cp Frontend/build/app/outputs/flutter-apk/app-release.apk release-assets/agrikey-latest.apk
-          cp Frontend/build/app/outputs/flutter-apk/app-release.apk release-assets/app-release.apk
+          APK_PATH="Frontend/build/app/outputs/flutter-apk/app-github-release.apk"
+          echo "Found compiled release APK at: $APK_PATH"
+          cp "$APK_PATH" release-assets/agrikey-v1.0.${{ github.run_number }}.apk
+          cp "$APK_PATH" release-assets/agrikey-latest.apk
+          cp "$APK_PATH" release-assets/app-release.apk
 
       - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v4

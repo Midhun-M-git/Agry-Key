@@ -1,8 +1,16 @@
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.database import Base, engine
 
 client = TestClient(app)
+
+def _mock_reverse_geocode(lat: float, lng: float):
+    if abs(lat - 10.7867) < 0.1 and abs(lng - 76.6547) < 0.1:
+        return ("kerala", "palakkad", True)
+    if abs(lat - 11.0168) < 0.1 and abs(lng - 76.9558) < 0.1:
+        return ("tamil nadu", "coimbatore", True)
+    return ("", "", False)
 
 
 def setup_module(module):
@@ -11,7 +19,8 @@ def setup_module(module):
 
 
 def test_zero_touch_geo_language_detection_palakkad():
-    response = client.post("/api/v1/geo/detect-language", json={"latitude": 10.7867, "longitude": 76.6547})
+    with patch("app.routers.geo._reverse_geocode", side_effect=_mock_reverse_geocode):
+        response = client.post("/api/v1/geo/detect-language", json={"latitude": 10.7867, "longitude": 76.6547})
     assert response.status_code == 200
     data = response.json()
     assert data["regional_language_code"] == "ml"
@@ -22,7 +31,8 @@ def test_zero_touch_geo_language_detection_palakkad():
 
 
 def test_zero_touch_geo_language_detection_coimbatore():
-    response = client.post("/api/v1/geo/detect-language", json={"latitude": 11.0168, "longitude": 76.9558})
+    with patch("app.routers.geo._reverse_geocode", side_effect=_mock_reverse_geocode):
+        response = client.post("/api/v1/geo/detect-language", json={"latitude": 11.0168, "longitude": 76.9558})
     assert response.status_code == 200
     data = response.json()
     assert data["regional_language_code"] == "ta"

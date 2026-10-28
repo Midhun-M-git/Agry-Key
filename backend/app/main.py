@@ -28,6 +28,7 @@ from app.routers import (
 )
 
 from app.core.database import Base, engine, SessionLocal
+from app.routers.health import verify_startup_provenance
 from app.routers.schemes import seed_schemes
 
 
@@ -35,41 +36,13 @@ from app.routers.schemes import seed_schemes
 async def lifespan(_app: FastAPI):
     db = SessionLocal()
     try:
-        # Production Lockdown: Fail-closed if demo seed data or demo users are detected in production
-        if str(settings.ENVIRONMENT).lower() == "production":
-            import logging
-            import sys
-            from sqlalchemy import text, inspect
+        # Deployment Lockdown: Fail-closed if demo seed data or demo users are detected in production
+        lockdown_err = verify_startup_provenance(db, force=True)
+        if lockdown_err and settings.is_deployed:
+            import logging, sys
             logger = logging.getLogger("app.main")
-            inspector = inspect(engine)
-            table_names = inspector.get_table_names()
-
-            for table_name in table_names:
-                columns = [c["name"] for c in inspector.get_columns(table_name)]
-                if "source_id" in columns:
-                    count = db.execute(
-                        text(f"SELECT COUNT(*) FROM {table_name} WHERE source_id = 'demo_seed'")
-                    ).scalar() or 0
-                    if count > 0:
-                        logger.critical(
-                            f"CRITICAL: Production startup aborted! Table '{table_name}' contains {count} demo_seed rows. "
-                            "Production environment must not boot with demo data in the database."
-                        )
-                        sys.exit(1)
-
-            # Check demo users and orders backstop
-            if "users" in table_names:
-                demo_users_count = db.execute(
-                    text("SELECT COUNT(*) FROM users WHERE phone_number IN ('+919876543210', '+919876543220') "
-                         "OR full_name IN ('Ravi Kumar', 'Organic Green Mart')")
-                ).scalar() or 0
-                if demo_users_count > 0:
-                    logger.critical(
-                        f"CRITICAL: Production startup aborted! 'users' table contains {demo_users_count} known demo user accounts. "
-                        "Production environment must not boot with demo accounts."
-                    )
-                    sys.exit(1)
-
+            logger.critical(f"CRITICAL: Production startup aborted! {lockdown_err}")
+            sys.exit(1)
         seed_schemes(db)
         yield
     finally:

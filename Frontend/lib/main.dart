@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
 
@@ -22,15 +25,24 @@ void main() {
   runApp(const ProviderScope(child: AgriKeyApp()));
 }
 
-class AgriKeyApp extends StatelessWidget {
+class AgriKeyApp extends ConsumerWidget {
   const AgriKeyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentLocale = ref.watch(localeProvider);
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
+      locale: currentLocale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: AppRouter.create(),
     );
   }

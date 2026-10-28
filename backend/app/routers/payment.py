@@ -94,7 +94,7 @@ def create_payment_order(
             )
     else:
         # Check if mock payments are explicitly allowed in non-production
-        is_prod = getattr(settings, "ENVIRONMENT", "development").lower() == "production"
+        is_prod = getattr(settings, "is_deployed", False)
         allow_mock = getattr(settings, "ALLOW_MOCK_PAYMENT", False)
         if is_prod or not allow_mock:
             raise HTTPException(
@@ -188,7 +188,7 @@ def verify_payment(
         except razorpay.errors.SignatureVerificationError:
             is_valid = False
     else:
-        is_prod = getattr(settings, "ENVIRONMENT", "development").lower() == "production"
+        is_prod = getattr(settings, "is_deployed", False)
         allow_mock = getattr(settings, "ALLOW_MOCK_PAYMENT", False)
         if is_prod or not allow_mock:
             raise HTTPException(

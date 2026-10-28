@@ -1,5 +1,6 @@
 """Community discussion, comment, and like API routes."""
 
+import logging
 from math import ceil
 from typing import Optional
 
@@ -30,9 +31,14 @@ def _get_post(post_id: int, db: Session) -> Post:
     return post
 
 
-def _author_name(author_id: int, db: Session) -> Optional[str]:
+logger = logging.getLogger(__name__)
+
+def _author_name(author_id: int, db: Session) -> str:
     author = db.query(User).filter(User.id == author_id).first()
-    return author.full_name if author else None
+    if not author:
+        logger.error(f"Community integrity defect: Referenced author_id={author_id} not found in database.")
+        return f"Unknown user (id: {author_id})"
+    return author.full_name or f"User #{author.id}"
 
 
 def _comment_response(comment: Comment, db: Session) -> CommentResponse:
@@ -71,7 +77,7 @@ def _post_response(
     return PostResponse(
         id=post.id,
         author_id=post.author_id,
-        author_name=_author_name(post.author_id, db) or "Kisan Mitra",
+        author_name=_author_name(post.author_id, db),
         content=post.content,
         district=post.district,
         image_url=post.image_url,
@@ -84,46 +90,7 @@ def _post_response(
     )
 
 
-def _seed_community_posts_if_empty(db: Session) -> None:
-    """Seed helpful farmer advisory discussions if community table is empty."""
-    if db.query(Post).count() > 0:
-        return
-    admin_user = db.query(User).first()
-    admin_id = admin_user.id if admin_user else 1
-
-    sample_posts = [
-        {
-            "content": "Rice crop showing yellow leaves and brown spots in Palakkad. Any organic solution to control blast?",
-            "district": "Palakkad",
-            "comments": [
-                "Spray Pseudomonas fluorescens at 10g per liter of water during morning hours.",
-                "Ensure proper drainage and avoid excess nitrogen fertilizer for the next 2 weeks.",
-            ],
-        },
-        {
-            "content": "Tomato wholesale price reached ₹38/kg in local APMC Mandi today! Strong demand for hybrid varieties.",
-            "district": "Wayanad",
-            "comments": [
-                "Great news! Prices were down last month.",
-            ],
-        },
-        {
-            "content": "Best organic fertilizer schedule for Nendran banana plantation before monsoon arrival?",
-            "district": "Thrissur",
-            "comments": [
-                "Apply 10 kg cow dung manure per pit along with 500g neem cake and wood ash.",
-            ],
-        },
-    ]
-
-    for p in sample_posts:
-        post = Post(author_id=admin_id, content=p["content"], district=p["district"])
-        db.add(post)
-        db.flush()
-        for c in p["comments"]:
-            comment = Comment(post_id=post.id, author_id=admin_id, content=c)
-            db.add(comment)
-    db.commit()
+# Auto-seeding of fake demo posts removed. Empty state is served honestly.
 
 
 @router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
@@ -149,7 +116,6 @@ def list_posts(
     db: Session = Depends(get_db),
 ):
     """Return a paginated community feed, optionally limited to a district."""
-    _seed_community_posts_if_empty(db)
     query = db.query(Post)
     if district:
         query = query.filter(Post.district.ilike(district.strip()))

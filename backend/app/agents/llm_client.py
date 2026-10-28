@@ -12,11 +12,8 @@ class LLMClient:
     - Google Gemini API
     """
 
-    FALLBACK_RESPONSE = (
-        "Fallback Advisory: Maintain current farming operations. "
-        "Ensure proper irrigation and monitor for pests. "
-        "(Detailed AI analysis currently unavailable)"
-    )
+    UNAVAILABLE_RESPONSE = "Advisory unavailable: AI analysis could not be generated."
+    FALLBACK_RESPONSE = UNAVAILABLE_RESPONSE
 
     def __init__(self, model_id: str = "gemini-1.5-flash", max_retries: int = 3):
         self.model_id = model_id
@@ -139,10 +136,8 @@ class LLMClient:
                     if attempt < self.max_retries - 1:
                         time.sleep(2**attempt)
 
-        # 4. Fallback to intelligent agronomic domain synthesis for farming prompts
-        if any(w in prompt.lower() for w in ["strategy", "farming", "crop", "district", "farm", "portfolio", "harvest"]):
-            return self._generate_intelligent_agricultural_strategy(prompt)
-        return self.FALLBACK_RESPONSE
+        # Fail closed: never fabricate advice when AI provider fails
+        return self.UNAVAILABLE_RESPONSE
 
     def _generate_intelligent_agricultural_strategy(self, prompt: str) -> str:
         """
