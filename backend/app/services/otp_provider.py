@@ -109,13 +109,56 @@ class TwilioVerifyOTPProvider(OTPProvider):
 class SMSOTPProvider(OTPProvider):
     """
     Production SMS provider supporting MSG91, Twilio, and external SMS gateways.
-    Activated when OTP_PROVIDER=sms/twilio and valid credentials are provided.
+    Activated when OTP_PROVIDER=msg91/sms/twilio and valid credentials are provided.
     """
 
     async def send_otp(self, phone_number: str, otp_code: str) -> bool:
-        account_sid, auth_token, _, from_number = _get_twilio_config()
-        provider = (settings.SMS_PROVIDER or "twilio").lower()
-        if provider == "twilio":
+        provider = (getattr(settings, "OTP_PROVIDER", "") or getattr(settings, "SMS_PROVIDER", "") or "twilio").lower()
+        if provider in ("msg91", "sms") or (getattr(settings, "SMS_PROVIDER", "") or "").lower() == "msg91":
+            # MSG91 Provider
+            auth_key = getattr(settings, "SMS_API_KEY", "") or getattr(settings, "MSG91_AUTH_KEY", "") or os.environ.get("MSG91_AUTHKEY", "") or os.environ.get("MSG91_AUTH_KEY", "")
+            if not auth_key:
+                logger.error("MSG91 auth key missing. Set SMS_API_KEY or MSG91_AUTH_KEY.")
+                return False
+
+            # MSG91 expects mobile number without leading '+'
+            clean_mobile = phone_number.lstrip("+").strip()
+            template_id = getattr(settings, "SMS_OTP_TEMPLATE_ID", "") or getattr(settings, "MSG91_TEMPLATE_ID", "") or os.environ.get("MSG91_TEMPLATE_ID", "")
+
+            payload = {
+                "mobile": clean_mobile,
+                "otp": otp_code,
+                "otp_expiry": "5",
+            }
+            if template_id:
+                payload["template_id"] = template_id
+
+            try:
+                url = "https://control.msg91.com/api/v5/otp"
+                if template_id:
+                    url = f"{url}?template_id={template_id}&mobile={clean_mobile}&otp={otp_code}&otp_expiry=5"
+                async with httpx.AsyncClient(timeout=10) as client:
+                    response = await client.post(
+                        url,
+                        headers={
+                            "authkey": auth_key,
+                            "Content-Type": "application/json",
+                        },
+                        json=payload,
+                    )
+                    data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
+                    if response.status_code in (200, 201) and data.get("type") != "error":
+                        logger.info(f"MSG91 OTP dispatched successfully to {clean_mobile}")
+                        return True
+                    else:
+                        logger.error(f"MSG91 delivery failed ({response.status_code}): {response.text}")
+                        return False
+            except Exception as exc:
+                logger.error(f"MSG91 delivery failed: {exc}")
+                return False
+        else:
+            # Twilio Provider
+            account_sid, auth_token, _, from_number = _get_twilio_config()
             if not (account_sid and auth_token and from_number):
                 logger.error("Twilio SMS credentials incomplete. Cannot deliver SMS.")
                 return False
@@ -136,45 +179,25 @@ class SMSOTPProvider(OTPProvider):
             except Exception as exc:
                 logger.error(f"Twilio standard SMS delivery failed: {exc}")
                 return False
-        else:
-            # MSG91
-            if not settings.SMS_API_KEY:
-                logger.error("MSG91 auth key missing. Cannot deliver SMS.")
-                return False
-            payload = {
-                "mobile": phone_number,
-                "otp": otp_code,
-                "otp_expiry": "5",
-            }
-            if settings.SMS_OTP_TEMPLATE_ID:
-                payload["template_id"] = settings.SMS_OTP_TEMPLATE_ID
-            try:
-                async with httpx.AsyncClient(timeout=10) as client:
-                    response = await client.post(
-                        "https://control.msg91.com/api/v5/otp",
-                        headers={
-                            "authkey": settings.SMS_API_KEY,
-                            "Content-Type": "application/json",
-                        },
-                        json=payload,
-                    )
-                    response.raise_for_status()
-                    return True
-            except Exception as exc:
-                logger.error(f"MSG91 delivery failed: {exc}")
-                return False
 
 
 def get_otp_provider() -> OTPProvider:
     """Factory selecting the active OTP provider based on environment configuration."""
+    provider_type = (getattr(settings, "OTP_PROVIDER", "") or "").lower()
+    sms_provider = (getattr(settings, "SMS_PROVIDER", "") or "").lower()
+    auth_key = getattr(settings, "SMS_API_KEY", "") or getattr(settings, "MSG91_AUTH_KEY", "") or os.environ.get("MSG91_AUTHKEY", "") or os.environ.get("MSG91_AUTH_KEY", "")
+
+    # Prioritize MSG91 if explicitly configured
+    if (provider_type in ("msg91", "sms") or sms_provider == "msg91") and auth_key and auth_key not in ("mock", "test", ""):
+        return SMSOTPProvider()
+
     account_sid, auth_token, service_sid, _ = _get_twilio_config()
     if account_sid and auth_token:
         if service_sid:
             return TwilioVerifyOTPProvider()
         return SMSOTPProvider()
 
-    provider_type = (getattr(settings, "OTP_PROVIDER", "development") or "development").lower()
-    if provider_type == "sms" and settings.SMS_API_KEY and settings.SMS_API_KEY not in ("mock", "test", ""):
+    if auth_key and auth_key not in ("mock", "test", ""):
         return SMSOTPProvider()
 
     return DevelopmentOTPProvider()

@@ -44,6 +44,12 @@ class Settings(BaseSettings):
                         "In a deployed environment, Twilio credentials (TWILIO_VERIFY_SERVICE_SID or "
                         "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN) must be provided."
                     )
+            if self.OTP_PROVIDER.lower() in ("msg91", "sms") or (self.SMS_PROVIDER and self.SMS_PROVIDER.lower() == "msg91"):
+                auth_key = self.SMS_API_KEY or getattr(self, "MSG91_AUTH_KEY", "") or os.environ.get("MSG91_AUTHKEY", "") or os.environ.get("MSG91_AUTH_KEY", "")
+                if not auth_key:
+                    raise ValueError(
+                        "In a deployed environment, MSG91 auth key (SMS_API_KEY or MSG91_AUTH_KEY) must be provided."
+                    )
         return self
 
     @field_validator("SECRET_KEY")
@@ -67,6 +73,8 @@ class Settings(BaseSettings):
     OTP_PROVIDER: str = Field(default="twilio")
     SMS_API_KEY: str = Field(default="")
     SMS_OTP_TEMPLATE_ID: str = Field(default="")
+    MSG91_AUTH_KEY: str = Field(default="")
+    MSG91_TEMPLATE_ID: str = Field(default="")
     SMS_PROVIDER: str = Field(default="twilio")
     TWILIO_ACCOUNT_SID: str = Field(default="")
     TWILIO_AUTH_TOKEN: str = Field(default="")
