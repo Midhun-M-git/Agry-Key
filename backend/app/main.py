@@ -28,12 +28,14 @@ from app.routers import (
 )
 
 from app.core.database import Base, engine, SessionLocal
+import app.models  # noqa: F401
 from app.routers.health import verify_startup_provenance
 from app.routers.schemes import seed_schemes
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         # Deployment Lockdown: Fail-closed if demo seed data or demo users are detected in production
