@@ -89,7 +89,7 @@ def verify_startup_provenance(db: Session, force: bool = False) -> Optional[str]
     return None
 
 
-@router.get("/liveness")
+@router.api_route("/liveness", methods=["GET", "HEAD"])
 def liveness_check():
     """Liveness probe confirming the server process is responsive."""
     return {
@@ -99,7 +99,7 @@ def liveness_check():
     }
 
 
-@router.get("/readiness")
+@router.api_route("/readiness", methods=["GET", "HEAD"])
 def readiness_check(db: Session = Depends(get_db)):
     """Readiness probe verifying operational database connectivity with fast cached provenance."""
     try:
@@ -137,7 +137,7 @@ def readiness_check(db: Session = Depends(get_db)):
         )
 
 
-@router.get("")
+@router.api_route("", methods=["GET", "HEAD"])
 def health_check(db: Session = Depends(get_db)):
     """Comprehensive health check for Database and core backend components.
     Constant/fabricated statuses removed; only reflects verifiable real checks."""

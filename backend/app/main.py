@@ -106,7 +106,7 @@ app.include_router(soil.router)
 
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "name": settings.PROJECT_NAME,
