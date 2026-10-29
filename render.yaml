@@ -38,12 +38,12 @@ services:
           name: agry-key-db
           property: connectionString
       - key: OTP_PROVIDER
-        value: "twilio"
-      - key: TWILIO_ACCOUNT_SID
+        value: "msg91"
+      - key: SMS_PROVIDER
+        value: "msg91"
+      - key: SMS_API_KEY
         sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_VERIFY_SERVICE_SID
+      - key: SMS_OTP_TEMPLATE_ID
         sync: false
       - key: DL_FORECAST_SERVICE_URL
         value: "https://agry-key-dl-space.hf.space/api/predict"
