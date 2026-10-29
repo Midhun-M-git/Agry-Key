@@ -187,6 +187,10 @@ def get_otp_provider() -> OTPProvider:
     sms_provider = (getattr(settings, "SMS_PROVIDER", "") or "").lower()
     auth_key = getattr(settings, "SMS_API_KEY", "") or getattr(settings, "MSG91_AUTH_KEY", "") or os.environ.get("MSG91_AUTHKEY", "") or os.environ.get("MSG91_AUTH_KEY", "")
 
+    # Prioritize development/mock/console provider when explicitly requested
+    if provider_type in ("development", "dev", "mock", "console"):
+        return DevelopmentOTPProvider()
+
     # Prioritize MSG91 if explicitly configured
     if (provider_type in ("msg91", "sms") or sms_provider == "msg91") and auth_key and auth_key not in ("mock", "test", ""):
         return SMSOTPProvider()

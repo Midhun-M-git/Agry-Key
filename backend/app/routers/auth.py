@@ -287,18 +287,13 @@ async def request_otp(
 
     delivered = await provider.send_otp(normalized_phone, otp_code)
     if not delivered:
-        if not getattr(settings, "is_deployed", False):
-            dev_provider = DevelopmentOTPProvider()
-            await dev_provider.send_otp(normalized_phone, otp_code)
-            delivered = True
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Failed to send verification SMS to your mobile number. Please try again.",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to send verification SMS to your mobile number. Please try again.",
+        )
 
     msg = "Verification code sent to your mobile number."
-    if not getattr(settings, "is_deployed", False):
+    if getattr(settings, "ENVIRONMENT", "").lower() == "development":
         msg = "Verification code sent (Dev test code: 123456)."
 
     return OTPResponse(
@@ -368,8 +363,8 @@ async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
     # Cryptographic hash verification against stored DB entry
     is_valid = verify_otp_hash(normalized_phone, code, settings.SECRET_KEY, otp_entry.otp_code)
 
-    # In non-deployed development mode, accept standard test code 123456
-    if not is_valid and not getattr(settings, "is_deployed", False) and code in ("123456", "000000"):
+    # In development mode only (not in test or deployed), accept test code 123456
+    if not is_valid and getattr(settings, "ENVIRONMENT", "").lower() == "development" and code == "123456":
         is_valid = True
 
     # Or verify via Twilio Verify API if configured
