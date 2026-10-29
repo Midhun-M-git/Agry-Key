@@ -46,9 +46,9 @@ async def lifespan(_app: FastAPI):
             logger.critical(f"CRITICAL: Production startup aborted! {lockdown_err}")
             sys.exit(1)
         seed_schemes(db)
-        yield
     finally:
         db.close()
+    yield
 
 
 app = FastAPI(

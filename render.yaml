@@ -20,7 +20,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: ENVIRONMENT
-        value: "staging"
+        value: "development"
       - key: PROJECT_NAME
         value: "Agry-Key Backend"
       - key: API_V1_STR
@@ -38,7 +38,7 @@ services:
           name: agry-key-db
           property: connectionString
       - key: OTP_PROVIDER
-        value: "twilio"
+        value: "development"
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
