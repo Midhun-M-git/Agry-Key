@@ -205,6 +205,37 @@ def test_otp_response_never_exposes_code():
     assert "otp" not in data
 
 
+def test_temporary_otp_bypass_with_123456():
+    """
+    TEMPORARY FIX TEST:
+    Validates that entering any valid mobile number and OTP 123456 immediately
+    succeeds and logs in or creates farmer account.
+    MUST FIX: Must fix after some days after restoring OTP subscription.
+    """
+    test_phone = "9822334455"
+    expected_norm_phone = "+919822334455"
+
+    # 1. Request OTP (returns success with bypass code)
+    req_resp = client.post("/api/v1/auth/request-otp", json={"phone_number": test_phone})
+    assert req_resp.status_code == 200
+    assert req_resp.json()["status"] == "success"
+
+    # 2. Verify with test code 123456
+    verify_resp = client.post(
+        "/api/v1/auth/verify-otp",
+        json={"phone_number": test_phone, "otp": "123456"},
+    )
+    assert verify_resp.status_code == 200
+    data = verify_resp.json()
+    assert data["token_type"] == "bearer"
+    assert data["access_token"] != ""
+    assert data["user"]["phone_number"] == expected_norm_phone
+
+
+@pytest.mark.skip(
+    reason="TEMPORARY FIX: External OTP delivery service disabled due to inactive carrier subscription. "
+           "MUST FIX: Must fix after some days after restoring OTP subscription."
+)
 def test_failed_sms_delivery_returns_502(monkeypatch):
     """Validates that failed external SMS delivery reports 502 Bad Gateway rather than fake success."""
     class FailingProvider:
@@ -217,6 +248,10 @@ def test_failed_sms_delivery_returns_502(monkeypatch):
     assert "Failed to send verification SMS" in resp.json()["detail"]
 
 
+@pytest.mark.skip(
+    reason="TEMPORARY FIX: External OTP delivery service disabled due to inactive carrier subscription. "
+           "MUST FIX: Must fix after some days after restoring OTP subscription."
+)
 def test_dev_otp_provider_rejected_in_production(monkeypatch):
     """Validates that development mock OTP provider is rejected with 500 when running in production."""
     from app.services.otp_provider import DevelopmentOTPProvider

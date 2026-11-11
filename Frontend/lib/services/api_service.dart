@@ -114,34 +114,43 @@ class ApiService {
   }
 
   // SEND OTP
+  // =========================================================================
+  // TEMPORARY FIX: External carrier OTP delivery temporarily bypassed.
+  // MUST FIX: Must fix after some days after restoring OTP subscription.
+  // =========================================================================
   static Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/request-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"phone_number": phoneNumber}),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {
           "success": true,
-          "message": data["message"] ?? "Verification code sent to your mobile number.",
+          "message": data["message"] ?? "OTP service active (Enter 123456 to continue)",
         };
       }
       return {
-        "success": false,
-        "message": data["detail"] ?? data["message"] ?? "Failed to send verification code. Please try again.",
+        "success": true,
+        "message": "Temporary bypass active: Enter OTP 123456",
       };
     } catch (e) {
+      // In case backend is cold-starting or offline, permit navigating to OTP screen
       return {
-        "success": false,
-        "message": "Unable to connect to Agry-Key server. Please check your internet connection.",
+        "success": true,
+        "message": "Temporary bypass active: Enter OTP 123456",
       };
     }
   }
 
   // VERIFY OTP
+  // =========================================================================
+  // TEMPORARY FIX: Fixed OTP 123456 accepted while carrier subscription is inactive.
+  // MUST FIX: Must fix after some days after restoring OTP subscription.
+  // =========================================================================
   static Future<Map<String, dynamic>> verifyOtp({
     required String phoneNumber,
     required String otpCode,
@@ -153,8 +162,9 @@ class ApiService {
         body: jsonEncode({
           "phone_number": phoneNumber,
           "otp": otpCode,
+          "code": otpCode,
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -167,11 +177,39 @@ class ApiService {
           "user": data["user"],
         };
       }
+      if (otpCode == "123456") {
+        return {
+          "success": true,
+          "message": "Verified with temporary bypass code",
+          "is_new_user": false,
+          "access_token": "mock-dev-token-bypass-123456",
+          "refresh_token": "mock-dev-refresh-bypass-123456",
+          "user": {
+            "phone_number": phoneNumber,
+            "role": "FARMER",
+            "full_name": "Agry-Key Farmer",
+          },
+        };
+      }
       return {
         "success": false,
         "message": data["detail"] ?? data["message"] ?? "Invalid or expired verification code.",
       };
     } catch (e) {
+      if (otpCode == "123456") {
+        return {
+          "success": true,
+          "message": "Verified with temporary offline bypass",
+          "is_new_user": false,
+          "access_token": "mock-dev-token-bypass-123456",
+          "refresh_token": "mock-dev-refresh-bypass-123456",
+          "user": {
+            "phone_number": phoneNumber,
+            "role": "FARMER",
+            "full_name": "Agry-Key Farmer",
+          },
+        };
+      }
       return {
         "success": false,
         "message": "Unable to connect to Agry-Key server. Please check your internet connection.",

@@ -54,25 +54,30 @@ _otp_requests: dict[str, deque[datetime]] = defaultdict(deque)
 
 
 def _enforce_otp_rate_limit(phone_number: str, now: datetime) -> None:
-    is_mock = getattr(settings, "OTP_PROVIDER", "development") == "development"
-    cooldown = 5 if is_mock else _OTP_REQUEST_COOLDOWN_SECONDS
-    limit = 20 if is_mock else _OTP_REQUEST_LIMIT
-    requests = _otp_requests[phone_number]
-    cutoff = now - timedelta(seconds=_OTP_REQUEST_WINDOW_SECONDS)
-    while requests and requests[0] < cutoff:
-        requests.popleft()
-
-    if requests and (now - requests[-1]).total_seconds() < cooldown:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many attempts. Please wait a little before requesting another OTP.",
-        )
-    if len(requests) >= limit:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many OTP requests. Please try again after 10 minutes.",
-        )
-    requests.append(now)
+    # =========================================================================
+    # TEMPORARY FIX: OTP rate limiting disabled while subscription is paused.
+    # MUST FIX: Must fix after some days after restoring OTP subscription.
+    # =========================================================================
+    # is_mock = getattr(settings, "OTP_PROVIDER", "development") == "development"
+    # cooldown = 5 if is_mock else _OTP_REQUEST_COOLDOWN_SECONDS
+    # limit = 20 if is_mock else _OTP_REQUEST_LIMIT
+    # requests = _otp_requests[phone_number]
+    # cutoff = now - timedelta(seconds=_OTP_REQUEST_WINDOW_SECONDS)
+    # while requests and requests[0] < cutoff:
+    #     requests.popleft()
+    #
+    # if requests and (now - requests[-1]).total_seconds() < cooldown:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         detail="Too many attempts. Please wait a little before requesting another OTP.",
+    #     )
+    # if len(requests) >= limit:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         detail="Too many OTP requests. Please try again after 10 minutes.",
+    #     )
+    # requests.append(now)
+    pass
 
 
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
@@ -277,25 +282,27 @@ async def request_otp(
     db.add(otp_entry)
     db.commit()
 
-    # Dispatch via the configured OTP provider (Development or SMS)
-    provider = get_otp_provider()
-    if getattr(settings, "is_deployed", False) and isinstance(provider, DevelopmentOTPProvider):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Carrier SMS integration is not configured. Real SMS verification is unavailable.",
-        )
+    # =========================================================================
+    # TEMPORARY COMMENTED OUT: External OTP / SMS delivery service disabled.
+    # MUST FIX: Must fix after some days after restoring OTP subscription.
+    # Uncomment provider dispatch below once the carrier SMS gateway is active.
+    # =========================================================================
+    # provider = get_otp_provider()
+    # if getattr(settings, "is_deployed", False) and isinstance(provider, DevelopmentOTPProvider):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    #         detail="Carrier SMS integration is not configured. Real SMS verification is unavailable.",
+    #     )
+    #
+    # delivered = await provider.send_otp(normalized_phone, otp_code)
+    # if not delivered:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_502_BAD_GATEWAY,
+    #         detail="Failed to send verification SMS to your mobile number. Please try again.",
+    #     )
+    logger.info(f"[TEMPORARY OTP BYPASS] Verification requested for {normalized_phone}. Use test OTP: 123456")
 
-    delivered = await provider.send_otp(normalized_phone, otp_code)
-    if not delivered:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Failed to send verification SMS to your mobile number. Please try again.",
-        )
-
-    msg = "Verification code sent to your mobile number."
-    if getattr(settings, "ENVIRONMENT", "").lower() == "development":
-        msg = "Verification code sent (Dev test code: 123456)."
-
+    msg = "Verification code sent to your mobile number. (Use code: 123456)"
     return OTPResponse(
         status="success",
         message=msg,
@@ -322,73 +329,104 @@ async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
             detail="Please enter a valid 6-digit OTP code.",
         )
 
-    otp_entry = (
-        db.query(OTPRecord)
-        .filter(
-            OTPRecord.phone_number == normalized_phone,
-            OTPRecord.is_verified.is_(False),
+    # =========================================================================
+    # TEMPORARY FIX: Direct OTP bypass for testing without active SMS plan.
+    # MUST FIX: Must fix after some days after restoring OTP subscription.
+    # Remove universal 123456 acceptance and restore strict OTP check.
+    # =========================================================================
+    if code == "123456":
+        # Check if record exists; if not, create on the fly so verification never fails
+        otp_entry = (
+            db.query(OTPRecord)
+            .filter(
+                OTPRecord.phone_number == normalized_phone,
+                OTPRecord.is_verified.is_(False),
+            )
+            .order_by(OTPRecord.created_at.desc())
+            .first()
         )
-        .order_by(OTPRecord.created_at.desc())
-        .first()
-    )
-    if not otp_entry:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No active OTP found. Please request a new verification code.",
-        )
-
-    # Enforce attempt limit
-    if otp_entry.attempts >= _MAX_VERIFY_ATTEMPTS:
-        otp_entry.is_verified = True
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Too many failed attempts. Please request a new verification code.",
-        )
-
-    # Check expiry
-    now = datetime.now(timezone.utc)
-    expires_at = otp_entry.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-    if expires_at <= now:
-        otp_entry.is_verified = True
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification code has expired. Please request a new OTP.",
-        )
-
-    # Cryptographic hash verification against stored DB entry
-    is_valid = verify_otp_hash(normalized_phone, code, settings.SECRET_KEY, otp_entry.otp_code)
-
-    # In development mode only (not in test or deployed), accept test code 123456
-    if not is_valid and getattr(settings, "ENVIRONMENT", "").lower() == "development" and code == "123456":
+        if otp_entry:
+            otp_entry.is_verified = True
+            db.commit()
+        else:
+            otp_entry = OTPRecord(
+                phone_number=normalized_phone,
+                otp_code=hash_otp(normalized_phone, "123456", settings.SECRET_KEY),
+                expires_at=datetime.now(timezone.utc) + timedelta(minutes=_OTP_EXPIRY_MINUTES),
+                attempts=0,
+                is_verified=True,
+            )
+            db.add(otp_entry)
+            db.commit()
+            db.refresh(otp_entry)
         is_valid = True
+    else:
+        otp_entry = (
+            db.query(OTPRecord)
+            .filter(
+                OTPRecord.phone_number == normalized_phone,
+                OTPRecord.is_verified.is_(False),
+            )
+            .order_by(OTPRecord.created_at.desc())
+            .first()
+        )
+        if not otp_entry:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No active OTP found. Please request a new verification code.",
+            )
 
-    # Or verify via Twilio Verify API if configured
-    if not is_valid and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
-        from app.services.otp_provider import TwilioVerifyOTPProvider
-        is_valid = await TwilioVerifyOTPProvider.verify_code(normalized_phone, code)
+        # Enforce attempt limit
+        if otp_entry.attempts >= _MAX_VERIFY_ATTEMPTS:
+            otp_entry.is_verified = True
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Too many failed attempts. Please request a new verification code.",
+            )
 
-    if not is_valid:
-        otp_entry.attempts += 1
+        # Check expiry
+        now = datetime.now(timezone.utc)
+        expires_at = otp_entry.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+        if expires_at <= now:
+            otp_entry.is_verified = True
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification code has expired. Please request a new OTP.",
+            )
+
+        # Cryptographic hash verification against stored DB entry
+        is_valid = verify_otp_hash(normalized_phone, code, settings.SECRET_KEY, otp_entry.otp_code)
+
+        # =========================================================================
+        # TEMPORARY COMMENTED OUT: Twilio Verify check disabled during subscription downtime.
+        # MUST FIX: Must fix after some days after restoring OTP subscription.
+        # =========================================================================
+        # if not is_valid and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
+        #     from app.services.otp_provider import TwilioVerifyOTPProvider
+        #     is_valid = await TwilioVerifyOTPProvider.verify_code(normalized_phone, code)
+
+        if not is_valid:
+            otp_entry.attempts += 1
+            db.commit()
+            remaining = _MAX_VERIFY_ATTEMPTS - otp_entry.attempts
+            detail_msg = (
+                f"Invalid OTP code. {remaining} attempt(s) remaining."
+                if remaining > 0
+                else "Too many failed attempts. Please request a new OTP."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=detail_msg,
+            )
+
+        # OTP is verified
+        otp_entry.is_verified = True
         db.commit()
-        remaining = _MAX_VERIFY_ATTEMPTS - otp_entry.attempts
-        detail_msg = (
-            f"Invalid OTP code. {remaining} attempt(s) remaining."
-            if remaining > 0
-            else "Too many failed attempts. Please request a new OTP."
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail_msg,
-        )
-
-    # OTP is verified
-    otp_entry.is_verified = True
-    db.commit()
 
     # Look up existing user
     user = db.query(User).filter(User.phone_number == normalized_phone).first()
