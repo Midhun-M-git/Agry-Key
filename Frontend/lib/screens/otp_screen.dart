@@ -106,10 +106,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         SnackBar(
           content: Text(
             L10n.get(
-              "New verification code sent to your phone",
-              "പുതിയ പരിശോധന കോഡ് അയച്ചു",
-              "नया सत्यापन कोड भेजा गया",
-              "புதிய சரிபார்ப்பு குறியீடு அனுப்பப்பட்டது",
+              "OTP service paused: Enter 123456",
+              "OTP സേവനം താൽക്കാലികം: 123456 നൽകുക",
+              "OTP सेवा अस्थायी: 123456 दर्ज करें",
+              "OTP சேவை தற்காலிகமானது: 123456 ஐ உள்ளிடவும்",
             ),
           ),
           backgroundColor: Colors.green.shade700,
@@ -359,6 +359,47 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         Icons.edit,
                         size: 16,
                         color: Colors.green,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // =========================================================================
+              // TEMPORARY FIX: OTP SMS delivery paused. Enter 123456 to log in.
+              // MUST FIX: Must fix after some days after restoring OTP subscription.
+              // =========================================================================
+              InkWell(
+                onTap: () {
+                  _otpController.text = "123456";
+                  _focusNode.unfocus();
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.amber.shade400),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.amber.shade800),
+                      const SizedBox(width: 8),
+                      Text(
+                        L10n.get(
+                          "Temporary OTP: Enter 123456 (Tap to fill)",
+                          "താൽക്കാലിക OTP: 123456 നൽകുക (ഫിൽ ചെയ്യാൻ ടാപ്പ് ചെയ്യുക)",
+                          "अस्थायी OTP: 123456 दर्ज करें (भरने के लिए टैप करें)",
+                          "தற்காலிக OTP: 123456 ஐ உள்ளிடவும் (நிரப்ப தட்டவும்)",
+                        ),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber.shade900,
+                        ),
                       ),
                     ],
                   ),

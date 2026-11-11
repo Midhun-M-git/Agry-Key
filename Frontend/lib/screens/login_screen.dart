@@ -94,15 +94,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoading = false;
     });
 
+    // =========================================================================
+    // TEMPORARY FIX: OTP SMS service temporarily disabled due to paused subscription.
+    // MUST FIX: Must fix after some days after restoring OTP subscription.
+    // =========================================================================
     if (result["success"] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             L10n.get(
-              "OTP sent to your mobile number",
-              "നിങ്ങളുടെ മൊബൈലിലേക്ക് OTP അയച്ചു",
-              "आपके मोबाइल पर OTP भेजा गया",
-              "உங்கள் மொபைலுக்கு OTP அனுப்பப்பட்டது",
+              "OTP service paused: Enter 123456 to continue",
+              "OTP സേവനം താൽക്കാലികം: തുടരാൻ 123456 നൽകുക",
+              "OTP सेवा अस्थायी: जारी रखने के लिए 123456 दर्ज करें",
+              "OTP சேவை தற்காலிகமானது: தொடர 123456 ஐ உள்ளிடவும்",
             ),
           ),
           backgroundColor: Colors.green.shade700,
