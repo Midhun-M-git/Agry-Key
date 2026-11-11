@@ -216,12 +216,6 @@ class ApiService {
       };
     }
   }
-      return {
-        "success": false,
-        "message": "Unable to connect to Agry-Key server. Please check your internet connection.",
-      };
-    }
-  }
 
   // LOGIN
   static Future<Map<String, dynamic>> login({
